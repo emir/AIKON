@@ -12,13 +12,15 @@ import javax.microedition.lcdui.StringItem;
  * Pairing, so no long access code has to be typed on the keypad:
  *
  *   phone: POST /v1/pair/start  -> shows a 6-digit code
- *   Mac:   npm run pair -- <code>          (admin approval)
+ *   owner: server/deploy/admin.sh SERVER pair <code>   (admin approval)
  *   phone: POST /v1/pair/claim every 5 s  -> receives its access code
  *
  * Only runs after the connection test has passed for the configured URL,
  * because the pairing secret must travel over the verified HTTPS path.
  * Polling stops on success, expiry, "İptal", 10 minutes or 3 network
- * errors in a row; nothing is repeated beyond that.
+ * errors in a row; nothing is repeated beyond that. As the last step of the
+ * setup wizard, "Geri"/"İptal" return to the wizard and success offers
+ * "Bitir".
  */
 final class Pairing implements CommandListener, Runnable {
 
@@ -27,20 +29,26 @@ final class Pairing implements CommandListener, Runnable {
     private static final int MAX_NET_ERRORS = 3;
 
     private final ClaudeS40MIDlet midlet;
-    private final Form form = new Form(L.s("Cihazı eşleştir", "Pair this phone"));
+    /** The wizard this pairing is a step of, or null. */
+    private final Setup setup;
+    private final Form form;
     private final StringItem codeItem = new StringItem(L.s("Eşleştirme kodu", "Pairing code"), "-");
     private final StringItem statusItem = new StringItem(L.s("Durum", "Status"), "");
     private final Command cancelCmd = new Command(L.s("İptal", "Cancel"), Command.BACK, 1);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+    private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
     private volatile boolean cancelled;
 
-    Pairing(ClaudeS40MIDlet midlet) {
+    Pairing(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
+        this.setup = setup;
+        form = new Form(setup != null ? Setup.title(Setup.STEPS - 1) : L.s("Cihazı eşleştir", "Pair this phone"));
         codeItem.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE));
         form.append(codeItem);
         form.append(statusItem);
         form.append(new StringItem(null,
-                L.s("Mac'te çalıştırın:\nnpm run pair -- <kod>\nOnaydan sonra telefon erişim kodunu kendisi alır.", "On the Mac run:\nnpm run pair -- <code>\nAfter approval the phone fetches its access code by itself.")));
+                L.s("Sunucunun sahibi bu kodu onaylar:\nadmin.sh SUNUCU pair <kod>\nOnaydan sonra telefon erişim kodunu kendisi alır.",
+                        "The server's owner approves this code:\nadmin.sh SERVER pair <code>\nAfter approval the phone fetches its access code by itself.")));
         form.addCommand(cancelCmd);
         form.setCommandListener(this);
     }
@@ -52,11 +60,15 @@ final class Pairing implements CommandListener, Runnable {
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == cancelCmd) {
+        if (c == cancelCmd || c == backCmd) {
             cancelled = true;
-            midlet.showMenu();
-        } else if (c == backCmd) {
-            midlet.showMenu();
+            if (setup != null) {
+                setup.show();
+            } else {
+                midlet.showMenu();
+            }
+        } else if (c == finishCmd) {
+            setup.finish();
         }
     }
 
@@ -65,9 +77,16 @@ final class Pairing implements CommandListener, Runnable {
     }
 
     private void finish(String s) {
+        finish(s, false);
+    }
+
+    private void finish(String s, boolean paired) {
         status(s);
         form.removeCommand(cancelCmd);
         form.addCommand(backCmd);
+        if (paired && setup != null) {
+            form.addCommand(finishCmd);
+        }
     }
 
     public void run() {
@@ -88,7 +107,7 @@ final class Pairing implements CommandListener, Runnable {
         String pair = r.msg.field("pair");
         String code = r.msg.field("code");
         codeItem.setText(code.length() == 6 ? code.substring(0, 3) + " " + code.substring(3) : code);
-        status(L.s("Mac'te onay bekleniyor...", "Waiting for approval on the Mac..."));
+        status(L.s("Onay bekleniyor...", "Waiting for approval..."));
 
         long deadline = System.currentTimeMillis() + MAX_MS;
         int netErrors = 0;
@@ -121,11 +140,12 @@ final class Pairing implements CommandListener, Runnable {
                 codeItem.setText("OK");
                 finish(err != null ? err
                         : L.s("Eşleştirildi (", "Paired (") + c.msg.field("device")
-                                + L.s("). Erişim kodu kaydedildi; sohbet kullanılabilir.", "). Access code saved; chat is ready."));
+                                + L.s("). Erişim kodu kaydedildi; sohbet kullanılabilir.", "). Access code saved; chat is ready."),
+                        err == null);
                 return;
             }
             if ("pending".equals(st)) {
-                status(L.s("Mac'te onay bekleniyor...", "Waiting for approval on the Mac..."));
+                status(L.s("Onay bekleniyor...", "Waiting for approval..."));
                 continue;
             }
             finish(L.s("Eşleştirme süresi doldu. Yeniden başlatın.", "Pairing expired. Start again."));

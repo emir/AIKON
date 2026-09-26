@@ -103,7 +103,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.drawString("Claude S40", tx, 5, Graphics.TOP | Graphics.LEFT);
         g.setFont(sm);
         g.setColor(Theme.mix(Theme.barInk, Theme.bar, 90));
-        g.drawString(midlet.homeStatus(), tx, 5 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
+        g.drawString(Text.fit(midlet.homeStatus(), sm, w - tx - MARGIN), tx, 5 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
 
         // rows
         int rowH = Math.max(f.getHeight() + sm.getHeight() + 6, 30);
@@ -127,22 +127,23 @@ final class HomeCanvas extends Canvas implements CommandListener {
             int ic = rowH - 12;
             icon(g, i, MARGIN + 4 + ic / 2, y + rowH / 2, ic, sel);
             int x = MARGIN + ic + 14;
+            String num = String.valueOf(i + 1);
+            int textW = w - x - MARGIN - 6 - sm.stringWidth(num);
             g.setFont(f);
             g.setColor(Theme.ink);
-            g.drawString(titles[i], x, y + 3, Graphics.TOP | Graphics.LEFT);
+            g.drawString(Text.fit(titles[i], f, textW), x, y + 3, Graphics.TOP | Graphics.LEFT);
             g.setFont(sm);
             g.setColor(Theme.muted);
-            g.drawString(hints[i], x, y + 3 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
-            g.drawString(String.valueOf(i + 1), w - MARGIN - 2, y + rowH / 2 - sm.getHeight() / 2,
-                    Graphics.TOP | Graphics.RIGHT);
+            g.drawString(Text.fit(midlet.homeHint(i, hints[i]), sm, textW), x, y + 3 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
+            g.drawString(num, w - MARGIN - 2, y + rowH / 2 - sm.getHeight() / 2, Graphics.TOP | Graphics.RIGHT);
             y += rowH;
         }
 
         // footer
         g.setFont(sm);
         g.setColor(Theme.muted);
-        g.drawString(L.s("Resmî olmayan istemci · ", "Unofficial client · ") + midlet.attr("MIDlet-Version"), w / 2, h - footH + 2,
-                Graphics.TOP | Graphics.HCENTER);
+        g.drawString(Text.fit(L.s("Resmî olmayan istemci · ", "Unofficial client · ") + midlet.attr("MIDlet-Version"), sm,
+                w - 2 * MARGIN), w / 2, h - footH + 2, Graphics.TOP | Graphics.HCENTER);
     }
 
     /** Small line icons drawn with primitives. */

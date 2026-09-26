@@ -3,7 +3,8 @@
 #   make           build + 42 package checks + reproducible rebuild
 #   make build     -> dist/ClaudeS40.jar, dist/ClaudeS40.jad, dist/SHA256SUMS
 #   make check     checks only (after build)
-#   make emu       optional FreeJ2ME screenshots (FREEJ2ME=path/to/classes)
+#   make emu       optional FreeJ2ME screenshots (FREEJ2ME=path/to/classes;
+#                  EMU_W/EMU_H screen size, EMU_LANG=en|tr)
 #   make promo     share images/sounds from the emulator screenshots
 #   make clean
 #
@@ -69,6 +70,7 @@ check:
 FREEJ2ME ?=
 EMU_W ?= 240
 EMU_H ?= 320
+EMU_LANG ?= en
 
 emu:
 	@test -f $(DIST)/$(FILE_BASE).jar || { echo "run 'make build' first" >&2; exit 1; }
@@ -76,7 +78,7 @@ emu:
 	rm -rf $(BUILD)/emu && mkdir -p $(BUILD)/emu/classes
 	$(JAVAC) --release 8 -nowarn -cp $(FREEJ2ME) -d $(BUILD)/emu/classes emu/EmuShot.java
 	cd $(BUILD)/emu && $(JAVA) -Djava.awt.headless=true -cp $(abspath $(FREEJ2ME)):classes EmuShot \
-		$(abspath $(DIST)/$(FILE_BASE).jar) shots $(EMU_W) $(EMU_H) 2>&1 | tee emu.log
+		$(abspath $(DIST)/$(FILE_BASE).jar) shots $(EMU_W) $(EMU_H) $(EMU_LANG) 2>&1 | tee emu.log
 
 promo:
 	@test -d $(BUILD)/emu/shots || { echo "run 'make emu' first" >&2; exit 1; }

@@ -65,7 +65,7 @@ final class Splash extends Canvas {
         }
         done = true;
         stop();
-        midlet.showMenu();
+        midlet.afterSplash();
     }
 
     protected void keyPressed(int keyCode) {
@@ -116,7 +116,8 @@ final class Splash extends Canvas {
         g.setFont(Theme.small);
         g.setColor(Theme.mix(Theme.bg, Theme.muted, t));
         ty += Theme.bold.getHeight() + 2;
-        g.drawString(L.s("Cebinizde Claude, 2007 usulü", "Claude in your pocket, 2007 style"), cx, ty, Graphics.TOP | Graphics.HCENTER);
+        g.drawString(Text.fit(L.s("Cebinizde Claude, 2007 usulü", "Claude in your pocket, 2007 style"), Theme.small, w - 8),
+                cx, ty, Graphics.TOP | Graphics.HCENTER);
 
         // loading dots and disclaimer
         int dots = (frame / 3) % 4;

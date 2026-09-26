@@ -4,10 +4,15 @@ Java ME MIDlet for Nokia Series 40 (CLDC 1.1 / MIDP 2.0, class file 46.0).
 English and Turkish UI (follows the phone language; Settings > Language).
 
 Features: animated splash with an original start-up jingle (MIDP tone
-sequences), icon home menu with number-key shortcuts, chat bubbles with
-timestamps and a typing animation, 14 everyday quick prompts (translate,
+sequences), a first-run setup wizard, icon home menu with number-key
+shortcuts, chat bubbles with timestamps, lists and paragraphs, a typing
+animation with the elapsed seconds, a reading mode that pages through one
+reply (whole lines only, page number, keeps its place, backlight kept on),
+message actions (shorten, translate, ask about it, open in the editor; they
+fill the editor and never send by themselves), a Shortcuts screen,
+18 everyday quick prompts (translate,
 reply to a message, summarize, fix my writing, ...), light/dark theme,
-three text sizes, reply chime + vibration, pairing without typing a long
+three text sizes, reply chime + vibration + backlight, pairing without typing a long
 code, a connection test that reports the phone's TLS details, and a local
 test mode with fake replies.
 

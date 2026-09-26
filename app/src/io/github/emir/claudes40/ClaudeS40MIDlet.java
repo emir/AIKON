@@ -22,8 +22,10 @@ import javax.microedition.midlet.MIDlet;
  * Screens: animated splash (Splash), main menu (HomeCanvas), chat
  * (ChatCanvas), chats on the server (ChatList), quick prompts (List),
  * message editor (the phone's own TextBox), connection test (ConnTest),
- * pairing (Pairing), settings and about (Form). English or Turkish UI (L). Networking happens only on
- * worker threads.
+ * pairing (Pairing), first-run setup (Setup), settings, shortcuts and about
+ * (Form). English or Turkish UI (L); changing the language rebuilds the
+ * screens (rebuildUi), no restart needed. Networking happens only on worker
+ * threads.
  */
 public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
@@ -64,7 +66,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     };
 
     static final String[] TITLES_TR = {
-        "Web'de ara", "Hava durumu", "Bugünün haberleri", "Döviz ve altın", "İngilizceye çevir", "Türkçeye çevir", "Mesaja cevap yaz", "Benim için SMS yaz",
+        "Web'de ara", "Hava durumu", "Bugünün haberleri", "Döviz ve altın", "İngilizceye çevir", "Türkçeye çevir", "Mesaja cevap yaz", "Benim için mesaj yaz",
         "Yazımı düzelt", "Özetle", "Kısa cevap", "Basitçe anlat", "Hesapla / çevir",
         "Bu ne demek?", "Ne pişirebilirim?", "Karar vermeme yardım et", "Nasıl yapılır?", "Bu telefonu roastla",
     };
@@ -77,7 +79,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         "İngilizceye çevir: ",
         "Türkçeye çevir: ",
         "Bu mesaja kısa ve samimi bir cevap yaz: ",
-        "Şunu söyleyen kısa bir SMS yaz: ",
+        "Şunu söyleyen kısa bir mesaj yaz: ",
         "Yazım ve dil bilgisini düzelt, üslubumu koru: ",
         "3 kısa satırda özetle: ",
         "2 cümleyle cevapla: ",
@@ -119,6 +121,25 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command jingleCmd;
     private Command splashCmd;
     private Command promptsBackCmd;
+    private Command wizardCmd;
+    private Form shortcuts;
+    private Displayable shortcutsBack;
+    private ChoiceGroup lightChoice;
+    /** Message actions (ChatCanvas selection): list, what each row does, the message. */
+    private List actionList;
+    private int[] actionIds;
+    private ChatSession.Entry actionEntry;
+    private TextBox viewer;
+    private Command listBackCmd;
+
+    private static final int ACT_READ = 0;
+    private static final int ACT_SHORTEN = 1;
+    private static final int ACT_SIMPLER = 2;
+    private static final int ACT_TO_TR = 3;
+    private static final int ACT_TO_EN = 4;
+    private static final int ACT_ASK = 5;
+    private static final int ACT_RESEND = 6;
+    private static final int ACT_EDITOR = 7;
 
     protected void startApp() {
         if (display == null) {
@@ -126,26 +147,67 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             settings.load(getAppProperty("ClaudeS40-Gateway"));
             L.init(settings);
             Theme.apply(settings);
-            sendCmd = new Command(L.s("Gönder", "Send"), Command.OK, 1);
-            composerBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-            saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
-            formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-            pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
-            jingleCmd = new Command(L.s("Melodiyi çal", "Play the jingle"), Command.SCREEN, 2);
-            splashCmd = new Command(L.s("Açılışı izle", "Replay the intro"), Command.SCREEN, 3);
-            promptsBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-            promptTexts = L.turkish() ? PROMPTS_TR : PROMPTS_EN;
             session = new ChatSession(this);
-            chat = new ChatCanvas(this, session);
+            buildUi();
             if (settings.saveChat) {
                 Vector saved = ChatStore.load();
                 session.restore(ChatStore.conversation, saved);
             }
-            home = new HomeCanvas(this);
             display.setCurrent(new Splash(this));
             return;
         }
         display.setCurrent(home);
+    }
+
+    /** Creates the screens and commands in the current language; the chat itself is kept. */
+    private void buildUi() {
+        sendCmd = new Command(L.s("Gönder", "Send"), Command.OK, 1);
+        composerBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+        saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
+        formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+        pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
+        wizardCmd = new Command(L.s("Kurulum sihirbazı", "Setup wizard"), Command.SCREEN, 3);
+        jingleCmd = new Command(L.s("Melodiyi çal", "Play the jingle"), Command.SCREEN, 2);
+        splashCmd = new Command(L.s("Açılışı izle", "Replay the intro"), Command.SCREEN, 3);
+        promptsBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+        listBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+        actionList = null;
+        viewer = null;
+        promptTexts = L.turkish() ? PROMPTS_TR : PROMPTS_EN;
+        chat = new ChatCanvas(this, session);
+        home = new HomeCanvas(this);
+        prompts = null;
+        composer = null;
+        chatList = null;
+        connTest = null;
+        shortcuts = null;
+    }
+
+    /** After a language change: every screen again in the new language. */
+    void rebuildUi() {
+        L.init(settings);
+        buildUi();
+    }
+
+    Display display() {
+        return display;
+    }
+
+    /** End of the splash: the setup wizard on a phone that is not set up yet, else the menu. */
+    void afterSplash() {
+        if (!settings.setupDone && !settings.ready() && !settings.testMode) {
+            new Setup(this).start();
+        } else {
+            showMenu();
+        }
+    }
+
+    void setupFinished(String message) {
+        info(message, settings.ready() ? (Displayable) chat : home);
+    }
+
+    void setupSkipped(String message) {
+        info(message, home);
     }
 
     protected void pauseApp() {
@@ -184,7 +246,27 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         if (settings.token.length() < 16) {
             return L.s("Kurulum: cihazı eşleştir", "Setup: pair this phone");
         }
-        return L.s("Hazır · Nokia 6300'de Claude", "Ready · Claude on a Nokia 6300");
+        String left = session.remainingToday();
+        return left.length() > 0 ? L.s("Hazır · bugün " + left + " hak kaldı", "Ready · " + left + " left today")
+                : L.s("Hazır · Nokia 6300'de Claude", "Ready · Claude on a Nokia 6300");
+    }
+
+    /** Second line of a home row; the Chat row shows the draft or the last message. */
+    String homeHint(int row, String fallback) {
+        if (row != 0) {
+            return fallback;
+        }
+        String d = session.draft();
+        if (d.length() > 0) {
+            return L.s("Taslak: ", "Draft: ") + firstLine(d);
+        }
+        String last = session.lastUserText();
+        return last.length() > 0 ? L.s("Son: ", "Last: ") + firstLine(last) : fallback;
+    }
+
+    private static String firstLine(String t) {
+        int nl = t.indexOf('\n');
+        return (nl < 0 ? t : t.substring(0, nl)).trim();
     }
 
     /** Re-applies theme and text size after a settings change. */
@@ -200,6 +282,14 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         if (settings.vibrate) {
             display.vibrate(180);
         }
+        if (settings.lightReply) {
+            display.flashBacklight(4000);
+        }
+    }
+
+    /** MIDP 2.0 Display.flashBacklight; false if the phone cannot. */
+    boolean flashBacklight(int ms) {
+        return display.flashBacklight(ms);
     }
 
     // ------------------------------------------------------------ navigation
@@ -267,6 +357,164 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         display.setCurrent(prompts);
     }
 
+    /** Every key of the chat and reading screens; "Geri" returns to `back`. */
+    void showShortcuts(Displayable back) {
+        if (shortcuts == null) {
+            shortcuts = new Form(L.s("Kısayollar", "Shortcuts"));
+            shortcuts.append(new StringItem(L.s("Sohbet", "Chat"), L.s(
+                    "Orta tuş veya 5: yaz\n"
+                    + "Yukarı / aşağı: bir satır\n"
+                    + "2 / 8, sol / sağ: bir sayfa\n"
+                    + "1 / 3: mesaj seç; orta tuş: kısalt, çevir, düzenle...\n"
+                    + "* / #: en başa / en sona\n"
+                    + "0: yanıtın devamı\n"
+                    + "7: okuma modu\n"
+                    + "9: yazı boyutu\n"
+                    + "Hatadan sonra orta tuş: tekrar dene\n",
+                    "Centre key or 5: write\n"
+                    + "Up / down: one line\n"
+                    + "2 / 8, left / right: one page\n"
+                    + "1 / 3: select a message; centre key: shorten, translate, edit...\n"
+                    + "* / #: top / end\n"
+                    + "0: the rest of a reply\n"
+                    + "7: reading mode\n"
+                    + "9: text size\n"
+                    + "After an error, centre key: retry\n")));
+            shortcuts.append(new StringItem(L.s("Okuma modu", "Reading mode"), L.s(
+                    "Bir yanıtı tam ekran, sayfa sayfa gösterir.\n"
+                    + "Orta tuş, 8 veya sağ: sonraki sayfa\n"
+                    + "2 veya sol: önceki sayfa\n"
+                    + "Yukarı / aşağı: bir satır\n"
+                    + "1 / 3: önceki / sonraki yanıt\n"
+                    + "* / #: en başa / en sona\n"
+                    + "0: yanıtın devamı\n"
+                    + "9: yazı boyutu\n"
+                    + "7 veya Kapat: sohbete dön\n",
+                    "Shows one reply page by page, full width.\n"
+                    + "Centre key, 8 or right: next page\n"
+                    + "2 or left: previous page\n"
+                    + "Up / down: one line\n"
+                    + "1 / 3: previous / next reply\n"
+                    + "* / #: top / end\n"
+                    + "0: the rest of a reply\n"
+                    + "9: text size\n"
+                    + "7 or Close: back to the chat\n")));
+            shortcuts.append(new StringItem(L.s("Ana menü", "Main menu"), L.s(
+                    "1-8: satırı doğrudan açar\n", "1-8: opens that row directly\n")));
+            shortcuts.append(new StringItem(null, L.s(
+                    "Kısalt, çevir gibi işlemler hiçbir şeyi kendiliğinden göndermez: yazma kutusu hazır metinle "
+                            + "açılır, Gönder'e sen basarsın.",
+                    "Actions like shorten or translate never send by themselves: the editor opens with the text "
+                            + "ready and you press Send.")));
+            shortcuts.append(new StringItem(null, L.s(
+                    "Yanıtın devamını almak ücretsizdir: sunucudaki yanıt gelir, Claude'a tekrar sorulmaz.",
+                    "Loading the rest of a reply is free: it comes from the server, Claude is not asked again.")));
+            shortcuts.addCommand(formBackCmd);
+            shortcuts.setCommandListener(this);
+        }
+        shortcutsBack = back;
+        display.setCurrent(shortcuts);
+    }
+
+    /**
+     * Actions for a message selected in the chat. Rewording actions open the
+     * editor with a prepared request that quotes the start of the message;
+     * nothing is sent (and nothing is paid) until the user presses Send.
+     */
+    void showActions(ChatSession.Entry e) {
+        boolean reply = e.kind != ChatSession.KIND_USER;
+        int[] ids = reply ? new int[] { ACT_READ, ACT_SHORTEN, ACT_SIMPLER, ACT_TO_TR, ACT_TO_EN, ACT_ASK, ACT_EDITOR }
+                : new int[] { ACT_RESEND, ACT_EDITOR };
+        String[] labels = new String[ids.length];
+        for (int i = 0; i < ids.length; i++) {
+            labels[i] = actionLabel(ids[i]);
+        }
+        actionList = new List(reply ? L.s("Yanıt", "Reply") : L.s("Mesajın", "Your message"), List.IMPLICIT, labels, null);
+        actionList.addCommand(listBackCmd);
+        actionList.setCommandListener(this);
+        actionIds = ids;
+        actionEntry = e;
+        display.setCurrent(actionList);
+    }
+
+    private static String actionLabel(int id) {
+        switch (id) {
+        case ACT_READ:
+            return L.s("Okuma modunda aç", "Open in reading mode");
+        case ACT_SHORTEN:
+            return L.s("Kısalt", "Make it shorter");
+        case ACT_SIMPLER:
+            return L.s("Daha basit anlat", "Explain it more simply");
+        case ACT_TO_TR:
+            return L.s("Türkçeye çevir", "Translate to Turkish");
+        case ACT_TO_EN:
+            return L.s("İngilizceye çevir", "Translate to English");
+        case ACT_ASK:
+            return L.s("Bunun hakkında sor", "Ask about this");
+        case ACT_RESEND:
+            return L.s("Düzenleyip yeniden gönder", "Edit and send again");
+        default:
+            return L.s("Düzenleyicide aç", "Open in editor");
+        }
+    }
+
+    private void runAction(int id, ChatSession.Entry e) {
+        String q = "\"" + quote(e.text) + "\"";
+        switch (id) {
+        case ACT_READ:
+            chat.read(e.uid);
+            showChat();
+            break;
+        case ACT_SHORTEN:
+            showComposer(L.s("Şu yanıtını kısalt, en fazla 3 cümle: ", "Make this reply shorter, 3 sentences at most: ") + q);
+            break;
+        case ACT_SIMPLER:
+            showComposer(L.s("Şu yanıtını daha basit anlat: ", "Explain this reply more simply: ") + q);
+            break;
+        case ACT_TO_TR:
+            showComposer(L.s("Şu yanıtının tamamını Türkçeye çevir: ", "Translate all of this reply to Turkish: ") + q);
+            break;
+        case ACT_TO_EN:
+            showComposer(L.s("Şu yanıtının tamamını İngilizceye çevir: ", "Translate all of this reply to English: ") + q);
+            break;
+        case ACT_ASK:
+            showComposer(L.s("Şu kısım hakkında: ", "About this part: ") + q + "\n");
+            break;
+        case ACT_RESEND:
+            showComposer(Text.clip(e.text, ChatSession.MAX_MESSAGE));
+            break;
+        default:
+            showViewer(e);
+            break;
+        }
+    }
+
+    /** The start of a message to quote: its first line, at most 60 characters, cut at a space. */
+    static String quote(String t) {
+        String s = firstLine(t);
+        if (s.length() <= 60) {
+            return s;
+        }
+        int cut = s.lastIndexOf(' ', 60);
+        return s.substring(0, cut > 30 ? cut : 60) + "...";
+    }
+
+    /**
+     * The whole message in the phone's own editor, where the phone's own
+     * marking/copying works if it has it. Changes there are not kept.
+     */
+    private void showViewer(ChatSession.Entry e) {
+        viewer = new TextBox(L.s("Metin", "Text"), "", Math.max(1, Math.min(e.text.length(), 8000)), TextField.ANY);
+        try {
+            viewer.setString(Text.clip(e.text, viewer.getMaxSize()));
+        } catch (IllegalArgumentException ex) {
+            viewer.setString("");
+        }
+        viewer.addCommand(listBackCmd);
+        viewer.setCommandListener(this);
+        display.setCurrent(viewer);
+    }
+
     void info(String text, Displayable next) {
         Alert a = new Alert("Claude S40", text, null, AlertType.INFO);
         a.setTimeout(Alert.FOREVER);
@@ -320,9 +568,23 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 saveSettings();
             } else if (c == pairCmd) {
                 startPairing();
+            } else if (c == wizardCmd) {
+                new Setup(this).start();
             } else {
                 showMenu();
             }
+        } else if (d == actionList) {
+            ChatSession.Entry e = actionEntry;
+            int i = actionList.getSelectedIndex();
+            if (c == List.SELECT_COMMAND && e != null && i >= 0 && i < actionIds.length) {
+                runAction(actionIds[i], e);
+            } else {
+                showChat();
+            }
+        } else if (d == viewer) {
+            showChat();
+        } else if (d == shortcuts) {
+            display.setCurrent(shortcutsBack != null ? shortcutsBack : chat);
         } else if (d == about) {
             if (c == jingleCmd) {
                 Sound.play(settings, Sound.JINGLE);
@@ -357,7 +619,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             break;
         case 4:
             if (connTest == null) {
-                connTest = new ConnTest(this);
+                connTest = new ConnTest(this, null);
             }
             connTest.show(display);
             break;
@@ -379,7 +641,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     private void showSettings() {
         settingsForm = new Form(L.s("Ayarlar", "Settings"));
-        langChoice = new ChoiceGroup(L.s("Dil (yeniden açınca)", "Language (after restart)"), ChoiceGroup.EXCLUSIVE,
+        langChoice = new ChoiceGroup(L.s("Dil", "Language"), ChoiceGroup.EXCLUSIVE,
                 new String[] { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" }, null);
         langChoice.setSelectedIndex(Math.max(0, Math.min(2, settings.lang)), true);
         themeChoice = new ChoiceGroup(L.s("Görünüm", "Look"), ChoiceGroup.EXCLUSIVE,
@@ -393,6 +655,11 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     L.s("Yanıtta titreşim", "Vibrate on reply") }, null);
         feedbackChoice.setSelectedIndex(0, settings.sound);
         feedbackChoice.setSelectedIndex(1, settings.vibrate);
+        lightChoice = new ChoiceGroup(L.s("Ekran ışığı", "Backlight"), ChoiceGroup.MULTIPLE,
+                new String[] { L.s("Okuma modunda açık tut", "Keep on in reading mode"),
+                    L.s("Yanıt gelince yak", "Light up when a reply arrives") }, null);
+        lightChoice.setSelectedIndex(0, settings.lightReading);
+        lightChoice.setSelectedIndex(1, settings.lightReply);
         urlField = new TextField(L.s("Sunucu adresi (https://...)", "Server address (https://...)"), settings.url,
                 200, TextField.URL);
         tokenField = new TextField(L.s("Erişim kodu", "Access code"), settings.token, 64,
@@ -409,6 +676,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settingsForm.append(themeChoice);
         settingsForm.append(sizeChoice);
         settingsForm.append(feedbackChoice);
+        settingsForm.append(lightChoice);
         settingsForm.append(claudeChoice);
         settingsForm.append(urlField);
         settingsForm.append(tokenField);
@@ -423,6 +691,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                         : L.s("Bu adres için bağlantı testi henüz geçmedi.", "No passed connection test for this address yet."))));
         settingsForm.addCommand(saveCmd);
         settingsForm.addCommand(pairCmd);
+        settingsForm.addCommand(wizardCmd);
         settingsForm.addCommand(formBackCmd);
         settingsForm.setCommandListener(this);
         display.setCurrent(settingsForm);
@@ -461,6 +730,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settings.fontSize = fs >= 0 && fs <= 2 ? fs : 1;
         settings.sound = feedbackChoice.isSelected(0);
         settings.vibrate = feedbackChoice.isSelected(1);
+        settings.lightReading = lightChoice.isSelected(0);
+        settings.lightReply = lightChoice.isSelected(1);
         settings.webSearch = claudeChoice.isSelected(0);
         boolean keep = claudeChoice.isSelected(1);
         if (keep != settings.saveChat) {
@@ -474,10 +745,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         String err = settings.save();
         applyLook();
-        String done = langChanged
-                ? L.s("Kaydedildi. Dil, uygulama yeniden açılınca değişir.", "Saved. The language changes after a restart.")
-                : L.s("Kaydedildi.", "Saved.");
-        info(err != null ? err : done, home);
+        if (langChanged) {
+            rebuildUi();
+        }
+        info(err != null ? err : L.s("Kaydedildi.", "Saved."), home);
     }
 
     private void startPairing() {
@@ -488,7 +759,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             info(L.s("Önce 'Bağlantı testi'ni çalıştırın. Eşleştirme yalnızca doğrulanmış bağlantıyla yapılır.",
                     "Run the 'Connection test' first. Pairing only runs over a verified connection."), home);
         } else {
-            new Pairing(this).start(display);
+            new Pairing(this, null).start(display);
         }
     }
 

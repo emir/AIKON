@@ -15,8 +15,9 @@ import javax.microedition.rms.RecordStoreException;
  * Stored: gateway URL, access code, test mode flag, the URL for which the
  * connection test last passed, look & feel (theme, text size, sound,
  * vibration, language), web search on/off and whether the last chat is kept
- * on the phone (ChatStore; off by default). No chat content is stored here.
- * Format 1-3 records (0.1.x-0.3.x) are still read.
+ * on the phone (ChatStore; off by default), and whether the setup wizard was
+ * finished or skipped, and the two backlight options. No chat content is stored here.
+ * Format 1-4 records (0.1.x-0.4.x) are still read.
  *
  * The access code is typed on the phone by the user; it is never part of
  * the JAR/JAD. Removing the application deletes this record store.
@@ -24,7 +25,7 @@ import javax.microedition.rms.RecordStoreException;
 final class Settings {
 
     private static final String STORE = "cs40cfg";
-    private static final int FORMAT = 4;
+    private static final int FORMAT = 5;
 
     String url = "";
     String token = "";
@@ -43,6 +44,12 @@ final class Settings {
     boolean webSearch = true;
     /** Keep the last chat on the phone for offline reading (ChatStore). */
     boolean saveChat;
+    /** The setup wizard was finished or skipped (Setup); true for settings from before 0.5.0. */
+    boolean setupDone;
+    /** Keep the backlight on while a reply is read in reading mode (Display.flashBacklight). */
+    boolean lightReading = true;
+    /** Light the screen up when a reply arrives. */
+    boolean lightReply = true;
 
     boolean connectionVerified() {
         return url.length() > 0 && url.equals(verifiedUrl);
@@ -75,9 +82,15 @@ final class Settings {
             if (format >= 3 && format <= FORMAT) {
                 lang = in.readByte();
             }
-            if (format == 4) {
+            if (format >= 4 && format <= FORMAT) {
                 webSearch = in.readBoolean();
                 saveChat = in.readBoolean();
+            }
+            // settings from before 0.5.0 belong to a phone that is already set up
+            setupDone = format == FORMAT ? in.readBoolean() : format >= 1 && format < FORMAT;
+            if (format == FORMAT) {
+                lightReading = in.readBoolean();
+                lightReply = in.readBoolean();
             }
         } catch (RecordStoreException e) {
             // first start: nothing stored yet
@@ -109,6 +122,9 @@ final class Settings {
             out.writeByte(lang);
             out.writeBoolean(webSearch);
             out.writeBoolean(saveChat);
+            out.writeBoolean(setupDone);
+            out.writeBoolean(lightReading);
+            out.writeBoolean(lightReply);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);

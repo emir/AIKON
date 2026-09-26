@@ -55,12 +55,20 @@ final class ChatSession implements Runnable, Net.Listener {
         final String request;
         /** Offset of the next part on the server; null when complete. */
         final String next;
+        /** Stays the same when a further part replaces the entry (reading position). */
+        final int uid;
 
         Entry(int kind, String text, boolean truncated) {
             this(kind, text, truncated, System.currentTimeMillis(), 0, null, null);
         }
 
         Entry(int kind, String text, boolean truncated, long time, int searched, String request, String next) {
+            this(kind, text, truncated, time, searched, request, next, nextUid());
+        }
+
+        private Entry(int kind, String text, boolean truncated, long time, int searched, String request, String next,
+                int uid) {
+            this.uid = uid;
             this.kind = kind;
             this.text = text;
             this.truncated = truncated;
@@ -73,6 +81,22 @@ final class ChatSession implements Runnable, Net.Listener {
         boolean more() {
             return request != null && next != null;
         }
+
+        /** This reply with the next part appended; keeps uid. */
+        Entry extend(String part, boolean cut, String nextOffset) {
+            return new Entry(kind, text + part, cut, time, searched, request, nextOffset, uid);
+        }
+
+        /** The rest can no longer be fetched; keeps uid. */
+        Entry cutOff() {
+            return new Entry(kind, text, true, time, searched, null, null, uid);
+        }
+    }
+
+    private static int uids;
+
+    private static synchronized int nextUid() {
+        return ++uids;
     }
 
     interface View {
@@ -90,6 +114,10 @@ final class ChatSession implements Runnable, Net.Listener {
     private String draft = "";
     private int version;
     private String remaining = "";
+    /** When `remaining` arrived; the server counts per UTC day. */
+    private long remainingAt;
+    /** When the running request started (for the elapsed time on screen). */
+    private long startedAt;
 
     // the request being resolved (null when none)
     private String pendingId;
@@ -136,6 +164,28 @@ final class ChatSession implements Runnable, Net.Listener {
         return remaining;
     }
 
+    /** Requests left today, or "" if not known for the current UTC day. */
+    synchronized String remainingToday() {
+        long day = 24L * 60 * 60 * 1000;
+        return remaining.length() > 0 && remainingAt / day == System.currentTimeMillis() / day ? remaining : "";
+    }
+
+    /** Text of the newest message the user sent, or "" if none. */
+    synchronized String lastUserText() {
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            Entry e = (Entry) entries.elementAt(i);
+            if (e.kind == KIND_USER) {
+                return e.text;
+            }
+        }
+        return "";
+    }
+
+    /** The entry with this uid, or null. */
+    synchronized Entry entry(int uid) {
+        return find(uid);
+    }
+
     synchronized boolean busy() {
         return state != STATE_IDLE;
     }
@@ -147,6 +197,16 @@ final class ChatSession implements Runnable, Net.Listener {
     /** True while a chat request (not a delete or a load) is running. */
     synchronized boolean typing() {
         return state != STATE_IDLE && job == JOB_CHAT;
+    }
+
+    /** Seconds since the running request started. */
+    synchronized int elapsed() {
+        return state == STATE_IDLE ? 0 : (int) ((System.currentTimeMillis() - startedAt) / 1000);
+    }
+
+    /** uid of the reply whose next part is loading, or 0. */
+    synchronized int loadingMore() {
+        return state != STATE_IDLE && job == JOB_MORE && jobEntry != null ? jobEntry.uid : 0;
     }
 
     /** A reply has a further part on the server. */
@@ -224,11 +284,36 @@ final class ChatSession implements Runnable, Net.Listener {
 
     /** Fetches the next part of the newest incomplete reply (no Claude call). */
     String more() {
+        return more(0);
+    }
+
+    /** True if the reply with this uid has a further part and nothing is running. */
+    synchronized boolean canMore(int uid) {
+        Entry e = find(uid);
+        return state == STATE_IDLE && e != null && e.more();
+    }
+
+    /** Called with the lock held. */
+    private Entry find(int uid) {
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            Entry e = (Entry) entries.elementAt(i);
+            if (e.uid == uid) {
+                return e;
+            }
+        }
+        return null;
+    }
+
+    /** Next part of the reply with this uid (0: the newest incomplete one). */
+    String more(int uid) {
         synchronized (this) {
             if (state != STATE_IDLE) {
                 return L.s("Önceki istek sürüyor.", "A request is still running.");
             }
-            Entry e = lastMore();
+            Entry e = uid == 0 ? lastMore() : find(uid);
+            if (e != null && !e.more()) {
+                e = null;
+            }
             if (e == null) {
                 return L.s("Yanıtın devamı yok.", "There is no more to this reply.");
             }
@@ -317,6 +402,7 @@ final class ChatSession implements Runnable, Net.Listener {
     private void begin(int j) {
         job = j;
         state = STATE_SENDING;
+        startedAt = System.currentTimeMillis();
         status = jobLabel();
         version++;
         new Thread(this).start();
@@ -451,6 +537,7 @@ final class ChatSession implements Runnable, Net.Listener {
         String st = m.field("status");
         if (m.field("remaining").length() > 0) {
             remaining = m.field("remaining");
+            remainingAt = System.currentTimeMillis();
         }
         if ("ok".equals(st)) {
             conversation = m.field("conversation");
@@ -557,11 +644,11 @@ final class ChatSession implements Runnable, Net.Listener {
             if (r.ok() && m != null && "ok".equals(m.field("status")) && i >= 0) {
                 String next = m.flag("more") && !r.bodyCut && m.field("next").length() > 0 ? m.field("next") : null;
                 boolean cut = (m.flag("truncated") && next == null) || r.bodyCut;
-                entries.setElementAt(new Entry(e.kind, e.text + m.text, cut, e.time, e.searched, e.request, next), i);
+                entries.setElementAt(e.extend(m.text, cut, next), i);
                 trim();
             } else if (i >= 0 && m != null && "not_found".equals(m.field("status"))) {
                 // the server no longer has the stored reply (kept 7 days): stop offering "more"
-                entries.setElementAt(new Entry(e.kind, e.text, true, e.time, e.searched, null, null), i);
+                entries.setElementAt(e.cutOff(), i);
                 add(KIND_INFO, L.s("Yanıtın devamı sunucuda artık yok.", "The rest of this reply is no longer on the server."),
                         false);
             } else if (i >= 0) {

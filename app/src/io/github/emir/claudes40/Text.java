@@ -7,6 +7,7 @@ import java.util.TimeZone;
 import java.util.Vector;
 
 import javax.microedition.lcdui.Font;
+import javax.microedition.lcdui.Graphics;
 
 /** Small text helpers (CLDC 1.1 has no formatter, no StringBuilder). */
 final class Text {
@@ -60,6 +61,150 @@ final class Text {
             out.addElement(trimEnd(s.substring(pos, end)));
             pos = end;
         }
+    }
+
+    /**
+     * One laid-out line of a reply. `gap` lines are the half-height space
+     * between paragraphs (no text). `dot` / `number` mark the first line of
+     * a list item; its marker is drawn at `mx`, the text (and the item's
+     * following lines) at `x`. `off` is the index in the source text where
+     * the line starts, used to keep the reading position across layouts.
+     */
+    static final class Line {
+        String s;
+        int x;
+        int mx;
+        boolean dot;
+        String number;
+        boolean gap;
+        int off;
+    }
+
+    /**
+     * Wraps a reply for display: paragraphs (blank lines) become a gap,
+     * "- " items get a dot and "1. " / "1) " items their number, both with a
+     * hanging indent; two leading spaces per nesting level (at most 2).
+     * Adds Text.Line objects to `out`.
+     */
+    static void layout(String text, Font font, int width, Vector out) {
+        int n = text.length();
+        int start = 0;
+        boolean pendingGap = false;
+        int em = Math.max(4, font.charWidth('m'));
+        Vector tmp = new Vector();
+        while (start <= n) {
+            int nl = text.indexOf('\n', start);
+            int end = nl < 0 ? n : nl;
+            String raw = text.substring(start, end);
+            int sp = 0;
+            while (sp < raw.length() && raw.charAt(sp) == ' ') {
+                sp++;
+            }
+            if (sp == raw.length()) {
+                pendingGap = out.size() > 0;
+            } else {
+                if (pendingGap) {
+                    Line g = new Line();
+                    g.gap = true;
+                    g.s = "";
+                    g.off = start;
+                    out.addElement(g);
+                    pendingGap = false;
+                }
+                int level = Math.min(2, sp / 2);
+                int base = level * em;
+                String body = raw.substring(sp);
+                int bodyOff = start + sp;
+                boolean dot = body.startsWith("- ") && body.length() > 2;
+                String number = dot ? null : listNumber(body);
+                int hang = base;
+                if (dot) {
+                    body = body.substring(2);
+                    bodyOff += 2;
+                    hang = base + Math.max(em, font.charWidth(' ') * 3);
+                } else if (number != null) {
+                    body = body.substring(number.length() + 1);
+                    bodyOff += number.length() + 1;
+                    hang = base + font.stringWidth(number + " ");
+                }
+                if (hang > width / 2) {
+                    // too narrow for an indent: the item as plain text, marker included
+                    dot = false;
+                    number = null;
+                    body = raw.substring(sp);
+                    bodyOff = start + sp;
+                    hang = base = 0;
+                }
+                tmp.removeAllElements();
+                wrapLine(body, font, Math.max(font.charWidth('W'), width - hang), tmp);
+                int pos = bodyOff;
+                for (int i = 0; i < tmp.size(); i++) {
+                    Line l = new Line();
+                    l.s = (String) tmp.elementAt(i);
+                    l.x = hang;
+                    l.mx = base;
+                    if (i == 0) {
+                        l.dot = dot;
+                        l.number = number;
+                    }
+                    // wrapLine keeps characters in order and drops only spaces at line ends
+                    int at = text.indexOf(l.s, pos);
+                    l.off = at >= 0 && at <= end ? at : pos;
+                    pos = l.off + l.s.length();
+                    out.addElement(l);
+                }
+            }
+            if (nl < 0) {
+                break;
+            }
+            start = nl + 1;
+        }
+    }
+
+    /** "12" for "12. text" or "12) text" (1-3 digits); the dot or bracket is kept. */
+    private static String listNumber(String s) {
+        int i = 0;
+        while (i < s.length() && i < 3 && s.charAt(i) >= '0' && s.charAt(i) <= '9') {
+            i++;
+        }
+        if (i == 0 || i + 1 >= s.length() || (s.charAt(i) != '.' && s.charAt(i) != ')') || s.charAt(i + 1) != ' '
+                || i + 2 >= s.length()) {
+            return null;
+        }
+        return s.substring(0, i + 1);
+    }
+
+    /** Height of laid-out lines: text lines are a font line, paragraph gaps half of one. */
+    static int lineH(Line l, Font font) {
+        return l.gap ? font.getHeight() / 2 : font.getHeight();
+    }
+
+    /** Draws one laid-out line at (x0, y) in the current colour. */
+    static void draw(Graphics g, Line l, Font font, int x0, int y) {
+        if (l.gap) {
+            return;
+        }
+        if (l.dot) {
+            int d = Math.max(4, font.getHeight() / 4);
+            int cy = y + font.getBaselinePosition() - font.getBaselinePosition() * 3 / 8;
+            g.fillArc(x0 + l.mx + 1, cy - d / 2, d, d, 0, 360);
+        } else if (l.number != null) {
+            g.drawString(l.number, x0 + l.mx, y, Graphics.TOP | Graphics.LEFT);
+        }
+        g.drawString(l.s, x0 + l.x, y, Graphics.TOP | Graphics.LEFT);
+    }
+
+    /** `s` if it fits in `width` pixels, otherwise cut with "..." at the end. */
+    static String fit(String s, Font font, int width) {
+        if (s == null || font.stringWidth(s) <= width) {
+            return s;
+        }
+        int dots = font.stringWidth("...");
+        int n = s.length();
+        while (n > 0 && font.substringWidth(s, 0, n) + dots > width) {
+            n--;
+        }
+        return trimEnd(s.substring(0, n)) + "...";
     }
 
     private static String trimEnd(String s) {

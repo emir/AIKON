@@ -36,7 +36,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~62 KB JAR, English + Turkish UI, splash + jingle, chat bubbles, web search (news, weather, rates: the phone's own browser can't open today's web), earlier chats from the server, long replies in parts, keypad shortcuts, optional offline copy of the last chat, quick prompts, dark mode, pairing without typing a long code. Reproducible build with 42 package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~80 KB JAR, English + Turkish UI, splash + jingle, chat bubbles, web search (news, weather, rates: the phone's own browser can't open today's web), earlier chats from the server, long replies in parts, reading mode, message actions, setup wizard, keypad shortcuts, optional offline copy of the last chat, quick prompts, dark mode, pairing without typing a long code. Reproducible build with 42 package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 

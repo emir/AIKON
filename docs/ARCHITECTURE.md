@@ -39,17 +39,26 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 
 - High-level `List`/`Form`/`TextBox` for input and settings; custom
   `Canvas` screens (splash, home, chat) sized from `getWidth()/getHeight()`,
-  softkeys as `Command`s, arrows via `getGameAction()`.
+  softkeys as `Command`s, arrows via `getGameAction()`. Replies are laid
+  out by `Text.layout`: paragraphs, "- " items with a dot and "1. " items
+  with their number, both with a hanging indent. Reading mode pages through
+  one reply with whole lines only and keeps its place by character offset
+  (across text-size changes and loading the rest) and keeps the backlight
+  on with `Display.flashBacklight` until a minute without a key press.
+  Message actions only prefill the editor; every paid request still needs
+  the user's Send. Single-line texts are
+  cut with "..." (`Text.fit`) so nothing runs off small screens.
 - Networking on worker threads only, one request at a time, HTTPS only
   (`https://` enforced, no fallback), response body capped at 8 KiB.
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
-  on/off, "keep last chat". Only with "keep last chat" on, RMS `cs40chat`
+  on/off, "keep last chat", setup wizard done, the two backlight options
+  (format 5; older records count as set up). Only with "keep last chat" on, RMS `cs40chat`
   holds the last conversation (id + newest user/Claude messages, ≤ 8000
   characters) for offline reading; turning it off deletes it. Deleting the
   app deletes both.
 - `L.s("Türkçe", "English")`: language from `microedition.locale` or the
-  Settings choice.
+  Settings choice; changing it rebuilds the screens at once.
 - Packaging is deterministic; `tools/check.py` verifies manifest/JAD
   consistency, class version, preverification (StackMap, no jsr/ret), every
   referenced class/member against the CLDC/MIDP API, only an optional HTTPS

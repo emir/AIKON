@@ -121,7 +121,10 @@ point, not an old WAP profile.
 
 ## 7. Connection test and pairing
 
-On the phone, in Claude S40:
+On the phone, in Claude S40. A fresh install opens a setup wizard
+(language, server address, connection test, pairing: "Setup 1/4" to "4/4")
+that walks through exactly these steps; it can be skipped and reopened from
+Settings → Options → Setup wizard.
 
 1. **Connection test → Start**: it checks `/health` and a UTF-8 round trip
    (`/echo`) and shows the TLS version, cipher and certificate. Chat stays
@@ -158,7 +161,11 @@ marked "searched the web" ends with "Web: <sources>".
 On the phone: **Chats** lists earlier conversations (open one to continue
 it); in a chat, **0** loads the rest of a long reply (free, Claude is not
 asked again), **2/8** page, **1/3** jump between messages, **\*/#** top and
-end, **5** write. Settings → Claude: web search on/off, keep the last chat
+end, **5** write, **7** reading mode (one reply page by page, full width),
+**9** text size. **1/3** also select a message; the centre key then offers
+shorten, translate, ask about it or open it in the editor (these only fill
+the editor, nothing is sent until you press Send). After an error the
+centre key retries the same request. Options → Shortcuts lists every key. Settings → Claude: web search on/off, keep the last chat
 on the phone for offline reading.
 
 ## 9. Day to day

@@ -14,7 +14,8 @@ import javax.microedition.lcdui.StringItem;
  * proof that its security level is current.
  *
  * Only when both steps pass is the URL marked as verified; chat is locked
- * until then.
+ * until then. As step 3 of the setup wizard (Setup) it gets "İleri" once
+ * the address is verified, and "Geri" goes to the previous step.
  */
 final class ConnTest implements CommandListener, Runnable {
 
@@ -22,17 +23,37 @@ final class ConnTest implements CommandListener, Runnable {
     static final String PROBE = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü";
 
     private final ClaudeS40MIDlet midlet;
-    private final Form form = new Form(L.s("Bağlantı testi", "Connection test"));
+    /** The wizard this test is a step of, or null. */
+    private final Setup setup;
+    private final Form form;
     private final Command startCmd = new Command(L.s("Başlat", "Start"), Command.SCREEN, 1);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+    private final Command nextCmd = new Command(L.s("İleri", "Next"), Command.OK, 1);
     private boolean running;
+    private boolean nextShown;
 
-    ConnTest(ClaudeS40MIDlet midlet) {
+    ConnTest(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
+        this.setup = setup;
+        form = new Form(setup != null ? Setup.title(2) : L.s("Bağlantı testi", "Connection test"));
         form.addCommand(startCmd);
         form.addCommand(backCmd);
         form.setCommandListener(this);
         intro();
+        showNext(midlet.settings.connectionVerified());
+    }
+
+    /** Wizard only: "İleri" while the address is verified. */
+    private synchronized void showNext(boolean want) {
+        if (setup == null || want == nextShown) {
+            return;
+        }
+        if (want) {
+            form.addCommand(nextCmd);
+        } else {
+            form.removeCommand(nextCmd);
+        }
+        nextShown = want;
     }
 
     private void intro() {
@@ -54,7 +75,13 @@ final class ConnTest implements CommandListener, Runnable {
 
     public void commandAction(Command c, Displayable d) {
         if (c == backCmd) {
-            midlet.showMenu();
+            if (setup != null) {
+                setup.back();
+            } else {
+                midlet.showMenu();
+            }
+        } else if (c == nextCmd) {
+            setup.next();
         } else if (c == startCmd && !running) {
             running = true;
             intro();
@@ -93,7 +120,7 @@ final class ConnTest implements CommandListener, Runnable {
         line(L.s("Sunucu", "Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
                 + (hm.flag("mock") ? L.s(", sunucu TEST MODU (sahte Claude)", ", server in TEST MODE (fake Claude)") : ""));
         line(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));
-        line(L.s("Cloudflare'in gördüğü TLS (aracı sunucu varsa onun bağlantısı)", "TLS seen by Cloudflare (the relay's, if one is used)"),
+        line(L.s("Sunucunun gördüğü TLS", "TLS seen by the server"),
                 hm.field("tls-version") + ", " + hm.field("tls-cipher"));
 
         // 2. echo
@@ -110,11 +137,13 @@ final class ConnTest implements CommandListener, Runnable {
                 : L.s("Farklı geldi: ", "Received something else: ")) + e.msg.text);
         if (!same || !serverMatch) {
             line(L.s("SONUÇ", "RESULT"), L.s("Karakter kodlaması hatası. Sohbet kilitli kaldı.", "Character encoding error. Chat stays locked."));
+            showNext(false);
             return;
         }
 
         s.verifiedUrl = base;
         String err = s.save();
+        showNext(true);
         line(L.s("SONUÇ", "RESULT"), L.s("Bağlantı doğrulandı; sohbet kullanılabilir.", "Connection verified; chat is ready.")
                 + (err != null ? " (" + err + ")" : "")
                 + L.s(" Not: bağlantının kurulması tek başına güncel güvenlik düzeyinin kanıtı değildir; "
@@ -147,6 +176,7 @@ final class ConnTest implements CommandListener, Runnable {
             s.verifiedUrl = "";
             s.save();
         }
+        showNext(false);
         line(L.s("SONUÇ", "RESULT"), L.s("Bağlantı doğrulanamadı. Sohbet kilitli.", "Connection not verified. Chat is locked."));
     }
 }
