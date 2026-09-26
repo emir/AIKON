@@ -4,7 +4,8 @@
 //
 // It replaces the Cloudflare Worker + Durable Objects and the separate TLS
 // relay. Public listener (TLS, for the phone): /health, /echo, /v1/chat,
-// /v1/delete, /v1/pair/start, /v1/pair/claim. Admin listener (plain HTTP,
+// /v1/more, /v1/conversations, /v1/history, /v1/delete, /v1/pair/start,
+// /v1/pair/claim. Admin listener (plain HTTP,
 // meant to be bound to 127.0.0.1 and reached through an SSH tunnel):
 // /admin/pair/approve, /admin/devices, /admin/devices/revoke.
 //
@@ -19,19 +20,21 @@ import (
 	"encoding/json"
 	"errors"
 	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf16"
 
 	"golang.org/x/text/unicode/norm"
 )
 
 const (
 	service       = "claude-s40-server"
-	version       = "0.2.0"
+	version       = "0.3.0"
 	echoProbe     = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest    = 4096
 	maxEcho       = 512
@@ -47,6 +50,11 @@ type config struct {
 	fallbacks, mock                    bool
 	reqLimit                           int
 	tokLimit                           int64
+	search                             bool
+	searchLimit                        int
+	searchMaxUses                      int
+	searchCountry, searchCity          string
+	searchTimezone                     string
 }
 
 func env(k, def string) string {
@@ -80,6 +88,12 @@ func loadConfig() config {
 	c.mock = env("MOCK_ANTHROPIC", "0") == "1"
 	c.reqLimit = envInt("DAILY_REQUEST_LIMIT", 100)
 	c.tokLimit = int64(envInt("DAILY_OUTPUT_TOKEN_LIMIT", 100000))
+	c.search = env("WEB_SEARCH", "1") == "1"
+	c.searchLimit = envInt("DAILY_SEARCH_LIMIT", 30)
+	c.searchMaxUses = envInt("WEB_SEARCH_MAX_USES", 3)
+	c.searchCountry = env("SEARCH_COUNTRY", "")
+	c.searchCity = env("SEARCH_CITY", "")
+	c.searchTimezone = env("SEARCH_TIMEZONE", "")
 	return c
 }
 
@@ -104,14 +118,17 @@ func main() {
 		if key == "" {
 			log.Fatalf("no API key in %s (or set MOCK_ANTHROPIC=1)", c.apiKeyFile)
 		}
-		m = newClaudeModel(key, c.model, c.effort, c.fallbacks)
+		cm := newClaudeModel(key, c.model, c.effort, c.fallbacks)
+		cm.search = searchConfig{maxUses: int64(max(1, c.searchMaxUses)), country: c.searchCountry,
+			city: c.searchCity, timezone: c.searchTimezone}
+		m = cm
 	}
 	adminToken := readSecret(c.adminTokenFile)
 	if len(adminToken) < 32 {
 		log.Printf("warning: no admin token (>= 32 chars) in %s; admin API disabled", c.adminTokenFile)
 	}
-	srv := &server{cfg: c, st: st, chat: &chatService{st: st, model: m, reqLimit: c.reqLimit, tokLimit: c.tokLimit},
-		adminToken: adminToken}
+	srv := &server{cfg: c, st: st, chat: &chatService{st: st, model: m, reqLimit: c.reqLimit, tokLimit: c.tokLimit,
+		search: c.search, searchLimit: c.searchLimit}, adminToken: adminToken}
 
 	go func() {
 		for {
@@ -135,7 +152,7 @@ func main() {
 	adm := &http.Server{Addr: c.adminListen, Handler: srv.adminMux(), ReadHeaderTimeout: 10 * time.Second}
 	go func() { log.Fatal(adm.ListenAndServe()) }()
 	logJSON(map[string]any{"evt": "start", "version": version, "listen": c.listen, "admin": c.adminListen,
-		"model": c.model, "mock": c.mock, "env": c.environment})
+		"model": c.model, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit})
 	log.Fatal(pub.ListenAndServeTLS("", ""))
 }
 
@@ -229,7 +246,8 @@ func logged(h http.Handler) http.Handler {
 
 func knownPath(p string) bool {
 	switch p {
-	case "/health", "/echo", "/v1/chat", "/v1/delete", "/v1/pair/start", "/v1/pair/claim",
+	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/conversations", "/v1/history", "/v1/delete",
+		"/v1/pair/start", "/v1/pair/claim",
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
 		return true
 	}
@@ -241,6 +259,9 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("GET /health", s.health)
 	mux.HandleFunc("POST /echo", s.echo)
 	mux.HandleFunc("POST /v1/chat", s.chatHandler)
+	mux.HandleFunc("POST /v1/more", s.moreHandler)
+	mux.HandleFunc("POST /v1/conversations", s.conversationsHandler)
+	mux.HandleFunc("POST /v1/history", s.historyHandler)
 	mux.HandleFunc("POST /v1/delete", s.deleteHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
@@ -264,7 +285,7 @@ func tlsFields(r *http.Request) []kv {
 
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	f := []kv{{"status", "ok"}, {"service", service}, {"version", version}, {"environment", s.cfg.environment},
-		{"mock", s.cfg.mock}, {"time", time.Now().UTC().Format(time.RFC3339)}}
+		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"time", time.Now().UTC().Format(time.RFC3339)}}
 	writeS40(w, 200, append(f, tlsFields(r)...), "Claude S40 server is running.")
 }
 
@@ -361,7 +382,7 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 413, []kv{{"status", "too_large"}, {"request", reqID}, {"max", maxMessageChars}}, "")
 		return
 	}
-	res, err := s.chat.chat(r.Context(), device, reqID, conv, msg)
+	res, err := s.chat.chat(r.Context(), device, reqID, conv, msg, m.get("search") != "0")
 	if err != nil {
 		logJSON(map[string]any{"evt": "chat_error"})
 		writeS40(w, 500, []kv{{"status", "server_error"}, {"request", reqID}}, "")
@@ -376,11 +397,102 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 		if res.replayed {
 			f = append(f, kv{"replayed", true})
 		}
+		f = append(f, partFields(res)...)
 	}
 	if res.hasRemaining {
 		f = append(f, kv{"remaining", res.remaining})
 	}
 	writeS40(w, res.http, f, res.text)
+}
+
+// partFields: "more"/"next" while parts of a long reply are left; "searched"
+// when web searches were made.
+func partFields(res chatResult) []kv {
+	var f []kv
+	if res.more {
+		f = append(f, kv{"more", true}, kv{"next", res.next})
+	}
+	if res.searches > 0 {
+		f = append(f, kv{"searched", res.searches})
+	}
+	return f
+}
+
+// moreHandler returns the next part of a stored reply. It never calls Claude.
+func (s *server) moreHandler(w http.ResponseWriter, r *http.Request) {
+	device, m, ok := s.authedS40(w, r)
+	if !ok {
+		return
+	}
+	reqID := m.get("request")
+	offset, err := strconv.Atoi(m.get("offset"))
+	if !idRE.MatchString(reqID) || err != nil || offset < 0 {
+		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
+		return
+	}
+	res, found, err := s.chat.morePart(r.Context(), device, reqID, offset)
+	if err != nil {
+		writeS40(w, 500, []kv{{"status", "server_error"}, {"request", reqID}}, "")
+		return
+	}
+	if !found {
+		writeS40(w, 404, []kv{{"status", "not_found"}, {"request", reqID}}, "")
+		return
+	}
+	f := append([]kv{{"status", "ok"}, {"request", reqID}, {"truncated", res.truncated}}, partFields(res)...)
+	writeS40(w, 200, f, res.text)
+}
+
+// conversationsHandler lists the newest conversations, one per line:
+// id TAB updated (ms) TAB messages TAB title.
+func (s *server) conversationsHandler(w http.ResponseWriter, r *http.Request) {
+	device, _, ok := s.authedS40(w, r)
+	if !ok {
+		return
+	}
+	list, err := s.st.conversations(r.Context(), device)
+	if err != nil {
+		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
+		return
+	}
+	var b strings.Builder
+	for _, c := range list {
+		fmt.Fprintf(&b, "%s\t%d\t%d\t%s\n", c.id, c.updated, c.messages, c.title)
+	}
+	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(list)}}, b.String())
+}
+
+// historyHandler returns the newest messages of a conversation, oldest
+// first, each as "u N" or "a N" (N = UTF-16 length, as Java counts), a
+// newline, the text and a newline.
+func (s *server) historyHandler(w http.ResponseWriter, r *http.Request) {
+	device, m, ok := s.authedS40(w, r)
+	if !ok {
+		return
+	}
+	conv := m.get("conversation")
+	if !convRE.MatchString(conv) {
+		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
+		return
+	}
+	msgs, older, found, err := s.st.history(r.Context(), device, conv)
+	if err != nil {
+		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
+		return
+	}
+	if !found {
+		writeS40(w, 404, []kv{{"status", "conversation_not_found"}, {"conversation", conv}}, "")
+		return
+	}
+	var b strings.Builder
+	for _, t := range msgs {
+		role := "u"
+		if t.role == "assistant" {
+			role = "a"
+		}
+		fmt.Fprintf(&b, "%s %d\n%s\n", role, len(utf16.Encode([]rune(t.content))), t.content)
+	}
+	writeS40(w, 200, []kv{{"status", "ok"}, {"conversation", conv}, {"count", len(msgs)}, {"older", older}}, b.String())
 }
 
 func (s *server) deleteHandler(w http.ResponseWriter, r *http.Request) {

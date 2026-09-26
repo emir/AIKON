@@ -81,13 +81,42 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /echo` | – | ≤ 512 bytes strict UTF-8, echoed; `probe: match` for the Turkish test string |
 | `POST /v1/pair/start` | – | → `pair` (128-bit secret), `code` (6 digits, shown on the phone), `expires` |
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
-| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, text = message |
+| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `search: 0` (no web search for this message), text = message |
+| `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls Claude) |
+| `POST /v1/conversations` | Bearer token | newest 20 conversations, one line each: `id TAB updated-ms TAB messages TAB title` |
+| `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out |
 | `POST /v1/delete` | Bearer token | `conversation: <id>` |
 
 Chat statuses: `ok` (fields `conversation`, `truncated`, `refused`, `mock`,
-`replayed`, `remaining`), `pending`, `busy`, `limit`, `conversation_full`,
+`replayed`, `remaining`, and since 0.3.0 `more` + `next` while parts of a
+long reply are left, `searched` = number of web searches), `pending`, `busy`, `limit`, `conversation_full`,
 `conversation_not_found`, `request_mismatch`, `rate_limited`, `overloaded`,
 `billing`, `upstream_error`, `config_error`, `uncertain`, plus input errors.
+
+### Long replies in parts (0.3.0)
+
+The server stores up to 8000 characters of a reply and sends it in parts of
+≤ 2000 characters (the phone reads at most 8 KiB). The first part comes with
+`/v1/chat` (and with a replay); `more: 1` + `next: <offset>` mean another
+part can be fetched with `/v1/more`. `truncated` is `1` on the first part
+while parts are left, so 0.3.x phones (which ignore `more`) still say the
+reply is incomplete; on later parts it means the stored reply itself was
+cut (length or token limit). Phones show "shortened" only when
+`truncated: 1` and no `more`.
+
+### Web search (0.3.0)
+
+Anthropic's server-side web search tool (`web_search_20260209`) is offered
+when `WEB_SEARCH=1` (default), the phone did not send `search: 0`, and the
+device has searches left today (`DAILY_SEARCH_LIMIT`, default 30, UTC day).
+At most `WEB_SEARCH_MAX_USES` (default 3) searches per message; Claude
+decides whether to search. Searches are billed per use and their results
+count as input tokens. A `pause_turn` is continued once (a continuation of
+the same turn, not a retry); if it fails, the answer so far is returned
+with `truncated`. Only the text after the last search is kept (narration
+like "let me look" is dropped) and up to three cited host names are
+appended as `Web: a.com, b.org`. Optional approximate location for local
+results: `SEARCH_COUNTRY`, `SEARCH_CITY`, `SEARCH_TIMEZONE`.
 
 ## Paid calls: idempotency without "exactly once"
 
@@ -109,10 +138,10 @@ Chat statuses: `ok` (fields `conversation`, `truncated`, `refused`, `mock`,
 | | |
 |---|---|
 | message | ≤ 1000 characters (request body ≤ 4 KiB) |
-| reply | sanitised (no Markdown/emoji/non-BMP), ≤ 2000 characters, `truncated` flag |
+| reply | sanitised (no Markdown/emoji/non-BMP), ≤ 8000 characters stored, sent in parts of ≤ 2000, `truncated` flag |
 | model | `CLAUDE_MODEL`, `max_tokens` 2048, `effort` from `CLAUDE_EFFORT`, optional server-side refusal fallback |
 | context | newest 16 messages and ≤ 16000 characters of the conversation |
-| per device | 1 request in flight, daily requests and output tokens (UTC day), ≤ 40 messages per conversation, ≤ 50 conversations |
+| per device | 1 request in flight, daily requests, output tokens and web searches (UTC day), ≤ 40 messages per conversation, ≤ 50 conversations |
 | retention | conversations 30 days after the last message, request records 7 days, usage 90 days (cleanup every 6 h) |
 
 All user-data tables are keyed by `device_id`: a conversation id is only

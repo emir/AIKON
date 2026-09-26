@@ -314,6 +314,143 @@ func TestChatFlow(t *testing.T) {
 	}
 }
 
+func TestLongReplyParts(t *testing.T) {
+	e := newEnv(t, 30)
+	tok, _ := e.pair("p")
+	id := rid()
+	first := e.chat(tok, id, "", "[[mock:long]]")
+	if first.msg.get("more") != "1" || first.msg.get("truncated") != "1" || len([]rune(first.msg.text)) > partChars {
+		t.Fatalf("first part: %q", first.raw[:200])
+	}
+	all := first.msg.text
+	next := first.msg.get("next")
+	for i := 0; next != "" && i < 10; i++ {
+		r := e.do("POST", "/v1/more", tok, formatS40([]kv{{"request", id}, {"offset", next}}, ""))
+		if r.code != 200 || len([]rune(r.msg.text)) > partChars || r.msg.text == "" {
+			t.Fatalf("more: %d %q", r.code, r.raw)
+		}
+		all += " " + r.msg.text
+		next = r.msg.get("next")
+		if r.msg.get("more") != "1" {
+			if next != "" || r.msg.get("truncated") != "0" {
+				t.Fatalf("last part: %q", r.raw[:80])
+			}
+		}
+	}
+	if next != "" || strings.Count(all, "Long test line") != 200 {
+		t.Fatalf("parts do not add up: %d lines", strings.Count(all, "Long test line"))
+	}
+	// a replay also starts with the first part
+	if r := e.chat(tok, id, "", "[[mock:long]]"); r.msg.get("replayed") != "1" || r.msg.get("next") != first.msg.get("next") {
+		t.Fatalf("replay: %q", r.raw[:120])
+	}
+	// the stored reply is capped; the last part says so
+	h := rid()
+	r := e.chat(tok, h, "", "[[mock:huge]]")
+	for i := 0; r.msg.get("more") == "1" && i < 10; i++ {
+		r = e.do("POST", "/v1/more", tok, formatS40([]kv{{"request", h}, {"offset", r.msg.get("next")}}, ""))
+	}
+	if r.msg.get("truncated") != "1" || !strings.HasSuffix(r.msg.text, "...") {
+		t.Fatalf("huge last part: %q", r.raw)
+	}
+	// errors: other device, unknown request, bad offset
+	other, _ := e.pair("q")
+	if r := e.do("POST", "/v1/more", other, formatS40([]kv{{"request", id}, {"offset", "0"}}, "")); r.code != 404 {
+		t.Fatal("other device reads the reply")
+	}
+	if r := e.do("POST", "/v1/more", tok, formatS40([]kv{{"request", id}, {"offset", "-1"}}, "")); r.code != 400 {
+		t.Fatal("negative offset")
+	}
+	if r := e.do("POST", "/v1/more", tok, formatS40([]kv{{"request", id}, {"offset", "999999"}}, "")); r.code != 404 {
+		t.Fatal("offset past the end")
+	}
+}
+
+func TestConversationsAndHistory(t *testing.T) {
+	e := newEnv(t, 30)
+	tok, _ := e.pair("p")
+	a := e.chat(tok, rid(), "", "Birinci sohbet:\tçok   uzun bir başlık olabilir, kırk sekiz karakteri kesinlikle geçer").msg.get("conversation")
+	e.chat(tok, rid(), a, "ikinci mesaj")
+	b := e.chat(tok, rid(), "", "İkinci sohbet").msg.get("conversation")
+	e.chat(tok, rid(), "", "[[mock:error]] başarısız") // conversation without messages: not listed
+	l := e.do("POST", "/v1/conversations", tok, "S40/1\n\n")
+	lines := strings.Split(strings.TrimSuffix(l.msg.text, "\n"), "\n")
+	if l.code != 200 || l.msg.get("count") != "2" || len(lines) != 2 {
+		t.Fatalf("%q", l.raw)
+	}
+	f0, f1 := strings.Split(lines[0], "\t"), strings.Split(lines[1], "\t")
+	if f0[0] != b || f0[2] != "2" || f0[3] != "İkinci sohbet" || f1[0] != a || f1[2] != "4" {
+		t.Fatalf("%q", l.msg.text)
+	}
+	if len([]rune(f1[3])) > titleChars+4 || strings.Contains(f1[3], "  ") || !strings.HasPrefix(f1[3], "Birinci sohbet: çok uzun") {
+		t.Fatalf("title %q", f1[3])
+	}
+
+	h := e.do("POST", "/v1/history", tok, "S40/1\nconversation: "+a+"\n\n")
+	if h.code != 200 || h.msg.get("count") != "4" || h.msg.get("older") != "0" {
+		t.Fatalf("%q", h.raw)
+	}
+	if !strings.HasPrefix(h.msg.text, "u ") || !strings.Contains(h.msg.text, "\na ") || !strings.Contains(h.msg.text, "ikinci mesaj\n") {
+		t.Fatalf("%q", h.msg.text)
+	}
+	// long conversations: newest messages only, within the byte budget
+	for i := 0; i < 6; i++ {
+		e.chat(tok, rid(), a, "[[mock:long]] "+string(rune('a'+i)))
+	}
+	h = e.do("POST", "/v1/history", tok, "S40/1\nconversation: "+a+"\n\n")
+	if h.msg.get("older") != "1" || len(h.msg.text) > historyBytes+200 {
+		t.Fatalf("older=%s len=%d", h.msg.get("older"), len(h.msg.text))
+	}
+	other, _ := e.pair("q")
+	if r := e.do("POST", "/v1/history", other, "S40/1\nconversation: "+a+"\n\n"); r.code != 404 {
+		t.Fatal("other device reads history")
+	}
+	if r := e.do("POST", "/v1/conversations", other, "S40/1\n\n"); r.msg.get("count") != "0" {
+		t.Fatal("other device lists conversations")
+	}
+}
+
+func TestWebSearchBudget(t *testing.T) {
+	e := newEnv(t, 30)
+	e.srv.chat.search, e.srv.chat.searchLimit = true, 3
+	tok, _ := e.pair("p")
+	r := e.chat(tok, rid(), "", "[[mock:search]] hava")
+	if r.msg.get("searched") != "2" || !strings.Contains(r.msg.text, "Web: example.com, example.org") {
+		t.Fatalf("%q", r.raw)
+	}
+	off := e.do("POST", "/v1/chat", tok, formatS40([]kv{{"request", rid()}, {"conversation", ""}, {"search", "0"}}, "[[mock:search]] kapalı"))
+	if off.msg.get("searched") != "" || !strings.Contains(off.msg.text, "Web search: off") {
+		t.Fatalf("search:0 %q", off.raw)
+	}
+	e.chat(tok, rid(), "", "[[mock:search]] ikinci") // 4 of 3 used: budget gone
+	if r := e.chat(tok, rid(), "", "[[mock:search]] üçüncü"); !strings.Contains(r.msg.text, "Web search: off") {
+		t.Fatalf("budget not enforced: %q", r.raw)
+	}
+	e.srv.chat.search = false
+	e2, _ := e.pair("q")
+	if r := e.chat(e2, rid(), "", "[[mock:search]] x"); !strings.Contains(r.msg.text, "Web search: off") {
+		t.Fatal("server setting off")
+	}
+}
+
+func TestMigrateOldDatabase(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "old.db")
+	st, _ := openStore(path)
+	st.db.Exec(`ALTER TABLE usage DROP COLUMN searches`)
+	st.db.Exec(`ALTER TABLE requests DROP COLUMN searches`)
+	st.close()
+	st2, err := openStore(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer st2.close()
+	var n int
+	st2.db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info('usage') WHERE name='searches'`).Scan(&n)
+	if n != 1 {
+		t.Fatal("column not added")
+	}
+}
+
 func TestDeviceIsolation(t *testing.T) {
 	e := newEnv(t, 30)
 	a, _ := e.pair("a")
@@ -395,6 +532,7 @@ type fakeAPI struct {
 	hdrs   []http.Header
 	status int
 	body   string
+	queue  []string // bodies served first, in order (then body)
 	drop   bool
 }
 
@@ -406,6 +544,9 @@ func (f *fakeAPI) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 	f.bodies = append(f.bodies, b)
 	f.hdrs = append(f.hdrs, r.Header.Clone())
 	status, body, drop := f.status, f.body, f.drop
+	if len(f.queue) > 0 {
+		body, f.queue = f.queue[0], f.queue[1:]
+	}
 	f.mu.Unlock()
 	if drop {
 		hj, _ := w.(http.Hijacker)
@@ -445,7 +586,7 @@ func fakeModel(t *testing.T, f *fakeAPI, fallbacks bool, effort string) *claudeM
 func TestClaudeRequestShape(t *testing.T) {
 	f := &fakeAPI{status: 200, body: okBody("Ankara.", "end_turn")}
 	m := fakeModel(t, f, true, "low")
-	r, err := m.reply(context.Background(), []turn{{"user", "a"}, {"assistant", "b"}}, "c")
+	r, err := m.reply(context.Background(), []turn{{"user", "a"}, {"assistant", "b"}}, "c", replyOpts{})
 	if err != nil || r.text != "Ankara." || r.outputTokens != 34 {
 		t.Fatalf("%v %+v", err, r)
 	}
@@ -476,9 +617,68 @@ func TestClaudeRequestShape(t *testing.T) {
 	}
 }
 
+func TestClaudeWebSearch(t *testing.T) {
+	cited := map[string]any{"type": "text", "text": "Ankara'da bugün 21 derece.", "citations": []any{
+		map[string]any{"type": "web_search_result_location", "url": "https://www.example.com/hava", "title": "t",
+			"cited_text": "x", "encrypted_index": "e"}}}
+	paused := map[string]any{"id": "msg_1", "type": "message", "role": "assistant", "model": "claude-opus-5",
+		"content": []any{
+			map[string]any{"type": "text", "text": "Bakayım."},
+			map[string]any{"type": "server_tool_use", "id": "srvtoolu_1", "name": "web_search", "input": map[string]any{"query": "ankara hava"}},
+		}, "stop_reason": "pause_turn",
+		"usage": map[string]any{"input_tokens": 100, "output_tokens": 10, "server_tool_use": map[string]any{"web_search_requests": 1}}}
+	final := map[string]any{"id": "msg_2", "type": "message", "role": "assistant", "model": "claude-opus-5",
+		"content": []any{
+			map[string]any{"type": "web_search_tool_result", "tool_use_id": "srvtoolu_1", "content": []any{}},
+			cited,
+		}, "stop_reason": "end_turn",
+		"usage": map[string]any{"input_tokens": 200, "output_tokens": 20, "server_tool_use": map[string]any{"web_search_requests": 1}}}
+	pb, _ := json.Marshal(paused)
+	fb, _ := json.Marshal(final)
+	f := &fakeAPI{status: 200, queue: []string{string(pb)}, body: string(fb)}
+	m := fakeModel(t, f, true, "low")
+	m.search = searchConfig{maxUses: 2, country: "TR", timezone: "Europe/Istanbul"}
+	r, err := m.reply(context.Background(), nil, "Ankara hava?", replyOpts{search: true})
+	if err != nil || r.text != "Ankara'da bugün 21 derece." || r.searches != 2 || r.inputTokens != 300 || r.outputTokens != 30 {
+		t.Fatalf("%v %+v", err, r)
+	}
+	if len(r.sources) != 1 || r.sources[0] != "example.com" || r.cutOff {
+		t.Fatalf("%+v", r)
+	}
+	tools, _ := f.bodies[0]["tools"].([]any)
+	tool, _ := tools[0].(map[string]any)
+	loc, _ := tool["user_location"].(map[string]any)
+	if len(tools) != 1 || tool["type"] != "web_search_20260209" || tool["max_uses"] != 2.0 || loc["country"] != "TR" {
+		t.Fatalf("tools %v", f.bodies[0]["tools"])
+	}
+	sys, _ := json.Marshal(f.bodies[0]["system"])
+	if !strings.Contains(string(sys), "search the web") || !strings.Contains(string(sys), "Today's date") {
+		t.Fatalf("system %s", sys)
+	}
+	// continuation: the paused assistant turn is sent back, no extra user message
+	msgs := f.bodies[1]["messages"].([]any)
+	if len(msgs) != 2 || msgs[1].(map[string]any)["role"] != "assistant" {
+		t.Fatalf("continuation %v", msgs)
+	}
+
+	// search off: no tools, no search prompt
+	f2 := &fakeAPI{status: 200, body: okBody("x", "end_turn")}
+	fakeModel(t, f2, true, "low").reply(context.Background(), nil, "c", replyOpts{})
+	if _, ok := f2.bodies[0]["tools"]; ok {
+		t.Fatal("tools sent without search")
+	}
+
+	// still paused after the continuation: cut off, not an error
+	f3 := &fakeAPI{status: 200, body: string(pb)}
+	r3, err := fakeModel(t, f3, true, "low").reply(context.Background(), nil, "c", replyOpts{search: true})
+	if err != nil || !r3.cutOff || f3.count() != 1+maxContinuations {
+		t.Fatalf("%v %+v calls=%d", err, r3, f3.count())
+	}
+}
+
 func TestClaudeOptionsOff(t *testing.T) {
 	f := &fakeAPI{status: 200, body: okBody("x", "end_turn")}
-	fakeModel(t, f, false, "").reply(context.Background(), nil, "c")
+	fakeModel(t, f, false, "").reply(context.Background(), nil, "c", replyOpts{})
 	if _, ok := f.bodies[0]["fallbacks"]; ok {
 		t.Fatal("fallbacks sent")
 	}
@@ -489,11 +689,11 @@ func TestClaudeOptionsOff(t *testing.T) {
 
 func TestClaudeStopReasons(t *testing.T) {
 	f := &fakeAPI{status: 200, body: okBody("yarım", "max_tokens")}
-	if r, _ := fakeModel(t, f, true, "low").reply(context.Background(), nil, "c"); !r.cutOff {
+	if r, _ := fakeModel(t, f, true, "low").reply(context.Background(), nil, "c", replyOpts{}); !r.cutOff {
 		t.Fatal("cutOff")
 	}
 	f2 := &fakeAPI{status: 200, body: okBody("", "refusal")}
-	if r, _ := fakeModel(t, f2, true, "low").reply(context.Background(), nil, "c"); !r.refused {
+	if r, _ := fakeModel(t, f2, true, "low").reply(context.Background(), nil, "c", replyOpts{}); !r.refused {
 		t.Fatal("refused")
 	}
 }
@@ -512,14 +712,14 @@ func TestClaudeErrorsNoRetry(t *testing.T) {
 	}
 	for _, c := range cases {
 		f := &fakeAPI{status: c.status, body: c.body}
-		_, err := fakeModel(t, f, true, "low").reply(context.Background(), nil, "c")
+		_, err := fakeModel(t, f, true, "low").reply(context.Background(), nil, "c", replyOpts{})
 		ue, ok := err.(*upstreamError)
 		if !ok || ue.code != c.want || ue.kind != "definite" || f.count() != 1 {
 			t.Fatalf("%d: %v calls=%d", c.status, err, f.count())
 		}
 	}
 	f := &fakeAPI{drop: true}
-	_, err := fakeModel(t, f, true, "low").reply(context.Background(), nil, "c")
+	_, err := fakeModel(t, f, true, "low").reply(context.Background(), nil, "c", replyOpts{})
 	if ue, ok := err.(*upstreamError); !ok || ue.kind != "uncertain" || f.count() != 1 {
 		t.Fatalf("dropped connection: %v calls=%d", err, f.count())
 	}

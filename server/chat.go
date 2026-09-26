@@ -8,18 +8,25 @@ package main
 //   - conversation ids are scoped to the device
 //   - the request is recorded as "pending" and counted BEFORE the paid call
 //   - uncertain upstream results are recorded and never retried
+//   - web search is offered only while the device's daily search budget lasts
+//   - long replies are stored whole and sent in parts (/v1/more reads the
+//     stored reply, it never calls Claude)
 
 import (
 	"context"
 	"database/sql"
 	"errors"
+	"strings"
 	"sync"
 	"time"
+	"unicode/utf8"
 )
 
 const (
 	maxMessageChars         = 1000
-	maxReplyChars           = 2000
+	maxReplyChars           = 8000 // stored reply
+	partChars               = 2000 // one part on the phone
+	maxSources              = 3
 	contextMessages         = 16
 	contextChars            = 16000
 	maxConversationMessages = 40
@@ -38,6 +45,9 @@ type chatResult struct {
 	mock         bool
 	remaining    int
 	hasRemaining bool
+	searches     int64
+	more         bool
+	next         int
 }
 
 var statusHTTP = map[string]int{
@@ -51,6 +61,8 @@ type chatService struct {
 	model       model
 	reqLimit    int
 	tokLimit    int64
+	search      bool // web search available at all (server setting)
+	searchLimit int  // searches per device per UTC day
 	deviceLocks sync.Map // device id -> *sync.Mutex (serialises the bookkeeping, not the call)
 }
 
@@ -80,7 +92,28 @@ func (c *chatService) remainingToday(ctx context.Context, device string) int {
 	return 0
 }
 
-func (c *chatService) chat(ctx context.Context, device, requestID, conv, message string) (chatResult, error) {
+// searchesLeft: web searches the device may still start today.
+func (c *chatService) searchesLeft(ctx context.Context, device string) int {
+	if !c.search {
+		return 0
+	}
+	var n int
+	c.st.db.QueryRowContext(ctx, `SELECT searches FROM usage WHERE device_id=? AND day=?`,
+		device, utcDay(c.st.ms())).Scan(&n)
+	return max(0, c.searchLimit-n)
+}
+
+// firstPart fills text/more/next/truncated for the first part of a stored reply.
+func (r *chatResult) firstPart(stored string, cut bool) {
+	part, next, more := pageText(stored, 0)
+	r.text, r.more, r.next = part, more, next
+	// truncated is also set while parts are left, so 0.3.x phones (which do
+	// not know "more") still say that the reply is not complete
+	r.truncated = cut || more
+}
+
+// chat: search is the phone's wish (0.4+ can turn web search off).
+func (c *chatService) chat(ctx context.Context, device, requestID, conv, message string, search bool) (chatResult, error) {
 	mu := c.lock(device)
 	mu.Lock()
 	db := c.st.db
@@ -92,9 +125,10 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	var prevCreated int64
 	var prevReply, prevErr sql.NullString
 	var prevTrunc, prevRef, prevMock int
-	err := db.QueryRowContext(ctx, `SELECT conversation_id, message_sha, state, created_at, reply, error, truncated, refused, mock
+	var prevSearches int64
+	err := db.QueryRowContext(ctx, `SELECT conversation_id, message_sha, state, created_at, reply, error, truncated, refused, mock, searches
 		FROM requests WHERE device_id=? AND request_id=?`, device, requestID).
-		Scan(&prevConv, &prevSha, &prevState, &prevCreated, &prevReply, &prevErr, &prevTrunc, &prevRef, &prevMock)
+		Scan(&prevConv, &prevSha, &prevState, &prevCreated, &prevReply, &prevErr, &prevTrunc, &prevRef, &prevMock, &prevSearches)
 	if err == nil {
 		defer mu.Unlock()
 		if prevSha != sha {
@@ -113,8 +147,9 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 			return r, nil
 		case "done":
 			r = result("ok", requestID)
-			r.conversation, r.text, r.replayed = prevConv, prevReply.String, true
-			r.truncated, r.refused, r.mock = prevTrunc == 1, prevRef == 1, prevMock == 1
+			r.conversation, r.replayed, r.searches = prevConv, true, prevSearches
+			r.firstPart(prevReply.String, prevTrunc == 1)
+			r.refused, r.mock = prevRef == 1, prevMock == 1
 			r.remaining, r.hasRemaining = c.remainingToday(ctx, device), true
 			return r, nil
 		case "uncertain":
@@ -172,6 +207,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		}
 		c.st.trimConversations(ctx, device)
 	}
+	opts := replyOpts{search: search && c.searchesLeft(ctx, device) > 0}
 	history, err := c.context(ctx, device, conv)
 	if err != nil {
 		mu.Unlock()
@@ -201,7 +237,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 
 	// 6. the call (no lock held; the pending row keeps other requests out)
 	callCtx := context.WithoutCancel(ctx) // a phone disconnect must not turn a paid call into "unknown"
-	rep, callErr := c.model.reply(callCtx, history, message)
+	rep, callErr := c.model.reply(callCtx, history, message, opts)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -228,6 +264,11 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	truncated := cut || rep.cutOff
 	if rep.refused {
 		text = ""
+	} else if text != "" && len(rep.sources) > 0 {
+		text += "\n\nWeb: " + strings.Join(rep.sources[:min(len(rep.sources), maxSources)], ", ")
+	} else if text == "" {
+		// billed but no answer text (e.g. a search loop that never finished)
+		text, truncated = "...", true
 	}
 	tx, err = db.BeginTx(ctx, nil)
 	if err != nil {
@@ -245,15 +286,16 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	tx.ExecContext(ctx, `UPDATE conversations SET updated_at=? WHERE device_id=? AND id=?`, done, device, conv)
 	tx.ExecContext(ctx, `UPDATE requests SET state='done', reply=?, truncated=?, refused=?, mock=?,
-		input_tokens=?, output_tokens=?, finished_at=? WHERE device_id=? AND request_id=?`,
-		text, b2i(truncated), b2i(rep.refused), b2i(rep.mock), rep.inputTokens, rep.outputTokens, done, device, requestID)
-	tx.ExecContext(ctx, `UPDATE usage SET input_tokens = input_tokens + ?, output_tokens = output_tokens + ?
-		WHERE device_id=? AND day=?`, rep.inputTokens, rep.outputTokens, device, utcDay(now))
+		input_tokens=?, output_tokens=?, searches=?, finished_at=? WHERE device_id=? AND request_id=?`,
+		text, b2i(truncated), b2i(rep.refused), b2i(rep.mock), rep.inputTokens, rep.outputTokens, rep.searches, done, device, requestID)
+	tx.ExecContext(ctx, `UPDATE usage SET input_tokens = input_tokens + ?, output_tokens = output_tokens + ?,
+		searches = searches + ? WHERE device_id=? AND day=?`, rep.inputTokens, rep.outputTokens, rep.searches, device, utcDay(now))
 	if err := tx.Commit(); err != nil {
 		return chatResult{}, err
 	}
 	r := result("ok", requestID)
-	r.conversation, r.text, r.truncated, r.refused, r.mock = conv, text, truncated, rep.refused, rep.mock
+	r.conversation, r.refused, r.mock, r.searches = conv, rep.refused, rep.mock, rep.searches
+	r.firstPart(text, truncated)
 	r.remaining, r.hasRemaining = c.remainingToday(ctx, device), true
 	return r, nil
 }
@@ -310,4 +352,48 @@ func b2i(b bool) int {
 		return 1
 	}
 	return 0
+}
+
+// pageText returns the part of a stored reply that starts at offset (in
+// characters), at most partChars long and cut at a word boundary when
+// possible, plus the offset of the next part.
+func pageText(text string, offset int) (part string, next int, more bool) {
+	r := []rune(text)
+	if offset < 0 || offset >= len(r) {
+		return "", len(r), false
+	}
+	end := offset + partChars
+	if end >= len(r) {
+		return strings.TrimSpace(string(r[offset:])), len(r), false
+	}
+	for i := end; i > offset+partChars*8/10; i-- {
+		if r[i-1] == ' ' || r[i-1] == '\n' {
+			end = i
+			break
+		}
+	}
+	return strings.TrimSpace(string(r[offset:end])), end, true
+}
+
+// morePart: the part of a stored reply from offset (/v1/more). ok is false
+// if the request is unknown to this device or has no stored reply.
+func (c *chatService) morePart(ctx context.Context, device, requestID string, offset int) (chatResult, bool, error) {
+	var reply sql.NullString
+	var trunc int
+	err := c.st.db.QueryRowContext(ctx, `SELECT reply, truncated FROM requests
+		WHERE device_id=? AND request_id=? AND state='done'`, device, requestID).Scan(&reply, &trunc)
+	if errors.Is(err, sql.ErrNoRows) || err == nil && !reply.Valid {
+		return chatResult{}, false, nil
+	}
+	if err != nil {
+		return chatResult{}, false, err
+	}
+	if offset > utf8.RuneCountInString(reply.String) {
+		return chatResult{}, false, nil
+	}
+	r := result("ok", requestID)
+	part, next, more := pageText(reply.String, offset)
+	r.text, r.next, r.more = part, next, more
+	r.truncated = trunc == 1 // the stored reply itself is incomplete (length or token limit)
+	return r, true, nil
 }

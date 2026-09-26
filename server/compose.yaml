@@ -9,7 +9,7 @@
 services:
   server:
     build: .
-    image: claude-s40-server:0.2.0
+    image: claude-s40-server:0.3.0
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
@@ -19,6 +19,12 @@ services:
       MOCK_ANTHROPIC: ${MOCK_ANTHROPIC:-1}
       DAILY_REQUEST_LIMIT: ${DAILY_REQUEST_LIMIT:-100}
       DAILY_OUTPUT_TOKEN_LIMIT: ${DAILY_OUTPUT_TOKEN_LIMIT:-100000}
+      WEB_SEARCH: ${WEB_SEARCH:-1}
+      WEB_SEARCH_MAX_USES: ${WEB_SEARCH_MAX_USES:-3}
+      DAILY_SEARCH_LIMIT: ${DAILY_SEARCH_LIMIT:-30}
+      SEARCH_COUNTRY: ${SEARCH_COUNTRY:-}
+      SEARCH_CITY: ${SEARCH_CITY:-}
+      SEARCH_TIMEZONE: ${SEARCH_TIMEZONE:-}
       ADMIN_LISTEN: 0.0.0.0:9090
     ports:
       - "443:8443"

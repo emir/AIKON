@@ -7,7 +7,9 @@
 # Env (S40_ prefix, so unrelated CLAUDE_* shell variables are never picked
 # up): PKI_DIR (default ~/.config/claude-s40/pki), S40_MOCK (default 1),
 # S40_MODEL, S40_EFFORT, S40_FALLBACKS, S40_REQ_LIMIT, S40_TOK_LIMIT,
-# S40_ENVIRONMENT.
+# S40_ENVIRONMENT, S40_SEARCH (1/0), S40_SEARCH_MAX_USES (per message),
+# S40_SEARCH_LIMIT (per device per day), S40_SEARCH_COUNTRY/_CITY/_TIMEZONE
+# (optional approximate location for local search results).
 # Copies only: image, compose.yaml, .env (no secrets), server-chain.pem, server.key.
 # On the server: secrets/admin_token is generated there if missing (never
 # leaves the server); secrets/anthropic_api_key must be put there with
@@ -18,7 +20,7 @@ TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.2.0
+IMAGE=claude-s40-server:0.3.0
 MOCK=${S40_MOCK:-1}
 
 for f in server-chain.pem server.key; do
@@ -38,6 +40,12 @@ CLAUDE_FALLBACKS=${S40_FALLBACKS:-default}
 MOCK_ANTHROPIC=$MOCK
 DAILY_REQUEST_LIMIT=${S40_REQ_LIMIT:-100}
 DAILY_OUTPUT_TOKEN_LIMIT=${S40_TOK_LIMIT:-100000}
+WEB_SEARCH=${S40_SEARCH:-1}
+WEB_SEARCH_MAX_USES=${S40_SEARCH_MAX_USES:-3}
+DAILY_SEARCH_LIMIT=${S40_SEARCH_LIMIT:-30}
+SEARCH_COUNTRY=${S40_SEARCH_COUNTRY:-}
+SEARCH_CITY=${S40_SEARCH_CITY:-}
+SEARCH_TIMEZONE=${S40_SEARCH_TIMEZONE:-}
 ENV
 
 echo "== plan"
@@ -48,6 +56,7 @@ echo "cert    : $(${OPENSSL:-openssl} x509 -in "$PKI/server.pem" -noout -subject
 echo "ports   : 443 -> 8443 (phone TLS), 127.0.0.1:9090 (admin, server-local only)"
 echo "data    : Docker volume claude-s40-server_s40data (SQLite)"
 [ "$MOCK" = 0 ] && echo "LIVE    : MOCK_ANTHROPIC=0 -> real, paid Claude calls; needs secrets/anthropic_api_key"
+[ "$MOCK" = 0 ] && [ "${S40_SEARCH:-1}" = 1 ] && echo "SEARCH  : web search on -> billed per search, results count as input tokens"
 if [ "$EXEC" != yes ]; then
 	echo; echo "PLAN ONLY. Run again with --execute after approval."
 	exit 0

@@ -13,6 +13,7 @@ import (
 	"encoding/hex"
 	"errors"
 	"fmt"
+	"strings"
 	"time"
 
 	_ "modernc.org/sqlite"
@@ -61,6 +62,10 @@ func openStore(path string) (*store, error) {
 		db.Close()
 		return nil, err
 	}
+	if err := migrate(db); err != nil {
+		db.Close()
+		return nil, err
+	}
 	s := &store{db: db, now: time.Now}
 	// a request left "pending" by a restart may or may not have been billed
 	if _, err := db.Exec(`UPDATE requests SET state='uncertain', error='uncertain' WHERE state='pending'`); err != nil {
@@ -68,6 +73,26 @@ func openStore(path string) (*store, error) {
 		return nil, err
 	}
 	return s, nil
+}
+
+// migrate adds columns introduced after the first release (0.3.0: web
+// search counts). Existing databases keep their data.
+func migrate(db *sql.DB) error {
+	for _, c := range []struct{ table, column, def string }{
+		{"usage", "searches", "INTEGER NOT NULL DEFAULT 0"},
+		{"requests", "searches", "INTEGER NOT NULL DEFAULT 0"},
+	} {
+		var n int
+		if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`, c.table, c.column).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			if _, err := db.Exec(`ALTER TABLE ` + c.table + ` ADD COLUMN ` + c.column + ` ` + c.def); err != nil {
+				return err
+			}
+		}
+	}
+	return nil
 }
 
 func (s *store) close() error { return s.db.Close() }
@@ -235,6 +260,84 @@ func (s *store) claimPairing(ctx context.Context, pairID string) (state, deviceI
 		return "", "", "", err
 	}
 	return "approved", dev.String, tok.String, nil
+}
+
+// ------------------------------------------------------------ history
+
+const (
+	listConversations = 20
+	titleChars        = 48
+	historyBytes      = 6000 // S40 body budget for one history answer (phone reads <= 8 KiB)
+	historyMsgChars   = 1200 // longer messages are shortened in the history view
+)
+
+type convInfo struct {
+	id       string
+	updated  int64
+	messages int
+	title    string
+}
+
+// conversations: the device's newest conversations with a title taken from
+// the first user message.
+func (s *store) conversations(ctx context.Context, device string) ([]convInfo, error) {
+	rows, err := s.db.QueryContext(ctx, `SELECT c.id, c.updated_at,
+		  (SELECT COUNT(*) FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id),
+		  COALESCE((SELECT content FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id
+		    AND m.role='user' ORDER BY seq LIMIT 1), '')
+		FROM conversations c WHERE c.device_id=? ORDER BY c.updated_at DESC LIMIT ?`, device, listConversations)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []convInfo
+	for rows.Next() {
+		var c convInfo
+		if err := rows.Scan(&c.id, &c.updated, &c.messages, &c.title); err != nil {
+			return nil, err
+		}
+		if c.messages == 0 {
+			continue // created, but the first exchange failed
+		}
+		c.title, _ = limitChars(strings.Join(strings.Fields(c.title), " "), titleChars)
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// history: the newest messages of a conversation that fit in historyBytes,
+// oldest first. older is true if earlier messages were left out. ok is
+// false if the conversation is unknown to this device.
+func (s *store) history(ctx context.Context, device, conv string) (msgs []turn, older, ok bool, err error) {
+	var x int
+	if s.db.QueryRowContext(ctx, `SELECT 1 FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&x) != nil {
+		return nil, false, false, nil
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT role, content FROM messages
+		WHERE device_id=? AND conversation_id=? ORDER BY seq DESC`, device, conv)
+	if err != nil {
+		return nil, false, false, err
+	}
+	defer rows.Close()
+	var rev []turn
+	size := 0
+	for rows.Next() {
+		var t turn
+		if err := rows.Scan(&t.role, &t.content); err != nil {
+			return nil, false, false, err
+		}
+		t.content, _ = limitChars(t.content, historyMsgChars)
+		size += len(t.content) + 12
+		if size > historyBytes {
+			older = true
+			break
+		}
+		rev = append(rev, t)
+	}
+	for i := len(rev) - 1; i >= 0; i-- {
+		msgs = append(msgs, rev[i])
+	}
+	return msgs, older, true, rows.Err()
 }
 
 // ------------------------------------------------------------ retention
