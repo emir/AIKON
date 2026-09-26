@@ -1,0 +1,5 @@
+.env
+secrets/
+certs/
+*.db
+*.db-*

@@ -1,0 +1,4 @@
+# Copy to app.local.properties (gitignored) and set your server's address.
+# It is written into the JAD/manifest as ClaudeS40-Gateway (not a secret).
+# The phone must be able to verify its certificate (see docs/SETUP.md).
+GATEWAY_URL=https://203.0.113.10

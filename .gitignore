@@ -1,0 +1,10 @@
+.DS_Store
+*.log
+# private material: never commit
+*.key
+*.pem
+*.csr
+*.srl
+*.cer
+secrets/
+.env

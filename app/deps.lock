@@ -1,0 +1,8 @@
+# Build dependencies (none are packaged into the application JAR).
+# name  sha256  license  url
+# Downloaded to .deps/j2me/ (gitignored) by tools/fetch_deps.sh, which verifies every hash.
+ecj-3.33.0.jar	f7686c4960cf70c2ebc5c500a73a8cfc04541b730c18f1c5c21329889b137f45	EPL-2.0	https://repo1.maven.org/maven2/org/eclipse/jdt/ecj/3.33.0/ecj-3.33.0.jar
+cldcapi11-2.0.4.jar	f86f41bfb4097e4bd9cdfeca528960f6977cbda0f5785342adef9909a6a3baef	LGPL (MicroEmulator)	https://repo1.maven.org/maven2/org/microemu/cldcapi11/2.0.4/cldcapi11-2.0.4.jar
+midpapi20-2.0.4.jar	b7f6ed5e0344c7000643ecc114e6edff3587e8e77face546af0e12ffd6dbe826	LGPL (MicroEmulator)	https://repo1.maven.org/maven2/org/microemu/midpapi20/2.0.4/midpapi20-2.0.4.jar
+proguard-7.9.1.zip	159a5c81f7a293520496b5896e3a2b8d56dff9d8d168b893188fb1a12525c4bb	GPL-2.0	https://github.com/Guardsquare/proguard/releases/download/v7.9.1/proguard-7.9.1.zip
+proguard-7.9.1/lib/proguard.jar	cf36e761a28b4029b9b950880b0c09004eaae70727840e5c65cdc70d381e379d	GPL-2.0	extracted from proguard-7.9.1.zip

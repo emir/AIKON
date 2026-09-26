@@ -1,0 +1,124 @@
+#!/usr/bin/env python3
+"""
+Deterministic MIDlet packaging: JAR first, then JAD from the final JAR.
+
+  package.py app.properties CLASSES_DIR DIST_DIR [LOCAL_PROPERTIES]
+
+Claude S40 differences: display name and file base differ ("Claude S40" /
+ClaudeS40.*), MIDlet-Description, one optional permission
+(MIDlet-Permissions-Opt: https), and an optional ClaudeS40-Gateway URL taken
+from an untracked app.local.properties. Secrets are never packaged.
+
+- Manifest is the first entry; entries sorted; fixed timestamps; fixed
+  permissions; deflate level 9 -> same inputs give the same bytes.
+- JAD is written after the JAR is closed; MIDlet-Jar-Size is the real size.
+- Only MIDlet-Permissions-Opt (HTTPS); no install/delete notify URLs, no push.
+"""
+
+import hashlib
+import os
+import sys
+import zipfile
+
+FIXED_TIME = (2000, 1, 1, 0, 0, 0)
+
+
+def read_props(path):
+    props = {}
+    for line in open(path, encoding="utf-8"):
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        k, v = line.split("=", 1)
+        props[k.strip()] = v.strip()
+    return props
+
+
+def attributes(p, local):
+    # order matters only for readability; same list used for manifest and JAD
+    attrs = [
+        ("MIDlet-Name", p["NAME"]),
+        ("MIDlet-Vendor", p["VENDOR"]),
+        ("MIDlet-Version", p["VERSION"]),
+        ("MIDlet-Description", p["DESCRIPTION"]),
+        ("MIDlet-1", f"{p['NAME']},{p.get('ICON', '')},{p['MAIN_CLASS']}"),
+        ("MicroEdition-Configuration", p["CONFIGURATION"]),
+        ("MicroEdition-Profile", p["PROFILE"]),
+        ("MIDlet-Permissions-Opt", p["PERMISSIONS_OPT"]),
+        ("ClaudeS40-Build", p["BUILD"]),
+    ]
+    url = local.get("GATEWAY_URL", "")
+    if url:
+        if not url.startswith("https://") or any(c in url for c in " \t\r\n"):
+            sys.exit("GATEWAY_URL must be a plain https:// URL")
+        attrs.append(("ClaudeS40-Gateway", url.rstrip("/")))
+    for k, v in attrs:
+        if not v.isascii():
+            sys.exit(f"{k}: JAD/manifest values must be ASCII")
+    return attrs
+
+
+def zinfo(name):
+    zi = zipfile.ZipInfo(name, date_time=FIXED_TIME)
+    zi.compress_type = zipfile.ZIP_DEFLATED
+    zi.create_system = 0
+    zi.external_attr = 0
+    return zi
+
+
+def main():
+    props_path, classes, dist = sys.argv[1:4]
+    local_path = sys.argv[4] if len(sys.argv) > 4 else ""
+    res_dir = sys.argv[5] if len(sys.argv) > 5 else ""
+    p = read_props(props_path)
+    local = read_props(local_path) if local_path and os.path.exists(local_path) else {}
+    attrs = attributes(p, local)
+    os.makedirs(dist, exist_ok=True)
+
+    jar_name = p["FILE_BASE"] + ".jar"
+    jad_name = p["FILE_BASE"] + ".jad"
+    jar_path = os.path.join(dist, jar_name)
+    jad_path = os.path.join(dist, jad_name)
+
+    manifest = "Manifest-Version: 1.0\r\n" + "".join(
+        f"{k}: {v}\r\n" for k, v in attrs) + "\r\n"
+
+    files = []
+    for dp, dn, fn in os.walk(classes):
+        for f in fn:
+            full = os.path.join(dp, f)
+            files.append(os.path.relpath(full, classes).replace(os.sep, "/"))
+    files.sort()
+    resources = []
+    if res_dir:
+        for f in sorted(os.listdir(res_dir)):
+            resources.append(f)
+
+    with zipfile.ZipFile(jar_path, "w") as z:
+        z.writestr(zinfo("META-INF/MANIFEST.MF"), manifest.encode("utf-8"),
+                   compresslevel=9)
+        for rel in files:
+            with open(os.path.join(classes, rel), "rb") as f:
+                z.writestr(zinfo(rel), f.read(), compresslevel=9)
+        for rel in resources:
+            with open(os.path.join(res_dir, rel), "rb") as f:
+                z.writestr(zinfo(rel), f.read(), compresslevel=9)
+
+    size = os.path.getsize(jar_path)
+    jad = "".join(f"{k}: {v}\n" for k, v in attrs)
+    jad += f"MIDlet-Jar-URL: {jar_name}\n"
+    jad += f"MIDlet-Jar-Size: {size}\n"
+    with open(jad_path, "w", encoding="utf-8", newline="") as f:
+        f.write(jad)
+
+    with open(os.path.join(dist, "SHA256SUMS"), "w") as f:
+        for name in (jar_name, jad_name):
+            h = hashlib.sha256(open(os.path.join(dist, name), "rb").read()).hexdigest()
+            f.write(f"{h}  {name}\n")
+
+    print(f"{jar_path}: {size} bytes")
+    print(f"{jad_path}: {os.path.getsize(jad_path)} bytes")
+
+
+if __name__ == "__main__":
+    main()

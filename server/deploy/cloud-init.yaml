@@ -1,0 +1,16 @@
+#cloud-config
+# Claude S40 relay droplet (Ubuntu 24.04): Docker Engine + compose plugin
+# from Docker's official apt repository, unattended security upgrades.
+# Nothing else. The relay itself is started later by deploy/push.sh.
+package_update: true
+package_upgrade: true
+packages: [ca-certificates, curl, unattended-upgrades]
+runcmd:
+  - install -m 0755 -d /etc/apt/keyrings
+  - curl -fsSL https://download.docker.com/linux/ubuntu/gpg -o /etc/apt/keyrings/docker.asc
+  - chmod a+r /etc/apt/keyrings/docker.asc
+  - sh -c '. /etc/os-release && echo "deb [arch=$(dpkg --print-architecture) signed-by=/etc/apt/keyrings/docker.asc] https://download.docker.com/linux/ubuntu $VERSION_CODENAME stable" > /etc/apt/sources.list.d/docker.list'
+  - apt-get update
+  - apt-get install -y docker-ce docker-ce-cli containerd.io docker-compose-plugin
+  - systemctl enable --now docker
+  - touch /var/lib/claude-s40-ready

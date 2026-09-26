@@ -1,0 +1,40 @@
+# Claude S40 server. On the VPS, in this directory:
+#   certs/server-chain.pem, certs/server.key   phone-facing TLS (our own CA)
+#   secrets/anthropic_api_key                  Claude API key (only when MOCK_ANTHROPIC=0)
+#   secrets/admin_token                        generated on the server by deploy/push.sh
+#   .env                                       settings below (no secrets)
+#
+#   docker compose up -d
+#   docker compose logs -f        # JSON lines: method/path/status/ms/TLS, no content
+services:
+  server:
+    build: .
+    image: claude-s40-server:0.2.0
+    pull_policy: never
+    environment:
+      ENVIRONMENT: ${ENVIRONMENT:-production}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5}
+      CLAUDE_EFFORT: ${CLAUDE_EFFORT:-low}
+      CLAUDE_FALLBACKS: ${CLAUDE_FALLBACKS:-default}
+      MOCK_ANTHROPIC: ${MOCK_ANTHROPIC:-1}
+      DAILY_REQUEST_LIMIT: ${DAILY_REQUEST_LIMIT:-100}
+      DAILY_OUTPUT_TOKEN_LIMIT: ${DAILY_OUTPUT_TOKEN_LIMIT:-100000}
+      ADMIN_LISTEN: 0.0.0.0:9090
+    ports:
+      - "443:8443"
+      - "127.0.0.1:9090:9090"   # admin: reachable only on the server itself
+    volumes:
+      - ./certs:/certs:ro
+      - ./secrets:/run/secrets:ro
+      - s40data:/data
+    read_only: true
+    cap_drop: [ALL]
+    security_opt: ["no-new-privileges:true"]
+    mem_limit: 128m
+    pids_limit: 128
+    restart: unless-stopped
+    logging:
+      driver: json-file
+      options: { max-size: "10m", max-file: "5" }
+volumes:
+  s40data:

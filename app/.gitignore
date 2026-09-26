@@ -1,0 +1,4 @@
+build/
+dist/
+.deps/
+app.local.properties
