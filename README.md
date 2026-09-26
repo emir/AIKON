@@ -36,7 +36,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~52 KB JAR, English + Turkish UI, splash + jingle, chat bubbles, quick prompts, dark mode, pairing without typing a long code. Reproducible build with 42 package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~62 KB JAR, English + Turkish UI, splash + jingle, chat bubbles, web search (news, weather, rates: the phone's own browser can't open today's web), earlier chats from the server, long replies in parts, keypad shortcuts, optional offline copy of the last chat, quick prompts, dark mode, pairing without typing a long code. Reproducible build with 42 package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
@@ -78,11 +78,14 @@ deployment), OpenSSL or LibreSSL.
 
 - The Claude API key lives only on your server. The phone gets a per-device,
   revocable access token through pairing.
-- Chats are stored on your server for 30 days after the last message; no
-  chat history is kept on the phone. Logs contain no message text.
+- Chats are stored on your server for 30 days after the last message. The
+  phone keeps the last chat only if you turn on "Keep last chat on phone".
+  Logs contain no message text.
 - Every message is a Claude API call billed to your key. The server enforces
-  per-device daily request and output-token limits and never retries a paid
-  call automatically. Set a spending limit in the Claude Console.
+  per-device daily request, output-token and web-search limits and never
+  retries a paid call automatically. Web searches are billed per search and
+  their results count as input tokens. Set a spending limit in the Claude
+  Console.
 
 ## License
 

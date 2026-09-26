@@ -9,18 +9,20 @@ import javax.microedition.lcdui.Graphics;
 
 /**
  * Main menu with drawn icons. UP/DOWN (game actions) move, FIRE or "Seç"
- * opens, number keys 1-7 (Canvas.KEY_NUMx constants) jump directly.
+ * opens, number keys 1-8 (Canvas.KEY_NUMx constants) jump directly.
  * Softkeys are standard Commands.
  */
 final class HomeCanvas extends Canvas implements CommandListener {
 
     private final String[] titles = {
-        L.s("Sohbet", "Chat"), L.s("Hızlı sorular", "Quick prompts"), L.s("Yeni sohbet", "New chat"),
+        L.s("Sohbet", "Chat"), L.s("Sohbetler", "Chats"), L.s("Hızlı sorular", "Quick prompts"),
+        L.s("Yeni sohbet", "New chat"),
         L.s("Bağlantı testi", "Connection test"), L.s("Ayarlar", "Settings"), L.s("Hakkında", "About"),
         L.s("Çıkış", "Exit") };
     private final String[] hints = {
         L.s("Kaldığın yerden devam et", "Pick up where you left off"),
-        L.s("Çevir, cevapla, özetle...", "Translate, reply, summarize..."),
+        L.s("Önceki sohbetleri aç", "Open earlier chats"),
+        L.s("Web'de ara, çevir, özetle...", "Search the web, translate..."),
         L.s("Temiz bir sayfa aç", "Start fresh"),
         L.s("Sunucuya ulaşıyor muyuz?", "Can we reach the server?"),
         L.s("Görünüm, dil, ses, eşleştirme", "Look, language, sound, pairing"),
@@ -51,7 +53,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
     }
 
     protected void keyPressed(int keyCode) {
-        if (keyCode >= KEY_NUM1 && keyCode <= KEY_NUM7) {
+        if (keyCode >= KEY_NUM1 && keyCode <= KEY_NUM8) {
             selected = keyCode - KEY_NUM1;
             repaint();
             midlet.menuSelected(selected);
@@ -157,22 +159,29 @@ final class HomeCanvas extends Canvas implements CommandListener {
                 g.fillArc(cx + i * (s / 4) - 2, cy - 1, 4, 4, 0, 360);
             }
             break;
-        case 1: // lightning
+        case 1: // list of chats: three lines with dots
+            for (int i = -1; i <= 1; i++) {
+                int ly = cy + i * (s / 3) - 1;
+                g.fillArc(cx - r, ly, 4, 4, 0, 360);
+                g.fillRect(cx - r + 6, ly + 1, s - 6, 2);
+            }
+            break;
+        case 2: // lightning
             g.fillTriangle(cx + 2, cy - r, cx - r / 2, cy + 2, cx + 1, cy + 1);
             g.fillTriangle(cx - 2, cy + r, cx + r / 2, cy - 2, cx - 1, cy - 1);
             break;
-        case 2: // plus in a circle
+        case 3: // plus in a circle
             g.drawArc(cx - r, cy - r, s, s, 0, 360);
             g.fillRect(cx - r / 2, cy - 1, r, 3);
             g.fillRect(cx - 1, cy - r / 2, 3, r);
             break;
-        case 3: // signal bars
+        case 4: // signal bars
             for (int i = 0; i < 4; i++) {
                 int bh = (i + 1) * s / 4;
                 g.fillRect(cx - r + i * (s / 4), cy + r - bh, Math.max(2, s / 6), bh);
             }
             break;
-        case 4: // gear-ish: ring with teeth
+        case 5: // gear-ish: ring with teeth
             g.fillArc(cx - r, cy - r, s, s, 0, 360);
             g.setColor(Theme.bg);
             g.fillArc(cx - r / 2, cy - r / 2, r, r, 0, 360);
@@ -182,7 +191,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
             g.fillRect(cx - r - 2, cy - 1, 4, 3);
             g.fillRect(cx + r - 2, cy - 1, 4, 3);
             break;
-        case 5: // info "i"
+        case 6: // info "i"
             g.drawArc(cx - r, cy - r, s, s, 0, 360);
             g.fillRect(cx - 1, cy - r / 2, 3, 3);
             g.fillRect(cx - 1, cy - r / 6, 3, r * 2 / 3 + 2);

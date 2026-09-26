@@ -13,9 +13,10 @@ import javax.microedition.rms.RecordStoreException;
  * Settings kept on the phone (RMS record store "cs40cfg", one record).
  *
  * Stored: gateway URL, access code, test mode flag, the URL for which the
- * connection test last passed, and look & feel (theme, text size, sound,
- * vibration, language). No chat content is ever stored. Format 1 and 2
- * records (0.1.x, 0.2.x) are still read.
+ * connection test last passed, look & feel (theme, text size, sound,
+ * vibration, language), web search on/off and whether the last chat is kept
+ * on the phone (ChatStore; off by default). No chat content is stored here.
+ * Format 1-3 records (0.1.x-0.3.x) are still read.
  *
  * The access code is typed on the phone by the user; it is never part of
  * the JAR/JAD. Removing the application deletes this record store.
@@ -23,7 +24,7 @@ import javax.microedition.rms.RecordStoreException;
 final class Settings {
 
     private static final String STORE = "cs40cfg";
-    private static final int FORMAT = 3;
+    private static final int FORMAT = 4;
 
     String url = "";
     String token = "";
@@ -38,6 +39,10 @@ final class Settings {
     boolean vibrate = true;
     /** L.AUTO (follow the phone), L.TURKISH or L.ENGLISH. */
     int lang = L.AUTO;
+    /** Let Claude search the web (the server may still limit it). */
+    boolean webSearch = true;
+    /** Keep the last chat on the phone for offline reading (ChatStore). */
+    boolean saveChat;
 
     boolean connectionVerified() {
         return url.length() > 0 && url.equals(verifiedUrl);
@@ -55,20 +60,24 @@ final class Settings {
             byte[] b = rs.getRecord(1);
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(b));
             int format = in.readInt();
-            if (format >= 1 && format <= 3) {
+            if (format >= 1 && format <= FORMAT) {
                 url = in.readUTF();
                 token = in.readUTF();
                 testMode = in.readBoolean();
                 verifiedUrl = in.readUTF();
             }
-            if (format >= 2 && format <= 3) {
+            if (format >= 2 && format <= FORMAT) {
                 theme = in.readByte();
                 fontSize = in.readByte();
                 sound = in.readBoolean();
                 vibrate = in.readBoolean();
             }
-            if (format == 3) {
+            if (format >= 3 && format <= FORMAT) {
                 lang = in.readByte();
+            }
+            if (format == 4) {
+                webSearch = in.readBoolean();
+                saveChat = in.readBoolean();
             }
         } catch (RecordStoreException e) {
             // first start: nothing stored yet
@@ -98,6 +107,8 @@ final class Settings {
             out.writeBoolean(sound);
             out.writeBoolean(vibrate);
             out.writeByte(lang);
+            out.writeBoolean(webSearch);
+            out.writeBoolean(saveChat);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);

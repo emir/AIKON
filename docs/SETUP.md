@@ -143,11 +143,23 @@ S40_MOCK=0 server/deploy/push.sh $SERVER --execute
 Settings you can pass to `push.sh`: `S40_MODEL` (default `claude-opus-5`),
 `S40_EFFORT` (`low`), `S40_FALLBACKS` (`default` = server-side refusal
 fallback; `off` for models without it), `S40_REQ_LIMIT` (100/day),
-`S40_TOK_LIMIT` (100000 output tokens/day). Pairings and chats survive
-redeploys (Docker volume `s40data`).
+`S40_TOK_LIMIT` (100000 output tokens/day), `S40_SEARCH` (`1` = Claude may
+search the web, `0` = never), `S40_SEARCH_LIMIT` (30 searches/day per
+phone), `S40_SEARCH_MAX_USES` (3 per message), and optionally
+`S40_SEARCH_COUNTRY` (e.g. `TR`), `S40_SEARCH_CITY`, `S40_SEARCH_TIMEZONE`
+(e.g. `Europe/Istanbul`) for local results. Web searches are billed per
+search on top of tokens. Pairings and chats survive redeploys (Docker
+volume `s40data`).
 
 Send "Translate to English: Günaydın" from the phone, then "Make it
-shorter" in the same chat.
+shorter" in the same chat. Then try Quick prompts → Weather: a reply
+marked "searched the web" ends with "Web: <sources>".
+
+On the phone: **Chats** lists earlier conversations (open one to continue
+it); in a chat, **0** loads the rest of a long reply (free, Claude is not
+asked again), **2/8** page, **1/3** jump between messages, **\*/#** top and
+end, **5** write. Settings → Claude: web search on/off, keep the last chat
+on the phone for offline reading.
 
 ## 9. Day to day
 
@@ -172,4 +184,5 @@ settings), then revoke the old device.
 | HTTP code but "not a Claude S40 server reply" | operator proxy or wrong address |
 | "No credits" | the Claude API account has no credit balance |
 | "Daily limit reached" | raise `S40_REQ_LIMIT` / `S40_TOK_LIMIT` |
+| Claude no longer searches the web | the phone's daily search budget is used up (`S40_SEARCH_LIMIT`) or web search is off in Settings / `S40_SEARCH=0` |
 | "Access code invalid or revoked" | pair again |

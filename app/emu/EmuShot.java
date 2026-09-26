@@ -72,7 +72,7 @@ public class EmuShot {
 
         command("Quick prompts");
         save("prompts");
-        select(0);                            // "Translate to English" -> editor
+        select(4);                            // "Translate to English" -> editor
         type("Translate to English: Bu telefon 2007'den kalma ama hâlâ çalışıyor.");
         command("Send");
         Thread.sleep(200);
@@ -90,6 +90,8 @@ public class EmuShot {
         key(Mobile.NOKIA_UP);
         key(Mobile.NOKIA_UP);
         save("chat_scrolled");
+        key(Mobile.KEY_STAR);                 // shortcut: top
+        save("chat_top");
 
         // dark theme, large text
         setting("theme", new Integer(1));
@@ -103,11 +105,11 @@ public class EmuShot {
 
         setting("fontSize", new Integer(1));
         applyTheme();
-        key(Mobile.KEY_NUM6);                 // About
+        key(Mobile.KEY_NUM7);                 // About
         save("about");
         command("Back");
 
-        key(Mobile.KEY_NUM7);                 // Exit
+        key(Mobile.KEY_NUM8);                 // Exit
         settle();
         System.out.println("EMU: exit did not terminate the MIDlet");
         System.exit(3);

@@ -19,8 +19,10 @@ import javax.microedition.lcdui.Graphics;
  * way an animated "Claude yazıyor" bubble is shown.
  *
  * Softkeys are standard Commands; scrolling uses getGameAction() (UP/DOWN one
- * line, LEFT/RIGHT one page); FIRE opens the editor. Sizes come from
- * getWidth()/getHeight() and font metrics only.
+ * line, LEFT/RIGHT one page); FIRE opens the editor. Number keys (checked
+ * before game actions, which also map 2/4/6/8/5 on Nokia): 2/8 page up/down,
+ * 1/3 previous/next message, * top, # bottom, 5 write, 0 the rest of a long
+ * reply. Sizes come from getWidth()/getHeight() and font metrics only.
  */
 final class ChatCanvas extends Canvas implements CommandListener, ChatSession.View {
 
@@ -34,6 +36,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     final Command writeCmd = new Command(L.s("Yaz", "Write"), Command.SCREEN, 1);
     final Command promptsCmd = new Command(L.s("Hızlı sorular", "Quick prompts"), Command.SCREEN, 2);
     final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.SCREEN, 3);
+    final Command moreCmd = new Command(L.s("Devamını göster", "Show more"), Command.SCREEN, 1);
+    final Command chatsCmd = new Command(L.s("Sohbetler", "Chats"), Command.SCREEN, 4);
     final Command newCmd = new Command(L.s("Yeni sohbet", "New chat"), Command.SCREEN, 4);
     final Command deleteCmd = new Command(L.s("Sohbeti sil", "Delete chat"), Command.SCREEN, 5);
     final Command backCmd = new Command(L.s("Menü", "Menu"), Command.BACK, 1);
@@ -44,6 +48,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         String[] lines;
         String meta;
         boolean truncated;
+        boolean more;
         int y;
         int h;
         int bw;
@@ -58,6 +63,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private boolean jumpToLast;
     private boolean followTyping;
     private boolean retryShown;
+    private boolean moreShown;
     private Timer anim;
     private int animFrame;
 
@@ -66,6 +72,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         this.session = session;
         addCommand(writeCmd);
         addCommand(promptsCmd);
+        addCommand(chatsCmd);
         addCommand(newCmd);
         addCommand(deleteCmd);
         addCommand(backCmd);
@@ -85,6 +92,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             midlet.showPrompts();
         } else if (c == retryCmd) {
             err = session.retry();
+        } else if (c == moreCmd) {
+            err = session.more();
+        } else if (c == chatsCmd) {
+            midlet.showChats();
         } else if (c == newCmd) {
             err = session.newChat();
         } else if (c == deleteCmd) {
@@ -109,12 +120,12 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         if (newReply) {
             midlet.replyFeedback();
         }
-        updateRetryCommand();
+        updateCommands();
         updateAnimation();
         repaint();
     }
 
-    private synchronized void updateRetryCommand() {
+    private synchronized void updateCommands() {
         boolean want = session.canRetry();
         if (want != retryShown) {
             if (want) {
@@ -123,6 +134,15 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 removeCommand(retryCmd);
             }
             retryShown = want;
+        }
+        want = session.canMore();
+        if (want != moreShown) {
+            if (want) {
+                addCommand(moreCmd);
+            } else {
+                removeCommand(moreCmd);
+            }
+            moreShown = want;
         }
     }
 
@@ -144,7 +164,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     protected void showNotify() {
-        updateRetryCommand();
+        updateCommands();
         updateAnimation();
     }
 
@@ -163,11 +183,74 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     protected void keyPressed(int keyCode) {
-        scroll(keyCode);
+        if (!numberKey(keyCode, false)) {
+            scroll(keyCode);
+        }
     }
 
     protected void keyRepeated(int keyCode) {
-        scroll(keyCode);
+        if (!numberKey(keyCode, true)) {
+            scroll(keyCode);
+        }
+    }
+
+    /** Returns true if the key was a shortcut (see the class comment). */
+    private boolean numberKey(int keyCode, boolean repeat) {
+        if (keyCode == KEY_NUM5) {
+            if (!repeat && !session.busy()) {
+                midlet.showComposer(null);
+            }
+            return true;
+        }
+        if (keyCode == KEY_NUM0) {
+            String err = repeat || !session.canMore() ? null : session.more();
+            if (err != null) {
+                midlet.info(err, this);
+            }
+            return true;
+        }
+        synchronized (this) {
+            int line = Theme.font.getHeight();
+            int page = Math.max(line, viewH() - line);
+            switch (keyCode) {
+            case KEY_NUM2:
+                scroll -= page;
+                break;
+            case KEY_NUM8:
+                scroll += page;
+                break;
+            case KEY_STAR:
+                scroll = 0;
+                break;
+            case KEY_POUND:
+                scroll = Integer.MAX_VALUE / 2; // clamped in paint()
+                break;
+            case KEY_NUM1:
+            case KEY_NUM3:
+                scroll = messageStart(keyCode == KEY_NUM3);
+                break;
+            default:
+                return false;
+            }
+            followTyping = false;
+        }
+        repaint();
+        return true;
+    }
+
+    /** Scroll position of the previous / next message start relative to the view. */
+    private int messageStart(boolean forward) {
+        int best = scroll;
+        for (int i = 0; i < blocks.size(); i++) {
+            int y = Math.max(0, ((Block) blocks.elementAt(i)).y - PAD);
+            if (forward && y > scroll + 1) {
+                return y;
+            }
+            if (!forward && y < scroll - 1) {
+                best = y;
+            }
+        }
+        return forward ? Integer.MAX_VALUE / 2 : (best == scroll ? 0 : best);
     }
 
     private void scroll(int keyCode) {
@@ -234,12 +317,15 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             Block b = new Block();
             b.kind = e.kind;
             b.truncated = e.truncated;
+            b.more = e.more();
             boolean bubble = isBubble(e.kind);
             int textW = bubble ? maxBubble - 2 * BUBBLE_PAD : w - 4 * PAD;
             Vector lines = new Vector();
             Text.wrap(e.text, f, textW, lines);
             if (e.truncated) {
                 lines.addElement(L.s("(yanıt kısaltıldı)", "(reply shortened)"));
+            } else if (e.more()) {
+                lines.addElement(L.s("(devamı var: 0 tuşu)", "(more: press 0)"));
             }
             b.lines = new String[lines.size()];
             lines.copyInto(b.lines);
@@ -250,7 +336,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             String who = e.kind == ChatSession.KIND_USER ? L.s("Sen", "You")
                     : e.kind == ChatSession.KIND_CLAUDE ? "Claude"
                     : e.kind == ChatSession.KIND_TEST ? L.s("Test modu (sahte yanıt)", "Test mode (fake reply)") : null;
-            b.meta = who == null ? null : who + " · " + hhmm(e.time);
+            b.meta = who == null ? null : who + (e.time > 0 ? " · " + hhmm(e.time) : "")
+                    + (e.searched > 0 ? L.s(" · web'de arandı", " · searched the web") : "");
             int metaH = b.meta == null ? 0 : Theme.small.getHeight() + 1;
             if (bubble) {
                 b.bw = Math.max(widest, Theme.small.stringWidth(b.meta) + (e.kind == ChatSession.KIND_USER ? 0 : 12))
@@ -360,8 +447,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             ty += Theme.small.getHeight() + 1;
             g.setFont(f);
             for (int k = 0; k < b.lines.length; k++) {
-                boolean note = b.truncated && k == b.lines.length - 1;
-                g.setColor(note ? Theme.error : text);
+                boolean last = k == b.lines.length - 1;
+                g.setColor(b.truncated && last ? Theme.error : b.more && last && !mine ? Theme.accent : text);
                 g.drawString(b.lines[k], x + BUBBLE_PAD, ty, Graphics.TOP | Graphics.LEFT);
                 ty += lh;
             }
@@ -415,7 +502,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.setColor(Theme.muted);
         y += Theme.bold.getHeight() + 4;
         Vector tips = new Vector();
-        Text.wrap(L.s("Orta tuş: yaz. Seçenekler > Hızlı sorular: hazır fikirler.", "Centre key: write. Options > Quick prompts: ideas to start."),
+        Text.wrap(L.s("Orta tuş: yaz. Claude gerekirse web'de arar. 2/8 sayfa, 1/3 mesaj, */# baş/son, 0 devamı.",
+                "Centre key: write. Claude searches the web when needed. 2/8 page, 1/3 message, */# top/end, 0 more."),
                 Theme.small, w - 4 * PAD, tips);
         for (int i = 0; i < tips.size(); i++) {
             g.drawString((String) tips.elementAt(i), cx, y, Graphics.TOP | Graphics.HCENTER);

@@ -1,5 +1,7 @@
 package io.github.emir.claudes40;
 
+import java.util.Vector;
+
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.ChoiceGroup;
@@ -18,9 +20,9 @@ import javax.microedition.midlet.MIDlet;
  * Claude S40: an unofficial Claude client for Nokia Series 40.
  *
  * Screens: animated splash (Splash), main menu (HomeCanvas), chat
- * (ChatCanvas), quick prompts (List), message editor (the phone's own
- * TextBox), connection test (ConnTest), pairing (Pairing), settings and
- * about (Form). English or Turkish UI (L). Networking happens only on
+ * (ChatCanvas), chats on the server (ChatList), quick prompts (List),
+ * message editor (the phone's own TextBox), connection test (ConnTest),
+ * pairing (Pairing), settings and about (Form). English or Turkish UI (L). Networking happens only on
  * worker threads.
  */
 public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
@@ -35,12 +37,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
      * editor. Same order in all four arrays.
      */
     static final String[] TITLES_EN = {
-        "Translate to English", "Translate to Turkish", "Reply to a message", "Write a text for me",
+        "Search the web", "Weather", "Today's news", "Exchange rates", "Translate to English", "Translate to Turkish", "Reply to a message", "Write a text for me",
         "Fix my writing", "Summarize", "Quick answer", "Explain simply", "Calculate / convert",
         "What does it mean?", "What can I cook?", "Help me decide", "How do I...?", "Roast this phone",
     };
 
     static final String[] PROMPTS_EN = {
+        "Search the web and answer briefly: ",
+        "Weather today and tomorrow in: ",
+        "Search the web: the most important news today, 5 short lines.",
+        "Current exchange rate, search the web, numbers first: ",
         "Translate to English: ",
         "Translate to Turkish: ",
         "Write a short, friendly reply to this message: ",
@@ -58,12 +64,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     };
 
     static final String[] TITLES_TR = {
-        "İngilizceye çevir", "Türkçeye çevir", "Mesaja cevap yaz", "Benim için SMS yaz",
+        "Web'de ara", "Hava durumu", "Bugünün haberleri", "Döviz ve altın", "İngilizceye çevir", "Türkçeye çevir", "Mesaja cevap yaz", "Benim için SMS yaz",
         "Yazımı düzelt", "Özetle", "Kısa cevap", "Basitçe anlat", "Hesapla / çevir",
         "Bu ne demek?", "Ne pişirebilirim?", "Karar vermeme yardım et", "Nasıl yapılır?", "Bu telefonu roastla",
     };
 
     static final String[] PROMPTS_TR = {
+        "Web'de ara ve kısaca cevapla: ",
+        "Bugün ve yarın hava durumu, şehir: ",
+        "Web'de ara: bugünün en önemli haberleri, 5 kısa satır.",
+        "Güncel kur, web'de ara, önce rakamlar: ",
         "İngilizceye çevir: ",
         "Türkçeye çevir: ",
         "Bu mesaja kısa ve samimi bir cevap yaz: ",
@@ -96,6 +106,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private ChoiceGroup sizeChoice;
     private ChoiceGroup feedbackChoice;
     private ChoiceGroup testChoice;
+    private ChoiceGroup claudeChoice;
+    private ChatList chatList;
     private ConnTest connTest;
     private Form about;
 
@@ -125,6 +137,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             promptTexts = L.turkish() ? PROMPTS_TR : PROMPTS_EN;
             session = new ChatSession(this);
             chat = new ChatCanvas(this, session);
+            if (settings.saveChat) {
+                Vector saved = ChatStore.load();
+                session.restore(ChatStore.conversation, saved);
+            }
             home = new HomeCanvas(this);
             display.setCurrent(new Splash(this));
             return;
@@ -211,6 +227,31 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             composer.setString("");
         }
         display.setCurrent(composer);
+    }
+
+    /** The server's list of earlier chats. */
+    void showChats() {
+        if (!chatReady()) {
+            return;
+        }
+        if (settings.testMode) {
+            info(L.s("Test modunda sunucudaki sohbetler gösterilmez.", "Server chats are not shown in test mode."), home);
+            return;
+        }
+        if (chatList == null) {
+            chatList = new ChatList(this);
+        }
+        chatList.show(display);
+    }
+
+    /** Opens a chat from ChatList in the chat screen. */
+    void openConversation(String id) {
+        String err = session.open(id);
+        if (err != null) {
+            info(err, chat);
+        } else {
+            showChat();
+        }
     }
 
     void showPrompts() {
@@ -301,9 +342,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             }
             break;
         case 1:
-            showPrompts();
+            showChats();
             break;
         case 2:
+            showPrompts();
+            break;
+        case 3:
             String err = session.newChat();
             if (err != null) {
                 info(err, home);
@@ -311,19 +355,19 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 showChat();
             }
             break;
-        case 3:
+        case 4:
             if (connTest == null) {
                 connTest = new ConnTest(this);
             }
             connTest.show(display);
             break;
-        case 4:
+        case 5:
             showSettings();
             break;
-        case 5:
+        case 6:
             showAbout();
             break;
-        case 6:
+        case 7:
             exit();
             break;
         default:
@@ -356,10 +400,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         testChoice = new ChoiceGroup(L.s("Test modu", "Test mode"), ChoiceGroup.MULTIPLE,
                 new String[] { L.s("Sahte yanıt (ağ kullanılmaz)", "Fake replies (no network)") }, null);
         testChoice.setSelectedIndex(0, settings.testMode);
+        claudeChoice = new ChoiceGroup("Claude", ChoiceGroup.MULTIPLE,
+                new String[] { L.s("Web'de arayabilir (haber, hava, kur...)", "May search the web (news, weather...)"),
+                    L.s("Son sohbeti telefonda sakla", "Keep last chat on phone") }, null);
+        claudeChoice.setSelectedIndex(0, settings.webSearch);
+        claudeChoice.setSelectedIndex(1, settings.saveChat);
         settingsForm.append(langChoice);
         settingsForm.append(themeChoice);
         settingsForm.append(sizeChoice);
         settingsForm.append(feedbackChoice);
+        settingsForm.append(claudeChoice);
         settingsForm.append(urlField);
         settingsForm.append(tokenField);
         settingsForm.append(testChoice);
@@ -411,6 +461,17 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settings.fontSize = fs >= 0 && fs <= 2 ? fs : 1;
         settings.sound = feedbackChoice.isSelected(0);
         settings.vibrate = feedbackChoice.isSelected(1);
+        settings.webSearch = claudeChoice.isSelected(0);
+        boolean keep = claudeChoice.isSelected(1);
+        if (keep != settings.saveChat) {
+            settings.saveChat = keep;
+            if (keep) {
+                session.markUnsaved();
+                session.persist();
+            } else {
+                ChatStore.delete();
+            }
+        }
         String err = settings.save();
         applyLook();
         String done = langChanged
@@ -465,8 +526,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 + "Diğer cihazlarla uyumluluk test edilmedi.",
                 "Tested on: Nokia 6300 RM-217, firmware V06.60. Other phones are untested.")));
         about.append(new StringItem(null, L.s(
-                "Sohbet geçmişi telefonda saklanmaz. Sunucuda son mesajdan 30 gün sonra silinir.",
-                "No chat history is stored on the phone. The server deletes it 30 days after the last message.")));
+                "Sohbetler sunucuda son mesajdan 30 gün sonra silinir. Telefonda yalnızca Ayarlar'da "
+                        + "'Son sohbeti telefonda sakla' açıksa son sohbet tutulur.",
+                "The server deletes chats 30 days after the last message. The phone keeps the last chat only "
+                        + "if 'Keep last chat on phone' is on in Settings.")));
+        about.append(new StringItem(null, L.s(
+                "Web araması Anthropic'in arama aracıyla sunucuda yapılır; telefonun tarayıcısı kullanılmaz.",
+                "Web search runs on the server with Anthropic's search tool, not the phone's browser.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
         about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));

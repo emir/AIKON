@@ -3,7 +3,8 @@ package io.github.emir.claudes40;
 import java.util.Vector;
 
 /**
- * Conversation state in RAM only (nothing is written to the phone).
+ * Conversation state in RAM. Written to the phone (ChatStore) only if the
+ * user turned on Settings > "Keep last chat on phone".
  *
  * - At most one request in flight.
  * - The message being sent stays in `draft` until a definite answer arrives,
@@ -13,6 +14,10 @@ import java.util.Vector;
  *   instead of calling Claude again. Nothing is re-sent automatically.
  * - If the gateway reports "uncertain", the id is dropped; sending the draft
  *   again is a new (paid) request and needs a new user action.
+ * - Long replies arrive in parts. "Devamı" / "Show more" fetches the next
+ *   part of the STORED reply (/v1/more); that never calls Claude again.
+ * - A conversation from the server's list can be opened (/v1/history) and
+ *   continued.
  */
 final class ChatSession implements Runnable, Net.Listener {
 
@@ -26,22 +31,47 @@ final class ChatSession implements Runnable, Net.Listener {
     static final int STATE_SENDING = 1;
     static final int STATE_WAITING = 2;
 
+    private static final int JOB_CHAT = 0;
+    private static final int JOB_DELETE = 1;
+    private static final int JOB_MORE = 2;
+    private static final int JOB_HISTORY = 3;
+
     /** RAM limits for the on-screen transcript. */
     static final int MAX_ENTRIES = 30;
     static final int MAX_CHARS = 12000;
     static final int MAX_MESSAGE = 1000;
 
+    /** One message; immutable (a new part replaces the entry). */
     static final class Entry {
         final int kind;
         final String text;
+        /** The reply is incomplete and nothing more can be fetched. */
         final boolean truncated;
+        /** 0 if unknown (loaded from the server's history). */
         final long time;
+        /** Web searches Claude made for this reply. */
+        final int searched;
+        /** request_id of the reply, for /v1/more; null if not known. */
+        final String request;
+        /** Offset of the next part on the server; null when complete. */
+        final String next;
 
         Entry(int kind, String text, boolean truncated) {
+            this(kind, text, truncated, System.currentTimeMillis(), 0, null, null);
+        }
+
+        Entry(int kind, String text, boolean truncated, long time, int searched, String request, String next) {
             this.kind = kind;
             this.text = text;
             this.truncated = truncated;
-            this.time = System.currentTimeMillis();
+            this.time = time;
+            this.searched = searched;
+            this.request = request;
+            this.next = next;
+        }
+
+        boolean more() {
+            return request != null && next != null;
         }
     }
 
@@ -68,7 +98,13 @@ final class ChatSession implements Runnable, Net.Listener {
     private boolean canRetry;
 
     // work item for the worker thread
-    private boolean deleteJob;
+    private int job;
+    /** Conversation to open (JOB_HISTORY). */
+    private String jobConversation;
+    /** Entry whose next part is being fetched (JOB_MORE). */
+    private Entry jobEntry;
+    /** Session version last written to ChatStore. */
+    private int savedVersion = -1;
 
     ChatSession(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
@@ -108,9 +144,25 @@ final class ChatSession implements Runnable, Net.Listener {
         return state == STATE_IDLE && canRetry && pendingId != null;
     }
 
-    /** True while a chat request (not a delete) is running. */
+    /** True while a chat request (not a delete or a load) is running. */
     synchronized boolean typing() {
-        return state != STATE_IDLE && !deleteJob;
+        return state != STATE_IDLE && job == JOB_CHAT;
+    }
+
+    /** A reply has a further part on the server. */
+    synchronized boolean canMore() {
+        return state == STATE_IDLE && lastMore() != null;
+    }
+
+    /** Called with the lock held. */
+    private Entry lastMore() {
+        for (int i = entries.size() - 1; i >= 0; i--) {
+            Entry e = (Entry) entries.elementAt(i);
+            if (e.more()) {
+                return e;
+            }
+        }
+        return null;
     }
 
     synchronized int entryCount() {
@@ -151,7 +203,7 @@ final class ChatSession implements Runnable, Net.Listener {
             pendingConversation = conversation;
             canRetry = false;
             add(KIND_USER, t, false);
-            begin(false);
+            begin(JOB_CHAT);
         }
         changed(false);
         return null;
@@ -164,10 +216,60 @@ final class ChatSession implements Runnable, Net.Listener {
                 return L.s("Tekrar denenecek istek yok.", "Nothing to retry.");
             }
             canRetry = false;
-            begin(false);
+            begin(JOB_CHAT);
         }
         changed(false);
         return null;
+    }
+
+    /** Fetches the next part of the newest incomplete reply (no Claude call). */
+    String more() {
+        synchronized (this) {
+            if (state != STATE_IDLE) {
+                return L.s("Önceki istek sürüyor.", "A request is still running.");
+            }
+            Entry e = lastMore();
+            if (e == null) {
+                return L.s("Yanıtın devamı yok.", "There is no more to this reply.");
+            }
+            jobEntry = e;
+            begin(JOB_MORE);
+        }
+        changed(false);
+        return null;
+    }
+
+    /** Opens a conversation from the server's list (replaces the transcript). */
+    String open(String conv) {
+        synchronized (this) {
+            if (state != STATE_IDLE) {
+                return L.s("Önceki istek sürüyor.", "A request is still running.");
+            }
+            jobConversation = conv;
+            begin(JOB_HISTORY);
+        }
+        changed(false);
+        return null;
+    }
+
+    /** Puts a transcript saved on the phone back (start-up, ChatStore). */
+    void restore(String conv, Vector saved) {
+        synchronized (this) {
+            if (saved == null || saved.size() == 0) {
+                return;
+            }
+            resetLocal();
+            // "test" (test mode) or an unexpected id: start a new conversation when writing
+            conversation = conv != null && conv.length() == 16 ? conv : "";
+            add(KIND_INFO, L.s("Bu telefonda kayıtlı sohbet. Ağ olmadan da okunur; yazınca kaldığı yerden sürer.",
+                    "Chat saved on this phone. Readable offline; write to continue it."), false);
+            for (int i = 0; i < saved.size(); i++) {
+                entries.addElement(saved.elementAt(i));
+            }
+            trim();
+            savedVersion = version;
+        }
+        changed(false);
     }
 
     /** Starts a new conversation; the old one stays on the server until it expires. */
@@ -196,7 +298,7 @@ final class ChatSession implements Runnable, Net.Listener {
                 changed(false);
                 return null;
             }
-            begin(true);
+            begin(JOB_DELETE);
         }
         changed(false);
         return null;
@@ -212,12 +314,25 @@ final class ChatSession implements Runnable, Net.Listener {
         version++;
     }
 
-    private void begin(boolean delete) {
-        deleteJob = delete;
+    private void begin(int j) {
+        job = j;
         state = STATE_SENDING;
-        status = delete ? L.s("Siliniyor...", "Deleting...") : L.s("Gönderiliyor...", "Sending...");
+        status = jobLabel();
         version++;
         new Thread(this).start();
+    }
+
+    private String jobLabel() {
+        switch (job) {
+        case JOB_DELETE:
+            return L.s("Siliniyor...", "Deleting...");
+        case JOB_MORE:
+            return L.s("Devamı yükleniyor...", "Loading more...");
+        case JOB_HISTORY:
+            return L.s("Sohbet yükleniyor...", "Loading chat...");
+        default:
+            return L.s("Gönderiliyor...", "Sending...");
+        }
     }
 
     // ------------------------------------------------------------ worker
@@ -226,7 +341,7 @@ final class ChatSession implements Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 state = STATE_WAITING;
-                status = deleteJob ? L.s("Siliniyor...", "Deleting...") : L.s("Yanıt bekleniyor...", "Waiting for reply...");
+                status = job == JOB_CHAT ? L.s("Yanıt bekleniyor...", "Waiting for reply...") : jobLabel();
                 version++;
             }
             changed(false);
@@ -234,22 +349,38 @@ final class ChatSession implements Runnable, Net.Listener {
     }
 
     public void run() {
-        boolean delete;
+        int j;
         String id;
         String text;
         String conv;
+        Entry more;
         synchronized (this) {
-            delete = deleteJob;
+            j = job;
             id = pendingId;
             text = pendingText;
-            conv = delete ? conversation : pendingConversation;
+            conv = j == JOB_DELETE ? conversation : j == JOB_HISTORY ? jobConversation : pendingConversation;
+            more = jobEntry;
         }
         Settings s = midlet.settings;
-        if (delete) {
+        if (j == JOB_DELETE) {
             Net.Result r = Net.request(s.url + "/v1/delete", "POST", s.token,
                     S40Message.format(new String[] { "conversation" }, new String[] { conv }, ""),
                     midlet.userAgent(), this);
             finishDelete(r);
+            return;
+        }
+        if (j == JOB_MORE) {
+            Net.Result r = Net.request(s.url + "/v1/more", "POST", s.token,
+                    S40Message.format(new String[] { "request", "offset" }, new String[] { more.request, more.next }, ""),
+                    midlet.userAgent(), this);
+            finishMore(r, more);
+            return;
+        }
+        if (j == JOB_HISTORY) {
+            Net.Result r = Net.request(s.url + "/v1/history", "POST", s.token,
+                    S40Message.format(new String[] { "conversation" }, new String[] { conv }, ""),
+                    midlet.userAgent(), this);
+            finishHistory(r, conv);
             return;
         }
         if (s.testMode) {
@@ -257,7 +388,8 @@ final class ChatSession implements Runnable, Net.Listener {
             return;
         }
         Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token,
-                S40Message.format(new String[] { "request", "conversation" }, new String[] { id, conv }, text),
+                S40Message.format(new String[] { "request", "conversation", "search" },
+                        new String[] { id, conv, s.webSearch ? "1" : "0" }, text),
                 midlet.userAgent(), this);
         finishChat(r);
     }
@@ -322,11 +454,14 @@ final class ChatSession implements Runnable, Net.Listener {
         }
         if ("ok".equals(st)) {
             conversation = m.field("conversation");
-            boolean cut = m.flag("truncated") || bodyCut;
+            // "truncated" is also set while parts are left ("more")
+            String next = m.flag("more") && !bodyCut && m.field("next").length() > 0 ? m.field("next") : null;
+            boolean cut = (m.flag("truncated") && next == null) || bodyCut;
             if (m.flag("refused")) {
                 add(KIND_INFO, L.s("Claude bu isteğe yanıt vermedi.", "Claude declined to answer this one."), false);
             } else {
-                add(m.flag("mock") ? KIND_TEST : KIND_CLAUDE, m.text, cut);
+                add(new Entry(m.flag("mock") ? KIND_TEST : KIND_CLAUDE, m.text, cut, System.currentTimeMillis(),
+                        Text.parseInt(m.field("searched"), 0), m.field("request"), next));
             }
             resolved();
             return true;
@@ -413,6 +548,92 @@ final class ChatSession implements Runnable, Net.Listener {
         version++;
     }
 
+    private void finishMore(Net.Result r, Entry e) {
+        synchronized (this) {
+            state = STATE_IDLE;
+            status = "";
+            S40Message m = r.msg;
+            int i = entries.indexOf(e);
+            if (r.ok() && m != null && "ok".equals(m.field("status")) && i >= 0) {
+                String next = m.flag("more") && !r.bodyCut && m.field("next").length() > 0 ? m.field("next") : null;
+                boolean cut = (m.flag("truncated") && next == null) || r.bodyCut;
+                entries.setElementAt(new Entry(e.kind, e.text + m.text, cut, e.time, e.searched, e.request, next), i);
+                trim();
+            } else if (i >= 0 && m != null && "not_found".equals(m.field("status"))) {
+                // the server no longer has the stored reply (kept 7 days): stop offering "more"
+                entries.setElementAt(new Entry(e.kind, e.text, true, e.time, e.searched, null, null), i);
+                add(KIND_INFO, L.s("Yanıtın devamı sunucuda artık yok.", "The rest of this reply is no longer on the server."),
+                        false);
+            } else if (i >= 0) {
+                status = L.s("Devamı alınamadı", "Could not load more");
+                add(KIND_ERROR, L.s("Yanıtın devamı yüklenemedi. 0 tuşuyla tekrar deneyin (ücretsiz; Claude'a tekrar sorulmaz). ",
+                        "Could not load the rest. Press 0 to try again (free; Claude is not asked again). ")
+                        + (r.ok() ? (m == null ? "?" : m.field("status")) : Net.explain(r)), false);
+            }
+            jobEntry = null;
+            version++;
+        }
+        changed(false);
+    }
+
+    private void finishHistory(Net.Result r, String conv) {
+        synchronized (this) {
+            state = STATE_IDLE;
+            status = "";
+            S40Message m = r.msg;
+            String st = m == null ? "" : m.field("status");
+            if (r.ok() && "ok".equals(st)) {
+                resetLocal();
+                conversation = conv;
+                if (m.flag("older")) {
+                    add(KIND_INFO, L.s("Daha eski mesajlar gösterilmiyor (Claude onları hâlâ hatırlıyor).",
+                            "Older messages are not shown (Claude still remembers them)."), false);
+                }
+                parseHistory(m.text, r.bodyCut);
+                add(KIND_INFO, L.s("Sohbet açıldı. Yazarak devam edebilirsiniz.", "Chat opened. Write to continue it."), false);
+            } else if ("conversation_not_found".equals(st)) {
+                status = L.s("Sohbet yok", "Chat not found");
+                add(KIND_ERROR, L.s("Sohbet sunucuda bulunamadı (silinmiş veya süresi dolmuş olabilir).",
+                        "Chat not found on the server (deleted or expired)."), false);
+            } else {
+                status = L.s("Yüklenemedi", "Not loaded");
+                add(KIND_ERROR, L.s("Sohbet yüklenemedi. ", "Could not load the chat. ")
+                        + (r.ok() ? (st.length() > 0 ? st : "?") : Net.explain(r)), false);
+            }
+            jobConversation = null;
+            version++;
+        }
+        changed(false);
+    }
+
+    /**
+     * Called with the lock held. History text: per message "u N" or "a N"
+     * (N = UTF-16 length), newline, the text, newline.
+     */
+    private void parseHistory(String t, boolean bodyCut) {
+        int pos = 0;
+        int n = t.length();
+        while (pos < n) {
+            int nl = t.indexOf('\n', pos);
+            if (nl < 0 || nl - pos < 3) {
+                break;
+            }
+            char role = t.charAt(pos);
+            int len = Text.parseInt(t.substring(pos + 2, nl), -1);
+            int start = nl + 1;
+            if (len < 0 || start + len > n) {
+                break; // cut body: drop the incomplete message
+            }
+            entries.addElement(new Entry(role == 'a' ? KIND_CLAUDE : KIND_USER, t.substring(start, start + len), false,
+                    0, 0, null, null));
+            pos = start + len + 1;
+        }
+        if (bodyCut) {
+            add(KIND_INFO, L.s("(sohbetin sonu yüklenemedi)", "(the end of the chat did not load)"), false);
+        }
+        trim();
+    }
+
     private void finishDelete(Net.Result r) {
         synchronized (this) {
             state = STATE_IDLE;
@@ -420,6 +641,7 @@ final class ChatSession implements Runnable, Net.Listener {
             String st = m == null ? "" : m.field("status");
             if (r.ok() && ("deleted".equals(st) || "conversation_not_found".equals(st))) {
                 resetLocal();
+                ChatStore.delete();
                 add(KIND_INFO, L.s("Sohbet sunucudan silindi.", "Chat deleted from the server."), false);
             } else {
                 status = L.s("Silinemedi", "Not deleted");
@@ -434,7 +656,15 @@ final class ChatSession implements Runnable, Net.Listener {
 
     /** Called with the lock held. Keeps the transcript within RAM limits. */
     private void add(int kind, String text, boolean truncated) {
-        entries.addElement(new Entry(kind, text, truncated));
+        add(new Entry(kind, text, truncated));
+    }
+
+    private void add(Entry e) {
+        entries.addElement(e);
+        trim();
+    }
+
+    private void trim() {
         int chars = 0;
         for (int i = 0; i < entries.size(); i++) {
             chars += ((Entry) entries.elementAt(i)).text.length();
@@ -446,10 +676,44 @@ final class ChatSession implements Runnable, Net.Listener {
         version++;
     }
 
+    /** Snapshot of the messages worth keeping on the phone (ChatStore). */
+    synchronized Vector keepable() {
+        Vector out = new Vector();
+        for (int i = 0; i < entries.size(); i++) {
+            Entry e = (Entry) entries.elementAt(i);
+            if (e.kind == KIND_USER || e.kind == KIND_CLAUDE || e.kind == KIND_TEST) {
+                out.addElement(e);
+            }
+        }
+        return out;
+    }
+
     private void changed(boolean newReply) {
+        persist();
         View v = view;
         if (v != null) {
             v.sessionChanged(newReply);
         }
+    }
+
+    /** Writes the transcript to the phone when that is turned on and it changed. */
+    void persist() {
+        if (!midlet.settings.saveChat) {
+            return;
+        }
+        String conv;
+        synchronized (this) {
+            if (state != STATE_IDLE || version == savedVersion) {
+                return;
+            }
+            savedVersion = version;
+            conv = conversation;
+        }
+        ChatStore.save(conv, keepable());
+    }
+
+    /** Forces the next persist() to write (setting just turned on). */
+    synchronized void markUnsaved() {
+        savedVersion = -1;
     }
 }

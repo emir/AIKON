@@ -96,6 +96,21 @@ final class Text {
         return c.get(Calendar.YEAR) + "-" + two(c.get(Calendar.MONTH) + 1) + "-" + two(c.get(Calendar.DAY_OF_MONTH));
     }
 
+    /** Phone-local "HH:mm" for today, otherwise "dd.MM"; "-" if unknown. */
+    static String shortDate(long ms) {
+        if (ms <= 0) {
+            return "-";
+        }
+        Calendar now = Calendar.getInstance();
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(ms));
+        if (c.get(Calendar.YEAR) == now.get(Calendar.YEAR) && c.get(Calendar.MONTH) == now.get(Calendar.MONTH)
+                && c.get(Calendar.DAY_OF_MONTH) == now.get(Calendar.DAY_OF_MONTH)) {
+            return two(c.get(Calendar.HOUR_OF_DAY)) + ":" + two(c.get(Calendar.MINUTE));
+        }
+        return two(c.get(Calendar.DAY_OF_MONTH)) + "." + two(c.get(Calendar.MONTH) + 1);
+    }
+
     private static String two(int v) {
         return v < 10 ? "0" + v : String.valueOf(v);
     }

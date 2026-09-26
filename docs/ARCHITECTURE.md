@@ -43,8 +43,11 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 - Networking on worker threads only, one request at a time, HTTPS only
   (`https://` enforced, no fallback), response body capped at 8 KiB.
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
-  URL, test mode, theme, text size, sound, vibration, language. No chat
-  history. Deleting the app deletes it.
+  URL, test mode, theme, text size, sound, vibration, language, web search
+  on/off, "keep last chat". Only with "keep last chat" on, RMS `cs40chat`
+  holds the last conversation (id + newest user/Claude messages, ≤ 8000
+  characters) for offline reading; turning it off deletes it. Deleting the
+  app deletes both.
 - `L.s("Türkçe", "English")`: language from `microedition.locale` or the
   Settings choice.
 - Packaging is deterministic; `tools/check.py` verifies manifest/JAD
