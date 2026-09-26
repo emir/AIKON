@@ -39,7 +39,7 @@ See [../docs/SETUP.md](../docs/SETUP.md#5-install-the-app-on-the-phone):
 
 ```
 make emu FREEJ2ME=/path/to/freej2me/classes    # headless screenshots, app in test mode
-make promo                                     # poster, square, splash.gif, logo, jingle.wav, chime.wav
+make promo                                     # cover, poster, square, splash.gif, logo, jingle.wav, chime.wav
 ```
 
 FreeJ2ME (GPL-3.0) is not included. Emulator success is not device

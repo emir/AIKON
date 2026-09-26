@@ -1,16 +1,63 @@
 # Claude S40
 
-**Chat with Claude on a 2007 Nokia.** An unofficial Claude client for Nokia
-Series 40 phones (Java ME), plus the small server it talks to.
+![Claude S40: chat with Claude on a 2007 Nokia](docs/images/cover.png)
 
-![Claude S40 on a Series 40 phone (emulator screenshots, test mode)](docs/images/poster.png)
+**Chat with Claude on a 2007 Nokia.** Claude S40 is an unofficial Claude
+client for Nokia Series 40 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus the
+small Go server it talks to. Type on the keypad, get Claude's answer on a
+240x320 screen: with today's news, weather and exchange rates from web
+search, long answers you can page through, and a UI in Turkish or English.
 
-| Home | Quick prompts | Waiting for Claude | Dark mode, large text |
+## Features
+
+**On the phone**
+
+- **Chat** with bubbles, timestamps and a typing indicator that counts the
+  seconds. Replies keep their paragraphs and lists (dots, numbers, hanging
+  indent).
+- **Web search** for news, weather, rates: Claude searches on the server,
+  the phone's 2007 browser is not involved. Sources are listed under the
+  reply.
+- **Reading mode** (key 7): one reply full width, page by page, whole lines
+  only, page number and progress line. It keeps its place when you change
+  the text size (key 9) or load the rest, and keeps the backlight on.
+- **Long replies in parts**: "0 · Show the rest" fetches the next part
+  from the server for free; Claude is not asked again.
+- **Message actions**: select a message with 1/3, press the centre key:
+  shorten, explain more simply, translate, ask about it, open it in the
+  editor. They only fill in the editor; nothing is sent until you press
+  Send.
+- **Earlier chats** from the server, continue any of them; optional offline
+  copy of the last chat.
+- **18 quick prompts** (search the web, weather, translate, reply to a
+  message, summarize, fix my writing, ...).
+- **Setup wizard** on first start: language, server address, connection
+  test, pairing with a 6-digit code (no long code to type).
+- **Keypad-first**: every screen works with the keypad; a Shortcuts screen
+  lists every key. Retry after an error is one key and never charges twice.
+- **Look and feel**: light and dark theme, three text sizes, start-up
+  animation and jingle, reply chime, vibration and backlight. Texts are
+  fitted to the screen and checked from 128x160 to 320x240.
+
+**On the server**
+
+- One Go binary / Docker image that speaks TLS 1.0 to the phone with a
+  certificate from your own private CA, and modern HTTPS to the Claude API.
+- Per-device access tokens through pairing, daily request, token and
+  web-search limits, no automatic retries of paid calls.
+- SQLite for chats (30 days), admin API on localhost only.
+
+## Screens
+
+| Home | Waiting for Claude | Lists and paragraphs | Reading mode |
 |---|---|---|---|
-| ![](docs/images/home.png) | ![](docs/images/prompts.png) | ![](docs/images/typing.png) | ![](docs/images/dark.png) |
+| ![](docs/images/home.png) | ![](docs/images/typing.png) | ![](docs/images/lists.png) | ![](docs/images/reading.png) |
+| **A selected message** | **Message actions** | **Quick prompts** | **Dark theme, large text** |
+| ![](docs/images/selected.png) | ![](docs/images/actions.png) | ![](docs/images/prompts.png) | ![](docs/images/dark.png) |
 
-Start-up animation: [docs/images/splash.gif](docs/images/splash.gif). Screens are from the
-FreeJ2ME emulator in the app's test mode.
+Screenshots are from the FreeJ2ME emulator in the app's test mode (the
+"[Test mode]" replies are fake and cost nothing); the cover is a drawing.
+Start-up animation: [docs/images/splash.gif](docs/images/splash.gif).
 
 > Unofficial side project. Not made, endorsed or supported by Anthropic or
 > Nokia. See [TRADEMARKS.md](TRADEMARKS.md).
@@ -36,7 +83,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~80 KB JAR, English + Turkish UI, splash + jingle, chat bubbles, web search (news, weather, rates: the phone's own browser can't open today's web), earlier chats from the server, long replies in parts, reading mode, message actions, setup wizard, keypad shortcuts, optional offline copy of the last chat, quick prompts, dark mode, pairing without typing a long code. Reproducible build with 42 package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~80 KB JAR, English + Turkish UI (see Features). Reproducible build with 42 package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
@@ -58,7 +105,8 @@ Full guide: **[docs/SETUP.md](docs/SETUP.md)**. In short:
 4. `echo GATEWAY_URL=https://<server-ip> > app/app.local.properties && make -C app`,
    then install `app/dist/ClaudeS40.jad/.jar` on the phone.
 5. Put the root CA on the phone (`server/deploy/serve-ca.sh`, compare the fingerprint).
-6. On the phone: Connection test → Settings → Pair this phone →
+6. On the phone the setup wizard walks through the connection test and
+   pairing; approve the code with
    `server/deploy/admin.sh root@<server-ip> pair <code>`.
 7. `server/deploy/set-key.sh root@<server-ip>` and
    `S40_MOCK=0 server/deploy/push.sh root@<server-ip> --execute` to go live.
