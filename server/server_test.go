@@ -329,7 +329,7 @@ func TestLongReplyParts(t *testing.T) {
 		if r.code != 200 || len([]rune(r.msg.text)) > partChars || r.msg.text == "" {
 			t.Fatalf("more: %d %q", r.code, r.raw)
 		}
-		all += " " + r.msg.text
+		all += r.msg.text
 		next = r.msg.get("next")
 		if r.msg.get("more") != "1" {
 			if next != "" || r.msg.get("truncated") != "0" {
@@ -337,7 +337,7 @@ func TestLongReplyParts(t *testing.T) {
 			}
 		}
 	}
-	if next != "" || strings.Count(all, "Long test line") != 200 {
+	if next != "" || !strings.HasSuffix(all, strings.Repeat("Long test line çğıİöşü. ", 199)+"Long test line çğıİöşü.") {
 		t.Fatalf("parts do not add up: %d lines", strings.Count(all, "Long test line"))
 	}
 	// a replay also starts with the first part

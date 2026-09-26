@@ -356,7 +356,8 @@ func b2i(b bool) int {
 
 // pageText returns the part of a stored reply that starts at offset (in
 // characters), at most partChars long and cut at a word boundary when
-// possible, plus the offset of the next part.
+// possible, plus the offset of the next part. Parts are not trimmed: the
+// phone joins them as they are.
 func pageText(text string, offset int) (part string, next int, more bool) {
 	r := []rune(text)
 	if offset < 0 || offset >= len(r) {
@@ -364,7 +365,7 @@ func pageText(text string, offset int) (part string, next int, more bool) {
 	}
 	end := offset + partChars
 	if end >= len(r) {
-		return strings.TrimSpace(string(r[offset:])), len(r), false
+		return string(r[offset:]), len(r), false
 	}
 	for i := end; i > offset+partChars*8/10; i-- {
 		if r[i-1] == ' ' || r[i-1] == '\n' {
@@ -372,7 +373,7 @@ func pageText(text string, offset int) (part string, next int, more bool) {
 			break
 		}
 	}
-	return strings.TrimSpace(string(r[offset:end])), end, true
+	return string(r[offset:end]), end, true
 }
 
 // morePart: the part of a stored reply from offset (/v1/more). ok is false
