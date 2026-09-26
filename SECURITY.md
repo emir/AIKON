@@ -19,4 +19,5 @@
 ## Reporting
 
 Please report vulnerabilities privately through GitHub's "Report a
-vulnerability" (Security tab) instead of a public issue.
+vulnerability" on https://github.com/emir/claude-s40/security instead of a
+public issue.

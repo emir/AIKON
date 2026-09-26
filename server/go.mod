@@ -1,4 +1,4 @@
-module claude-s40-server
+module github.com/emir/claude-s40/server
 
 go 1.26.5
 

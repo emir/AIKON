@@ -1,4 +1,4 @@
-package moneo.claudes40;
+package io.github.emir.claudes40;
 
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;

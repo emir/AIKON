@@ -40,6 +40,13 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
+## Get it
+
+```
+git clone https://github.com/emir/claude-s40.git
+cd claude-s40
+```
+
 ## Quick start
 
 Full guide: **[docs/SETUP.md](docs/SETUP.md)**. In short:
@@ -79,7 +86,7 @@ deployment), OpenSSL or LibreSSL.
 
 ## License
 
-MIT, see [LICENSE](LICENSE). Build-time tools are downloaded, not bundled
+MIT, see [LICENSE](LICENSE). Copyright (c) 2026 Emir Karşıyakalı. Build-time tools are downloaded, not bundled
 (ECJ: EPL-2.0, ProGuard: GPL-2.0, MicroEmulator API stubs: LGPL); none of
 them end up in the phone app. The optional emulator harness
 `app/emu/EmuShot.java` links against FreeJ2ME (GPL-3.0), which is not

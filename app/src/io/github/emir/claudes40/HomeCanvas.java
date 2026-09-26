@@ -1,4 +1,4 @@
-package moneo.claudes40;
+package io.github.emir.claudes40;
 
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;

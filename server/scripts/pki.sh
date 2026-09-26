@@ -36,7 +36,7 @@ prompt = no
 x509_extensions = v3
 [dn]
 CN = Claude S40 Private Root CA
-O = Moneo
+O = Claude S40
 [v3]
 basicConstraints = critical, CA:TRUE
 keyUsage = critical, keyCertSign, cRLSign
@@ -61,7 +61,7 @@ distinguished_name = dn
 prompt = no
 [dn]
 CN = $HOST
-O = Moneo
+O = Claude S40
 [v3]
 basicConstraints = CA:FALSE
 keyUsage = critical, digitalSignature, keyEncipherment

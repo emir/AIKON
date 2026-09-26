@@ -6,7 +6,8 @@
 #   tools/install-gammu.sh                      dry run: local checks + exact command
 #   tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone
 #
-# Env: GAMMU (default: gammu in PATH), GAMMURC (optional config file).
+# Env: GAMMU (default: gammu in PATH), GAMMURC (optional config file),
+#      GAMMU_LIB (optional: directory with a locally built libGammu).
 # Never passes -overwrite/-overwriteall, so Gammu's delete code paths are not
 # used; remove an older Claude S40 with the phone's own menu first.
 # Other ways to install: Bluetooth "send file" to the phone, Nokia PC Suite,
@@ -16,6 +17,10 @@ HERE=$(cd "$(dirname "$0")/.." && pwd)
 DIST="$HERE/dist"
 GAMMU=${GAMMU:-gammu}
 CFG=""; [ -n "${GAMMURC:-}" ] && CFG="-c $GAMMURC"
+if [ -n "${GAMMU_LIB:-}" ]; then
+	# set here, not by the caller: macOS strips DYLD_* when starting /bin/sh
+	export DYLD_LIBRARY_PATH="$GAMMU_LIB" LD_LIBRARY_PATH="$GAMMU_LIB"
+fi
 NAME=$(sed -n 's/^FILE_BASE=//p' "$HERE/app.properties")
 BASE="$DIST/$NAME"
 TARGET_DIR="d:/predefjava/predefcollections"

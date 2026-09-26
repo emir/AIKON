@@ -8,3 +8,5 @@
 *.cer
 secrets/
 .env
+CLAUDE.local.md
+.local/

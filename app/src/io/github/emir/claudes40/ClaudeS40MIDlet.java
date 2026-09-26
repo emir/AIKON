@@ -1,4 +1,4 @@
-package moneo.claudes40;
+package io.github.emir.claudes40;
 
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
@@ -24,6 +24,9 @@ import javax.microedition.midlet.MIDlet;
  * worker threads.
  */
 public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
+
+    /** Shown in About; the JAD/manifest vendor field is ASCII-only ("Emir Karsiyakali"). */
+    static final String AUTHOR = "Emir Karşıyakalı";
 
     /*
      * Quick prompts for everyday use. Most end with ": " so the editor opens
@@ -464,7 +467,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(null, L.s(
                 "Sohbet geçmişi telefonda saklanmaz. Sunucuda son mesajdan 30 gün sonra silinir.",
                 "No chat history is stored on the phone. The server deletes it 30 days after the last message.")));
-        about.append(new StringItem(null, L.s("Üretici: ", "Made by: ") + attr("MIDlet-Vendor")));
+        about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
+        about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));
         about.addCommand(jingleCmd);
         about.addCommand(splashCmd);

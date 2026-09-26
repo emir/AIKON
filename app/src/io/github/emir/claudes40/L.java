@@ -1,4 +1,4 @@
-package moneo.claudes40;
+package io.github.emir.claudes40;
 
 /**
  * UI language. English or Turkish, chosen once at start-up:
