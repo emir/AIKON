@@ -186,12 +186,27 @@ public class EmuShot {
         save("shortcuts");
         command(t("Back", "Geri"));
 
-        // a test-mode reply with a calendar entry line, shown in readable form
+        // a test-mode reply with a calendar entry line, shown in readable form.
+        // FreeJ2ME has the PIM API classes but reports no version: the harness
+        // sets microedition.pim.version so the calendar actions show. Save is
+        // never pressed; nothing is written anywhere.
+        System.setProperty("microedition.pim.version", "1.0");
+        System.out.println("EMU: microedition.pim.version = 1.0 (harness, screenshots only)");
         command(t("Write", "Yaz"));
         type(t("Add to my calendar: dentist tomorrow at 15:00", "Takvimime ekle: yarın 15:00 dişçi"));
         command(t("Send", "Gönder"));
-        Thread.sleep(2200);
-        save("chat_calendar_line");
+        Thread.sleep(1700);
+        save("chat_calendar_line");         // reply selected + "Centre key: add to calendar"
+        key(Mobile.NOKIA_SOFT3);              // centre key: actions, "Add to calendar" first
+        save("actions_calendar");
+        select(0);                            // prefilled form; never saved
+        save("calendar_form");
+        command(t("Cancel", "Vazgeç"));
+
+        call("showDataUsage");                // Settings > Options > Data usage (test mode: no data)
+        save("data_usage");
+        command(t("Back", "Geri"));
+        call("showChat");
 
         // dark theme, large text
         setting("theme", new Integer(1));

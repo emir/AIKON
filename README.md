@@ -8,6 +8,8 @@ small Go server it talks to. Type on the keypad, get Claude's answer on a
 240x320 screen: with today's news, weather and exchange rates from web
 search, long answers you can page through, and a UI in Turkish or English.
 
+**Video:** [Claude S40 on a Nokia 6300, on X](https://x.com/EmirKarsiyakali/status/2104183718483018026)
+
 ## Features
 
 **On the phone**
@@ -64,11 +66,13 @@ search, long answers you can page through, and a UI in Turkish or English.
 | Home | Waiting for Claude | Lists and paragraphs | Reading mode |
 |---|---|---|---|
 | ![](docs/images/home.png) | ![](docs/images/typing.png) | ![](docs/images/lists.png) | ![](docs/images/reading.png) |
-| **A selected message** | **Message actions** | **Quick prompts** | **Dark theme, large text** |
+| **A calendar entry, selected** | **Message actions** | **Quick prompts** | **Dark theme, large text** |
 | ![](docs/images/selected.png) | ![](docs/images/actions.png) | ![](docs/images/prompts.png) | ![](docs/images/dark.png) |
 
 Screenshots are from the FreeJ2ME emulator in the app's test mode (the
-"[Test mode]" replies are fake and cost nothing); the cover is a drawing.
+"[Test mode]" replies are fake and cost nothing; the emulator reports no
+calendar API, so the harness turns the calendar actions on for these
+screens and never saves); the cover is a drawing.
 Start-up animation: [docs/images/splash.gif](docs/images/splash.gif).
 
 > Unofficial side project. Not made, endorsed or supported by Anthropic or
