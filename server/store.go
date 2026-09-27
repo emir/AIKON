@@ -15,6 +15,7 @@ import (
 	"fmt"
 	"strings"
 	"time"
+	"unicode"
 
 	_ "modernc.org/sqlite"
 )
@@ -76,11 +77,13 @@ func openStore(path string) (*store, error) {
 }
 
 // migrate adds columns introduced after the first release (0.3.0: web
-// search counts). Existing databases keep their data.
+// search counts; 0.4.0: pinned conversations). Existing databases keep their
+// data.
 func migrate(db *sql.DB) error {
 	for _, c := range []struct{ table, column, def string }{
 		{"usage", "searches", "INTEGER NOT NULL DEFAULT 0"},
 		{"requests", "searches", "INTEGER NOT NULL DEFAULT 0"},
+		{"conversations", "pinned", "INTEGER NOT NULL DEFAULT 0"},
 	} {
 		var n int
 		if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`, c.table, c.column).Scan(&n); err != nil {
@@ -266,6 +269,7 @@ func (s *store) claimPairing(ctx context.Context, pairID string) (state, deviceI
 
 const (
 	listConversations = 20
+	maxPinned         = 10
 	titleChars        = 48
 	historyBytes      = 6000 // S40 body budget for one history answer (phone reads <= 8 KiB)
 	historyMsgChars   = 1200 // longer messages are shortened in the history view
@@ -276,16 +280,18 @@ type convInfo struct {
 	updated  int64
 	messages int
 	title    string
+	pinned   bool
 }
 
-// conversations: the device's newest conversations with a title taken from
-// the first user message.
+// conversations: the device's pinned conversations, then the newest ones,
+// with a title taken from the first user message.
 func (s *store) conversations(ctx context.Context, device string) ([]convInfo, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT c.id, c.updated_at,
+	rows, err := s.db.QueryContext(ctx, `SELECT c.id, c.updated_at, c.pinned,
 		  (SELECT COUNT(*) FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id),
 		  COALESCE((SELECT content FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id
 		    AND m.role='user' ORDER BY seq LIMIT 1), '')
-		FROM conversations c WHERE c.device_id=? ORDER BY c.updated_at DESC LIMIT ?`, device, listConversations)
+		FROM conversations c WHERE c.device_id=? ORDER BY c.pinned DESC, c.updated_at DESC LIMIT ?`,
+		device, listConversations)
 	if err != nil {
 		return nil, err
 	}
@@ -293,9 +299,11 @@ func (s *store) conversations(ctx context.Context, device string) ([]convInfo, e
 	var out []convInfo
 	for rows.Next() {
 		var c convInfo
-		if err := rows.Scan(&c.id, &c.updated, &c.messages, &c.title); err != nil {
+		var pinned int
+		if err := rows.Scan(&c.id, &c.updated, &pinned, &c.messages, &c.title); err != nil {
 			return nil, err
 		}
+		c.pinned = pinned == 1
 		if c.messages == 0 {
 			continue // created, but the first exchange failed
 		}
@@ -340,6 +348,184 @@ func (s *store) history(ctx context.Context, device, conv string) (msgs []turn, 
 	return msgs, older, true, rows.Err()
 }
 
+// setPinned pins or unpins a conversation of this device. Pinned
+// conversations are listed first and are not removed by the 30-day expiry
+// or the per-device limit. status: "ok", "conversation_not_found" or
+// "pin_limit" (already maxPinned pinned).
+func (s *store) setPinned(ctx context.Context, device, conv string, pin bool) (string, error) {
+	var cur int
+	err := s.db.QueryRowContext(ctx, `SELECT pinned FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&cur)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "conversation_not_found", nil
+	}
+	if err != nil {
+		return "", err
+	}
+	if pin && cur == 0 {
+		var n int
+		if err := s.db.QueryRowContext(ctx, `SELECT COUNT(*) FROM conversations WHERE device_id=? AND pinned=1`,
+			device).Scan(&n); err != nil {
+			return "", err
+		}
+		if n >= maxPinned {
+			return "pin_limit", nil
+		}
+	}
+	_, err = s.db.ExecContext(ctx, `UPDATE conversations SET pinned=? WHERE device_id=? AND id=?`, b2i(pin), device, conv)
+	return "ok", err
+}
+
+// ------------------------------------------------------------ search
+
+const (
+	maxSearchResults = 20
+	maxSearchWords   = 5
+	snippetBefore    = 25
+	snippetAfter     = 50
+)
+
+type searchHit struct {
+	id      string
+	updated int64
+	matches int // messages that contain the first word
+	snippet string
+}
+
+// fold makes search forgiving for keypad typing: lower case, and Turkish
+// letters match their plain Latin forms (ı/i/İ/I -> i, ş -> s, ğ -> g, ...).
+// It maps every rune to exactly one rune, so positions stay the same.
+func fold(r rune) rune {
+	switch r {
+	case 'I', 'İ', 'ı', 'î', 'Î':
+		return 'i'
+	case 'ş', 'Ş':
+		return 's'
+	case 'ğ', 'Ğ':
+		return 'g'
+	case 'ç', 'Ç':
+		return 'c'
+	case 'ö', 'Ö':
+		return 'o'
+	case 'ü', 'Ü', 'û', 'Û':
+		return 'u'
+	case 'â', 'Â':
+		return 'a'
+	case '\n', '\r', '\t':
+		return ' '
+	}
+	return unicode.ToLower(r)
+}
+
+func foldRunes(s string) []rune {
+	r := []rune(s)
+	for i, c := range r {
+		r[i] = fold(c)
+	}
+	return r
+}
+
+func runeIndex(hay, needle []rune) int {
+	for i := 0; i+len(needle) <= len(hay); i++ {
+		match := true
+		for j := range needle {
+			if hay[i+j] != needle[j] {
+				match = false
+				break
+			}
+		}
+		if match {
+			return i
+		}
+	}
+	return -1
+}
+
+// search finds the device's conversations that contain every word of the
+// query (in any of their messages), newest first, with a snippet around the
+// first word. Nothing here calls Claude.
+func (s *store) search(ctx context.Context, device, query string) ([]searchHit, error) {
+	var words [][]rune
+	for _, w := range strings.Fields(string(foldRunes(query))) {
+		if len(words) < maxSearchWords {
+			words = append(words, []rune(w))
+		}
+	}
+	if len(words) == 0 {
+		return nil, nil
+	}
+	rows, err := s.db.QueryContext(ctx, `SELECT c.id, c.updated_at, m.content FROM conversations c
+		JOIN messages m ON m.device_id=c.device_id AND m.conversation_id=c.id
+		WHERE c.device_id=? ORDER BY c.pinned DESC, c.updated_at DESC, c.id, m.seq`, device)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []searchHit
+	var cur *searchHit
+	found := make([]bool, len(words))
+	flush := func() {
+		if cur == nil || len(out) >= maxSearchResults {
+			return
+		}
+		for _, f := range found {
+			if !f {
+				return
+			}
+		}
+		out = append(out, *cur)
+	}
+	for rows.Next() {
+		var id, content string
+		var updated int64
+		if err := rows.Scan(&id, &updated, &content); err != nil {
+			return nil, err
+		}
+		if cur == nil || cur.id != id {
+			flush()
+			cur = &searchHit{id: id, updated: updated}
+			for i := range found {
+				found[i] = false
+			}
+		}
+		folded := foldRunes(content)
+		for i, w := range words {
+			at := runeIndex(folded, w)
+			if at < 0 {
+				continue
+			}
+			found[i] = true
+			if i == 0 {
+				cur.matches++
+				if cur.snippet == "" {
+					cur.snippet = snippet([]rune(content), at, len(w))
+				}
+			}
+		}
+	}
+	flush()
+	return out, rows.Err()
+}
+
+// snippet: the text around [at, at+n) on one line, "..." where it was cut.
+func snippet(r []rune, at, n int) string {
+	start := max(0, at-snippetBefore)
+	end := min(len(r), at+n+snippetAfter)
+	for start > 0 && start < at && r[start-1] != ' ' && r[start-1] != '\n' {
+		start++
+	}
+	for end < len(r) && end > at+n && r[end] != ' ' && r[end] != '\n' {
+		end--
+	}
+	s := strings.Join(strings.Fields(string(r[start:end])), " ")
+	if start > 0 {
+		s = "..." + s
+	}
+	if end < len(r) {
+		s += "..."
+	}
+	return s
+}
+
 // ------------------------------------------------------------ retention
 
 const (
@@ -362,10 +548,10 @@ func (s *store) cleanup(ctx context.Context) error {
 		args []any
 	}{
 		{`DELETE FROM messages WHERE (device_id, conversation_id) IN
-		    (SELECT device_id, id FROM conversations WHERE updated_at < ?)`, []any{old}},
+		    (SELECT device_id, id FROM conversations WHERE updated_at < ? AND pinned=0)`, []any{old}},
 		{`DELETE FROM requests WHERE state != 'pending' AND (device_id, conversation_id) IN
-		    (SELECT device_id, id FROM conversations WHERE updated_at < ?)`, []any{old}},
-		{`DELETE FROM conversations WHERE updated_at < ?`, []any{old}},
+		    (SELECT device_id, id FROM conversations WHERE updated_at < ? AND pinned=0)`, []any{old}},
+		{`DELETE FROM conversations WHERE updated_at < ? AND pinned=0`, []any{old}},
 		{`DELETE FROM requests WHERE created_at < ? AND state != 'pending'`, []any{now - requestTTL.Milliseconds()}},
 		{`DELETE FROM usage WHERE day < ?`, []any{utcDay(now - usageTTL.Milliseconds())}},
 		{`DELETE FROM pairings WHERE expires_at < ?`, []any{now}},
@@ -396,10 +582,11 @@ func (s *store) deleteConversation(ctx context.Context, device, conv string) err
 	return tx.Commit()
 }
 
-// trimConversations keeps the newest maxConversation per device.
+// trimConversations keeps the newest maxConversation unpinned conversations
+// per device (pinned ones are not counted and never removed).
 func (s *store) trimConversations(ctx context.Context, device string) error {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id FROM conversations WHERE device_id=? ORDER BY updated_at DESC LIMIT -1 OFFSET ?`,
+		`SELECT id FROM conversations WHERE device_id=? AND pinned=0 ORDER BY updated_at DESC LIMIT -1 OFFSET ?`,
 		device, maxConversation)
 	if err != nil {
 		return err

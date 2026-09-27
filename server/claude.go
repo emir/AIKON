@@ -41,10 +41,29 @@ const searchPrompt = `
 You can search the web. Use it for anything current or factual that may have changed: news, weather, exchange rates, prices, sports results, opening hours, schedules, recent events. Do not search for things you already know well.
 After searching, answer directly with the facts first. Do not describe your searching. Do not paste URLs.`
 
-func systemPrompt(search bool, now time.Time) string {
+// calendarPrompt is added when the phone can write to its calendar and
+// to-do list (0.7+ phones send "calendar: 1"). The phone turns such a last
+// line into a prepared calendar entry; nothing is written without the user.
+const calendarPrompt = `
+The user's phone can add entries to its calendar and to-do list. Only if the user asks you to add something to the calendar, to remind them of something, or to add a to-do: answer in one short sentence and put the entry on the last line, exactly in one of these forms, with nothing else on that line:
+EVENT: YYYY-MM-DD HH:MM | short title
+TODO: YYYY-MM-DD | short title
+Use the phone's local date and time for words like "today", "tomorrow" or "on Monday". For an event without a time use 09:00. At most one entry per answer, title at most 60 characters. Never use these forms otherwise.`
+
+func systemPrompt(o replyOpts, now time.Time) string {
 	p := basePrompt + "\nToday's date (UTC) is " + now.UTC().Format("2006-01-02") + "."
-	if search {
+	if o.search {
 		p += searchPrompt
+	}
+	if o.calendar {
+		p += calendarPrompt
+		if !o.localTime.IsZero() {
+			p += "\nThe phone's local date and time: " + o.localTime.Format("Monday 2006-01-02 15:04") + "."
+		}
+	}
+	if o.instructions != "" {
+		p += "\n\nThe user wrote these notes about themselves and how they like answers. Follow them unless they conflict with the rules above:\n<user_notes>\n" +
+			o.instructions + "\n</user_notes>"
 	}
 	return p
 }
@@ -67,7 +86,10 @@ type reply struct {
 
 // replyOpts: per-request options decided by the chat service.
 type replyOpts struct {
-	search bool
+	search       bool
+	calendar     bool      // the phone can add calendar / to-do entries
+	localTime    time.Time // the phone's clock (calendar only); zero if unknown
+	instructions string    // the user's own notes for Claude (Settings on the phone)
 }
 
 // upstreamError: kind "definite" or "uncertain"; code is the status sent to the phone.
@@ -135,7 +157,7 @@ func (m *claudeModel) reply(ctx context.Context, history []turn, message string,
 	params := anthropic.BetaMessageNewParams{
 		Model:     anthropic.Model(m.model),
 		MaxTokens: maxTokens,
-		System:    []anthropic.BetaTextBlockParam{{Text: systemPrompt(o.search, m.now())}},
+		System:    []anthropic.BetaTextBlockParam{{Text: systemPrompt(o, m.now())}},
 		Messages:  msgs,
 	}
 	if m.effort != "" {
@@ -271,7 +293,7 @@ func truncate(s string, n int) string {
 // mockModel never touches the network. Every reply starts with "[Test mode]"
 // so it can never be mistaken for Claude. Control words (tests):
 // [[mock:uncertain]] [[mock:error]] [[mock:overloaded]] [[mock:billing]]
-// [[mock:long]] [[mock:cut]] [[mock:slow]] [[mock:search]]
+// [[mock:long]] [[mock:cut]] [[mock:slow]] [[mock:search]] [[mock:event]]
 type mockModel struct{}
 
 func (mockModel) reply(ctx context.Context, history []turn, message string, o replyOpts) (reply, error) {
@@ -312,6 +334,16 @@ func (mockModel) reply(ctx context.Context, history []turn, message string, o re
 		} else {
 			text += "\nWeb search: off."
 		}
+	}
+	if o.instructions != "" {
+		text += fmt.Sprintf("\nYour notes for Claude: %d characters.", len([]rune(o.instructions)))
+	}
+	if strings.Contains(message, "[[mock:event]]") && o.calendar {
+		day := time.Now()
+		if !o.localTime.IsZero() {
+			day = o.localTime
+		}
+		text += "\nEVENT: " + day.AddDate(0, 0, 1).Format("2006-01-02") + " 15:00 | Test mode event"
 	}
 	r.text = text
 	return r, nil

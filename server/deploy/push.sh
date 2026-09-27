@@ -20,7 +20,7 @@ TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.3.0
+IMAGE=claude-s40-server:0.4.0
 MOCK=${S40_MOCK:-1}
 
 for f in server-chain.pem server.key; do

@@ -48,4 +48,4 @@ distroless non-root, read-only root fs, `cap_drop: ALL`, no-new-privileges,
 | `deploy/do-create.sh`, `deploy/cloud-init.yaml` | optional DigitalOcean droplet + firewall |
 
 Backup: `docker compose cp server:/data/claude-s40.db ./backup.db` (the file
-holds pairings and 30 days of chats).
+holds pairings, 30 days of chats and the pinned chats).

@@ -4,8 +4,8 @@
 //
 // It replaces the Cloudflare Worker + Durable Objects and the separate TLS
 // relay. Public listener (TLS, for the phone): /health, /echo, /v1/chat,
-// /v1/more, /v1/conversations, /v1/history, /v1/delete, /v1/pair/start,
-// /v1/pair/claim. Admin listener (plain HTTP,
+// /v1/more, /v1/conversations, /v1/history, /v1/delete, /v1/pin, /v1/search,
+// /v1/pair/start, /v1/pair/claim. Admin listener (plain HTTP,
 // meant to be bound to 127.0.0.1 and reached through an SSH tunnel):
 // /admin/pair/approve, /admin/devices, /admin/devices/revoke.
 //
@@ -33,13 +33,16 @@ import (
 )
 
 const (
-	service       = "claude-s40-server"
-	version       = "0.3.0"
-	echoProbe     = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
-	maxRequest    = 4096
-	maxEcho       = 512
-	maxPairClaim  = 512
-	cleanupPeriod = 6 * time.Hour
+	service      = "claude-s40-server"
+	version      = "0.4.0"
+	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
+	maxRequest   = 6144
+	maxEcho      = 512
+	maxPairClaim = 512
+	// the user's notes for Claude, sent by the phone with every message
+	maxInstructions = 300
+	maxSearchQuery  = 100
+	cleanupPeriod   = 6 * time.Hour
 )
 
 type config struct {
@@ -247,7 +250,7 @@ func logged(h http.Handler) http.Handler {
 func knownPath(p string) bool {
 	switch p {
 	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/conversations", "/v1/history", "/v1/delete",
-		"/v1/pair/start", "/v1/pair/claim",
+		"/v1/pin", "/v1/search", "/v1/pair/start", "/v1/pair/claim",
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
 		return true
 	}
@@ -263,6 +266,8 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /v1/conversations", s.conversationsHandler)
 	mux.HandleFunc("POST /v1/history", s.historyHandler)
 	mux.HandleFunc("POST /v1/delete", s.deleteHandler)
+	mux.HandleFunc("POST /v1/pin", s.pinHandler)
+	mux.HandleFunc("POST /v1/search", s.searchHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -382,7 +387,15 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 413, []kv{{"status", "too_large"}, {"request", reqID}, {"max", maxMessageChars}}, "")
 		return
 	}
-	res, err := s.chat.chat(r.Context(), device, reqID, conv, msg, m.get("search") != "0")
+	o := replyOpts{search: m.get("search") != "0", calendar: m.get("calendar") == "1",
+		instructions: cleanInstructions(m.get("instructions"))}
+	if o.calendar {
+		// the phone's own clock, for "tomorrow" and weekdays; ignored if malformed
+		if t, err := time.Parse("2006-01-02 15:04", m.get("local-time")); err == nil {
+			o.localTime = t
+		}
+	}
+	res, err := s.chat.chat(r.Context(), device, reqID, conv, msg, o)
 	if err != nil {
 		logJSON(map[string]any{"evt": "chat_error"})
 		writeS40(w, 500, []kv{{"status", "server_error"}, {"request", reqID}}, "")
@@ -403,6 +416,19 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 		f = append(f, kv{"remaining", res.remaining})
 	}
 	writeS40(w, res.http, f, res.text)
+}
+
+// cleanInstructions: the user's notes for Claude (one line from the phone),
+// NFC, without control characters, at most maxInstructions characters.
+func cleanInstructions(s string) string {
+	s = strings.Map(func(r rune) rune {
+		if r < 0x20 || r == 0x7f || r >= 0x80 && r < 0xa0 {
+			return ' '
+		}
+		return r
+	}, norm.NFC.String(s))
+	s, _ = limitChars(strings.Join(strings.Fields(s), " "), maxInstructions)
+	return s
 }
 
 // partFields: "more"/"next" while parts of a long reply are left; "searched"
@@ -443,10 +469,13 @@ func (s *server) moreHandler(w http.ResponseWriter, r *http.Request) {
 	writeS40(w, 200, f, res.text)
 }
 
-// conversationsHandler lists the newest conversations, one per line:
-// id TAB updated (ms) TAB messages TAB title.
+// conversationsHandler lists the pinned, then the newest conversations, one
+// per line: id TAB updated (ms) TAB messages TAB title. With "pins: 1"
+// (0.7+ phones) each line starts with the pinned flag instead:
+// pinned (0/1) TAB id TAB updated TAB messages TAB title. Older phones read
+// everything after the third tab as the title, so they never get the flag.
 func (s *server) conversationsHandler(w http.ResponseWriter, r *http.Request) {
-	device, _, ok := s.authedS40(w, r)
+	device, m, ok := s.authedS40(w, r)
 	if !ok {
 		return
 	}
@@ -455,11 +484,64 @@ func (s *server) conversationsHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
 		return
 	}
+	pins := m.get("pins") == "1"
 	var b strings.Builder
 	for _, c := range list {
+		if pins {
+			fmt.Fprintf(&b, "%d\t", b2i(c.pinned))
+		}
 		fmt.Fprintf(&b, "%s\t%d\t%d\t%s\n", c.id, c.updated, c.messages, c.title)
 	}
 	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(list)}}, b.String())
+}
+
+// pinHandler: "conversation", "pinned: 1" pins, "pinned: 0" unpins.
+func (s *server) pinHandler(w http.ResponseWriter, r *http.Request) {
+	device, m, ok := s.authedS40(w, r)
+	if !ok {
+		return
+	}
+	conv, pin := m.get("conversation"), m.get("pinned")
+	if !convRE.MatchString(conv) || pin != "0" && pin != "1" {
+		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
+		return
+	}
+	st, err := s.st.setPinned(r.Context(), device, conv, pin == "1")
+	if err != nil {
+		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
+		return
+	}
+	code := map[string]int{"ok": 200, "conversation_not_found": 404, "pin_limit": 409}[st]
+	f := []kv{{"status", st}, {"conversation", conv}, {"pinned", pin == "1" && st == "ok"}}
+	if st == "pin_limit" {
+		f = append(f, kv{"max", maxPinned})
+	}
+	writeS40(w, code, f, "")
+}
+
+// searchHandler: the text is the query. One line per conversation that
+// contains every word: id TAB updated (ms) TAB matching messages TAB
+// snippet. Never calls Claude.
+func (s *server) searchHandler(w http.ResponseWriter, r *http.Request) {
+	device, m, ok := s.authedS40(w, r)
+	if !ok {
+		return
+	}
+	q := strings.TrimSpace(norm.NFC.String(m.text))
+	if n := len([]rune(q)); n < 2 || n > maxSearchQuery {
+		writeS40(w, 400, []kv{{"status", "bad_query"}, {"min", 2}, {"max", maxSearchQuery}}, "")
+		return
+	}
+	hits, err := s.st.search(r.Context(), device, q)
+	if err != nil {
+		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
+		return
+	}
+	var b strings.Builder
+	for _, h := range hits {
+		fmt.Fprintf(&b, "%s\t%d\t%d\t%s\n", h.id, h.updated, h.matches, h.snippet)
+	}
+	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(hits)}}, b.String())
 }
 
 // historyHandler returns the newest messages of a conversation, oldest

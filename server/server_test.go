@@ -779,3 +779,195 @@ func TestPhoneTLSHandshake(t *testing.T) {
 func TestMain(m *testing.M) {
 	os.Exit(m.Run())
 }
+
+// ------------------------------------------------------------ 0.4.0: pins, search, notes, calendar
+
+func listLines(r resp) [][]string {
+	var out [][]string
+	for _, l := range strings.Split(strings.TrimSuffix(r.msg.text, "\n"), "\n") {
+		if l != "" {
+			out = append(out, strings.Split(l, "\t"))
+		}
+	}
+	return out
+}
+
+func TestPins(t *testing.T) {
+	e := newEnv(t, 100)
+	tok, _ := e.pair("p")
+	a := e.chat(tok, rid(), "", "birinci").msg.get("conversation")
+	b := e.chat(tok, rid(), "", "ikinci").msg.get("conversation")
+	pin := func(tok, conv, v string) resp {
+		return e.do("POST", "/v1/pin", tok, formatS40([]kv{{"conversation", conv}, {"pinned", v}}, ""))
+	}
+	if r := pin(tok, a, "1"); r.code != 200 || r.msg.get("status") != "ok" || r.msg.get("pinned") != "1" {
+		t.Fatalf("%q", r.raw)
+	}
+	// old format (no "pins"): 4 columns, pinned first
+	old := listLines(e.do("POST", "/v1/conversations", tok, "S40/1\n\n"))
+	if len(old) != 2 || len(old[0]) != 4 || old[0][0] != a || old[1][0] != b {
+		t.Fatalf("%q", old)
+	}
+	cur := listLines(e.do("POST", "/v1/conversations", tok, "S40/1\npins: 1\n\n"))
+	if len(cur) != 2 || len(cur[0]) != 5 || cur[0][0] != "1" || cur[0][1] != a || cur[1][0] != "0" || cur[1][4] != "ikinci" {
+		t.Fatalf("%q", cur)
+	}
+	if r := pin(tok, a, "0"); r.msg.get("pinned") != "0" {
+		t.Fatalf("%q", r.raw)
+	}
+	if l := listLines(e.do("POST", "/v1/conversations", tok, "S40/1\npins: 1\n\n")); l[0][1] != b || l[1][0] != "0" {
+		t.Fatalf("%q", l)
+	}
+	if r := pin(tok, "0123456789abcdef", "1"); r.code != 404 || r.msg.get("status") != "conversation_not_found" {
+		t.Fatalf("%q", r.raw)
+	}
+	if r := pin(tok, a, "yes"); r.code != 400 {
+		t.Fatal("bad pinned value")
+	}
+	other, _ := e.pair("q")
+	if r := pin(other, a, "1"); r.code != 404 {
+		t.Fatal("other device pins")
+	}
+	for i := 0; i < maxPinned; i++ {
+		c := e.chat(tok, rid(), "", "sohbet").msg.get("conversation")
+		if r := pin(tok, c, "1"); r.msg.get("status") != "ok" {
+			t.Fatalf("pin %d: %q", i, r.raw)
+		}
+	}
+	if r := pin(tok, a, "1"); r.code != 409 || r.msg.get("status") != "pin_limit" || r.msg.get("max") != "10" {
+		t.Fatalf("%q", r.raw)
+	}
+}
+
+func TestPinnedSurvivesExpiryAndTrim(t *testing.T) {
+	e := newEnv(t, 200)
+	st := e.srv.st
+	tok, _ := e.pair("p")
+	kept := e.chat(tok, rid(), "", "sabit").msg.get("conversation")
+	gone := e.chat(tok, rid(), "", "eski").msg.get("conversation")
+	e.do("POST", "/v1/pin", tok, formatS40([]kv{{"conversation", kept}, {"pinned", "1"}}, ""))
+	old := time.Now().Add(-31 * 24 * time.Hour).UnixMilli()
+	st.db.Exec(`UPDATE conversations SET updated_at=?`, old)
+	if err := st.cleanup(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if r := e.chat(tok, rid(), gone, "devam"); r.msg.get("status") != "conversation_not_found" {
+		t.Fatal("expired unpinned conversation still there")
+	}
+	for i := 0; i < maxConversation+2; i++ {
+		e.chat(tok, rid(), "", "yeni")
+	}
+	var n int
+	st.db.QueryRow(`SELECT COUNT(*) FROM conversations WHERE pinned=0`).Scan(&n)
+	if n != maxConversation {
+		t.Fatalf("unpinned conversations: %d", n)
+	}
+	if r := e.do("POST", "/v1/history", tok, "S40/1\nconversation: "+kept+"\n\n"); r.code != 200 {
+		t.Fatalf("pinned conversation removed: %q", r.raw)
+	}
+}
+
+func TestSearch(t *testing.T) {
+	e := newEnv(t, 100)
+	tok, _ := e.pair("p")
+	a := e.chat(tok, rid(), "", "Işıklı şişe nasıl yapılır?").msg.get("conversation")
+	e.chat(tok, rid(), a, "Peki ÇİĞ köfte tarifi?")
+	b := e.chat(tok, rid(), "", "Ankara hava durumu").msg.get("conversation")
+	search := func(tok, q string) resp { return e.do("POST", "/v1/search", tok, "S40/1\n\n"+q) }
+
+	r := search(tok, "isikli SISE")
+	l := listLines(r)
+	if r.code != 200 || r.msg.get("count") != "1" || len(l) != 1 || l[0][0] != a || len(l[0]) != 4 {
+		t.Fatalf("%q", r.raw)
+	}
+	if !strings.Contains(l[0][3], "Işıklı şişe") || strings.Contains(l[0][3], "\n") {
+		t.Fatalf("snippet %q", l[0][3])
+	}
+	// every word must be in the conversation, in any message
+	if l := listLines(search(tok, "sise cig")); len(l) != 1 || l[0][0] != a {
+		t.Fatalf("%q", l)
+	}
+	if l := listLines(search(tok, "sise ankara")); len(l) != 0 {
+		t.Fatalf("%q", l)
+	}
+	if l := listLines(search(tok, "hava")); len(l) != 1 || l[0][0] != b || l[0][2] != "2" { // question + quoting reply
+		t.Fatalf("%q", l)
+	}
+	if r := search(tok, "a"); r.code != 400 || r.msg.get("status") != "bad_query" {
+		t.Fatalf("%q", r.raw)
+	}
+	other, _ := e.pair("q")
+	if r := search(other, "hava"); r.msg.get("count") != "0" {
+		t.Fatal("other device finds conversations")
+	}
+}
+
+func TestSnippet(t *testing.T) {
+	text := []rune(strings.Repeat("önce gelen kelimeler ", 5) + "ARANAN" + strings.Repeat(" sonra gelen kelimeler", 8))
+	s := snippet(text, runeIndex(foldRunes(string(text)), []rune("aranan")), 6)
+	if !strings.HasPrefix(s, "...") || !strings.HasSuffix(s, "...") || !strings.Contains(s, "ARANAN") ||
+		len([]rune(s)) > snippetBefore+snippetAfter+12 {
+		t.Fatalf("%q", s)
+	}
+	if s := snippet([]rune("kısa metin"), 0, 4); s != "kısa metin" {
+		t.Fatalf("%q", s)
+	}
+}
+
+type recModel struct {
+	mu   sync.Mutex
+	last replyOpts
+}
+
+func (m *recModel) reply(ctx context.Context, h []turn, msg string, o replyOpts) (reply, error) {
+	m.mu.Lock()
+	m.last = o
+	m.mu.Unlock()
+	return mockModel{}.reply(ctx, h, msg, o)
+}
+
+func TestChatOptions(t *testing.T) {
+	e := newEnv(t, 100)
+	rec := &recModel{}
+	e.srv.chat.model = rec
+	tok, _ := e.pair("p")
+	notes := "Adım Emir.\u0001 İstanbul'da yaşıyorum, kısa yaz. " + strings.Repeat("uzun ", 100)
+	r := e.do("POST", "/v1/chat", tok, formatS40([]kv{{"request", rid()}, {"instructions", notes}, {"calendar", "1"},
+		{"local-time", "2026-09-26 21:05"}}, "[[mock:event]] yarın 15:00 dişçi"))
+	if r.msg.get("status") != "ok" || !strings.Contains(r.msg.text, "EVENT: 2026-09-27 15:00 | Test mode event") {
+		t.Fatalf("%q", r.raw)
+	}
+	o := rec.last
+	if !o.calendar || o.localTime.Format("2006-01-02 15:04") != "2026-09-26 21:05" {
+		t.Fatalf("%+v", o)
+	}
+	if !strings.HasPrefix(o.instructions, "Adım Emir. İstanbul'da") || len([]rune(o.instructions)) > maxInstructions+4 ||
+		strings.ContainsRune(o.instructions, 1) {
+		t.Fatalf("%q", o.instructions)
+	}
+	// older phones: no options; a malformed clock is ignored
+	e.chat(tok, rid(), "", "merhaba")
+	if o := rec.last; o.calendar || o.instructions != "" || !o.localTime.IsZero() {
+		t.Fatalf("%+v", o)
+	}
+	e.do("POST", "/v1/chat", tok, formatS40([]kv{{"request", rid()}, {"calendar", "1"}, {"local-time", "yarın"}}, "x"))
+	if o := rec.last; !o.calendar || !o.localTime.IsZero() {
+		t.Fatalf("%+v", o)
+	}
+}
+
+func TestSystemPromptParts(t *testing.T) {
+	now := time.Date(2026, 9, 26, 18, 0, 0, 0, time.UTC)
+	plain := systemPrompt(replyOpts{}, now)
+	if strings.Contains(plain, "EVENT:") || strings.Contains(plain, "user_notes") || strings.Contains(plain, "search the web") {
+		t.Fatal(plain)
+	}
+	lt := time.Date(2026, 9, 26, 21, 5, 0, 0, time.UTC)
+	p := systemPrompt(replyOpts{calendar: true, localTime: lt, instructions: "Kısa yaz."}, now)
+	for _, want := range []string{"EVENT: YYYY-MM-DD HH:MM | short title", "TODO: YYYY-MM-DD | short title",
+		"Saturday 2026-09-26 21:05", "<user_notes>\nKısa yaz.\n</user_notes>"} {
+		if !strings.Contains(p, want) {
+			t.Fatalf("missing %q in %s", want, p)
+		}
+	}
+}

@@ -61,8 +61,8 @@ type chatService struct {
 	model       model
 	reqLimit    int
 	tokLimit    int64
-	search      bool // web search available at all (server setting)
-	searchLimit int  // searches per device per UTC day
+	search      bool     // web search available at all (server setting)
+	searchLimit int      // searches per device per UTC day
 	deviceLocks sync.Map // device id -> *sync.Mutex (serialises the bookkeeping, not the call)
 }
 
@@ -112,8 +112,9 @@ func (r *chatResult) firstPart(stored string, cut bool) {
 	r.truncated = cut || more
 }
 
-// chat: search is the phone's wish (0.4+ can turn web search off).
-func (c *chatService) chat(ctx context.Context, device, requestID, conv, message string, search bool) (chatResult, error) {
+// chat: o.search is the phone's wish (0.4+ can turn web search off); the
+// other options come from the phone as they are.
+func (c *chatService) chat(ctx context.Context, device, requestID, conv, message string, o replyOpts) (chatResult, error) {
 	mu := c.lock(device)
 	mu.Lock()
 	db := c.st.db
@@ -207,7 +208,8 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		}
 		c.st.trimConversations(ctx, device)
 	}
-	opts := replyOpts{search: search && c.searchesLeft(ctx, device) > 0}
+	opts := o
+	opts.search = o.search && c.searchesLeft(ctx, device) > 0
 	history, err := c.context(ctx, device, conv)
 	if err != nil {
 		mu.Unlock()
