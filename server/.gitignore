@@ -3,3 +3,5 @@ secrets/
 certs/
 *.db
 *.db-*
+# go build output
+/server
