@@ -27,10 +27,21 @@ search, long answers you can page through, and a UI in Turkish or English.
   shorten, explain more simply, translate, ask about it, open it in the
   editor. They only fill in the editor; nothing is sent until you press
   Send.
-- **Earlier chats** from the server, continue any of them; optional offline
-  copy of the last chat.
-- **18 quick prompts** (search the web, weather, translate, reply to a
-  message, summarize, fix my writing, ...).
+- **Earlier chats** from the server, continue any of them; **pin** the ones
+  you want to keep at the top (kept until unpinned), **delete** or **search**
+  all chats (no Turkish letters needed: "sise" finds "şişe"); optional
+  offline copy of the last chat.
+- **Save to phone**: a reply as a .txt file (memory card if there is one),
+  readable later without the network under "Saved".
+- **Calendar and to-do**: ask "add to my calendar: dentist tomorrow at 3"
+  and the reply carries a ready entry; the centre key opens a prefilled
+  form, and only your "Save" writes it to the phone's own calendar or to-do
+  list. Works from any message too.
+- **Your notes for Claude** (Settings): "I'm Emir, I live in Istanbul, keep
+  it short" is sent with every message.
+- **Data usage**: requests and approximate kilobytes today and in total.
+- **20 quick prompts** (search the web, weather, translate, reply to a
+  message, add to my calendar, summarize, fix my writing, ...).
 - **Setup wizard** on first start: language, server address, connection
   test, pairing with a 6-digit code (no long code to type).
 - **Keypad-first**: every screen works with the keypad; a Shortcuts screen
@@ -45,7 +56,8 @@ search, long answers you can page through, and a UI in Turkish or English.
   certificate from your own private CA, and modern HTTPS to the Claude API.
 - Per-device access tokens through pairing, daily request, token and
   web-search limits, no automatic retries of paid calls.
-- SQLite for chats (30 days), admin API on localhost only.
+- SQLite for chats (30 days, pinned ones until unpinned), search over
+  them, admin API on localhost only.
 
 ## Screens
 
@@ -83,7 +95,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~80 KB JAR, English + Turkish UI (see Features). Reproducible build with 42 package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~100 KB JAR, English + Turkish UI (see Features). Reproducible build with 44 package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
@@ -114,7 +126,7 @@ Full guide: **[docs/SETUP.md](docs/SETUP.md)**. In short:
 ## Development
 
 ```
-make test          # server: go vet + go test -race; app: build + 42 checks + reproducibility
+make test          # server: go vet + go test -race; app: build + 44 checks + reproducibility
 make -C app        # phone app only (downloads pinned build tools to app/.deps)
 make -C server test
 ```
@@ -126,8 +138,14 @@ deployment), OpenSSL or LibreSSL.
 
 - The Claude API key lives only on your server. The phone gets a per-device,
   revocable access token through pairing.
-- Chats are stored on your server for 30 days after the last message. The
-  phone keeps the last chat only if you turn on "Keep last chat on phone".
+- Chats are stored on your server for 30 days after the last message;
+  pinned chats until you unpin or delete them. The phone keeps the last
+  chat only if you turn on "Keep last chat on phone"; replies you save and
+  calendar entries you add stay on the phone. Your notes for Claude are
+  stored on the phone and sent with each message (never logged).
+- The setup (server address, access code, notes) is also kept in a file on
+  the memory card so a new build needs no new pairing; revoke the device
+  if the card leaves your hands, or use Settings > Reset setup.
   Logs contain no message text.
 - Every message is a Claude API call billed to your key. The server enforces
   per-device daily request, output-token and web-search limits and never

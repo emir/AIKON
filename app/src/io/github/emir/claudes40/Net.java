@@ -44,6 +44,8 @@ final class Net {
 
     /** Largest response body kept in RAM. */
     static final int MAX_BODY = 8192;
+    /** Rough size of the server's response headers (DataUsage). */
+    private static final int RESPONSE_HEADERS = 200;
 
     static final class Result {
         int error = ERR_NONE;
@@ -89,8 +91,10 @@ final class Net {
         HttpConnection c = null;
         InputStream in = null;
         OutputStream out = null;
+        byte[] payload = null;
+        int received = 0;
         try {
-            byte[] payload = body == null ? null : body.getBytes("UTF-8");
+            payload = body == null ? null : body.getBytes("UTF-8");
             c = (HttpConnection) Connector.open(url, Connector.READ_WRITE, true);
             c.setRequestMethod(method);
             c.setRequestProperty("User-Agent", userAgent);
@@ -126,9 +130,11 @@ final class Net {
                     break;
                 }
                 n += k;
+                received = n;
             }
             if (n == MAX_BODY && in.read() >= 0) {
                 r.bodyCut = true;
+                received = n + 1;
             }
             int end = r.bodyCut ? utf8Boundary(buf, n) : n;
             try {
@@ -157,8 +163,24 @@ final class Net {
             r.detail = e.getClass().getName() + ": " + e.getMessage();
         } finally {
             close(in, out, c);
+            count(r, url, method, auth, userAgent, payload, received);
         }
         return r;
+    }
+
+    /**
+     * Adds the request to DataUsage once something may have gone over the
+     * network: the body exactly, headers estimated from what we send plus a
+     * margin for the phone's own, the response headers as a fixed guess.
+     */
+    private static void count(Result r, String url, String method, String auth, String userAgent, byte[] payload,
+            int received) {
+        if (r.phase < PHASE_SEND && r.httpCode < 0) {
+            return; // not connected: nothing sent (MIDP connects in getResponseCode)
+        }
+        int headers = 160 + url.length() + method.length() + userAgent.length() + (auth == null ? 0 : auth.length() + 24);
+        int sent = headers + (payload == null ? 0 : payload.length + 60);
+        DataUsage.add(sent, r.httpCode < 0 ? 0 : RESPONSE_HEADERS + received);
     }
 
     private static void report(Listener l, int phase) {

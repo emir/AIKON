@@ -20,10 +20,11 @@ import javax.microedition.midlet.MIDlet;
  * Claude S40: an unofficial Claude client for Nokia Series 40.
  *
  * Screens: animated splash (Splash), main menu (HomeCanvas), chat
- * (ChatCanvas), chats on the server (ChatList), quick prompts (List),
- * message editor (the phone's own TextBox), connection test (ConnTest),
- * pairing (Pairing), first-run setup (Setup), settings, shortcuts and about
- * (Form). English or Turkish UI (L); changing the language rebuilds the
+ * (ChatCanvas), chats on the server (ChatList), replies saved on the phone
+ * (SavedList), quick prompts (List), message editor (the phone's own
+ * TextBox), add to calendar (CalendarForm), connection test (ConnTest),
+ * pairing (Pairing), first-run setup (Setup), settings, data usage,
+ * shortcuts and about (Form). English or Turkish UI (L); changing the language rebuilds the
  * screens (rebuildUi), no restart needed. Networking happens only on worker
  * threads.
  */
@@ -40,7 +41,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
      */
     static final String[] TITLES_EN = {
         "Search the web", "Weather", "Today's news", "Exchange rates", "Translate to English", "Translate to Turkish", "Reply to a message", "Write a text for me",
-        "Fix my writing", "Summarize", "Quick answer", "Explain simply", "Calculate / convert",
+        "Add to my calendar", "Add a to-do", "Fix my writing", "Summarize", "Quick answer", "Explain simply", "Calculate / convert",
         "What does it mean?", "What can I cook?", "Help me decide", "How do I...?", "Roast this phone",
     };
 
@@ -53,6 +54,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         "Translate to Turkish: ",
         "Write a short, friendly reply to this message: ",
         "Write a short text message that says: ",
+        "Add to my calendar: ",
+        "Add to my to-do list: ",
         "Fix the spelling and grammar, keep my tone: ",
         "Summarize in 3 short lines: ",
         "Answer in 2 sentences: ",
@@ -67,7 +70,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     static final String[] TITLES_TR = {
         "Web'de ara", "Hava durumu", "Bugünün haberleri", "Döviz ve altın", "İngilizceye çevir", "Türkçeye çevir", "Mesaja cevap yaz", "Benim için mesaj yaz",
-        "Yazımı düzelt", "Özetle", "Kısa cevap", "Basitçe anlat", "Hesapla / çevir",
+        "Takvimime ekle", "Yapılacak ekle", "Yazımı düzelt", "Özetle", "Kısa cevap", "Basitçe anlat", "Hesapla / çevir",
         "Bu ne demek?", "Ne pişirebilirim?", "Karar vermeme yardım et", "Nasıl yapılır?", "Bu telefonu roastla",
     };
 
@@ -80,6 +83,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         "Türkçeye çevir: ",
         "Bu mesaja kısa ve samimi bir cevap yaz: ",
         "Şunu söyleyen kısa bir mesaj yaz: ",
+        "Takvimime ekle: ",
+        "Yapılacaklar listeme ekle: ",
         "Yazım ve dil bilgisini düzelt, üslubumu koru: ",
         "3 kısa satırda özetle: ",
         "2 cümleyle cevapla: ",
@@ -131,6 +136,15 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private ChatSession.Entry actionEntry;
     private TextBox viewer;
     private Command listBackCmd;
+    private TextField notesField;
+    private Command dataCmd;
+    private Form dataForm;
+    private Command resetCmd;
+    private SavedList savedList;
+    private Command resetSetupCmd;
+    private Command resetYesCmd;
+    private Command resetNoCmd;
+    private Alert resetConfirm;
 
     private static final int ACT_READ = 0;
     private static final int ACT_SHORTEN = 1;
@@ -140,6 +154,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private static final int ACT_ASK = 5;
     private static final int ACT_RESEND = 6;
     private static final int ACT_EDITOR = 7;
+    private static final int ACT_SAVE = 8;
+    private static final int ACT_CALENDAR = 9;
 
     protected void startApp() {
         if (display == null) {
@@ -152,6 +168,15 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             if (settings.saveChat) {
                 Vector saved = ChatStore.load();
                 session.restore(ChatStore.conversation, saved);
+            }
+            if (!settings.stored && !settings.testMode && hasFiles()) {
+                // just installed: look for the setup kept outside the app while the splash runs
+                restoring = true;
+                new Thread(new Runnable() {
+                    public void run() {
+                        restoreSetup();
+                    }
+                }).start();
             }
             display.setCurrent(new Splash(this));
             return;
@@ -171,7 +196,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         splashCmd = new Command(L.s("Açılışı izle", "Replay the intro"), Command.SCREEN, 3);
         promptsBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         listBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+        dataCmd = new Command(L.s("Veri kullanımı", "Data usage"), Command.SCREEN, 4);
+        resetSetupCmd = new Command(L.s("Kurulumu sıfırla", "Reset setup"), Command.SCREEN, 5);
+        resetYesCmd = new Command(L.s("Sıfırla", "Reset"), Command.OK, 1);
+        resetNoCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+        resetCmd = new Command(L.s("Sıfırla", "Reset"), Command.SCREEN, 2);
         actionList = null;
+        savedList = null;
         viewer = null;
         promptTexts = L.turkish() ? PROMPTS_TR : PROMPTS_EN;
         chat = new ChatCanvas(this, session);
@@ -193,8 +224,54 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         return display;
     }
 
+    /** Backup is being read (start-up); the splash end waits for it. */
+    private boolean restoring;
+    private boolean splashDone;
+    private boolean restored;
+
+    /** Worker thread at start-up: the setup kept outside the app (Backup), if any. */
+    private void restoreSetup() {
+        boolean ok = Backup.restore(settings);
+        if (ok) {
+            settings.save();
+            rebuildUi(); // the language may have changed
+            Theme.apply(settings);
+        }
+        boolean go;
+        synchronized (this) {
+            restoring = false;
+            restored = ok;
+            go = splashDone;
+        }
+        if (go) {
+            startScreen();
+        }
+    }
+
     /** End of the splash: the setup wizard on a phone that is not set up yet, else the menu. */
     void afterSplash() {
+        synchronized (this) {
+            if (restoring) {
+                splashDone = true; // restoreSetup() continues
+                return;
+            }
+        }
+        startScreen();
+    }
+
+    private void startScreen() {
+        boolean r;
+        synchronized (this) {
+            r = restored;
+            restored = false;
+        }
+        if (r) {
+            info(L.s("Önceki kurulum geri yüklendi: sunucu, eşleştirme ve notların. Baştan kurmak için: "
+                    + "Ayarlar > Seçenekler > Kurulumu sıfırla.",
+                    "Your earlier setup was restored: server, pairing and your notes. To start over: "
+                    + "Settings > Options > Reset setup."), home);
+            return;
+        }
         if (!settings.setupDone && !settings.ready() && !settings.testMode) {
             new Setup(this).start();
         } else {
@@ -276,15 +353,48 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         home.repaint();
     }
 
-    /** Sound + vibration when a reply arrives (Settings > Sound & vibration). */
+    /**
+     * The light comes on for a reply only after this long without a key: the
+     * screen may be dark by then. While the user is at it the light is still
+     * on, and the Nokia 6300 shows flashBacklight on a lit screen as a blink.
+     */
+    private static final long LIGHT_IDLE_MS = 30000;
+    /** Last key press or softkey in the app (userActive). */
+    private long lastInput;
+
+    /** Called on key presses and commands. */
+    synchronized void userActive() {
+        lastInput = System.currentTimeMillis();
+    }
+
+    private synchronized boolean idle() {
+        return System.currentTimeMillis() - lastInput > LIGHT_IDLE_MS;
+    }
+
+    /** Sound + vibration when a reply arrives (Settings > Sound & vibration); light only if idle. */
     void replyFeedback() {
         Sound.play(settings, Sound.CHIME);
         if (settings.vibrate) {
             display.vibrate(180);
         }
-        if (settings.lightReply) {
+        if (settings.lightReply && idle()) {
             display.flashBacklight(4000);
         }
+    }
+
+    /** The phone has JSR 75 FileConnection (saved replies, Files). */
+    static boolean hasFiles() {
+        return !"-".equals(prop("microedition.io.file.FileConnection.version"));
+    }
+
+    /** The phone has the JSR 75 PIM API (calendar and to-do list, Pim). */
+    static boolean hasPim() {
+        return !"-".equals(prop("microedition.pim.version"));
+    }
+
+    /** ChatList deleted a chat on the server. */
+    void chatDeleted(String id) {
+        session.forget(id);
     }
 
     /** MIDP 2.0 Display.flashBacklight; false if the phone cannot. */
@@ -344,6 +454,19 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
     }
 
+    /** Replies saved on the phone (works without the network). */
+    void showSaved() {
+        if (!hasFiles()) {
+            info(L.s("Bu telefon uygulamaların dosya kaydetmesini desteklemiyor.",
+                    "This phone does not let apps save files."), home);
+            return;
+        }
+        if (savedList == null) {
+            savedList = new SavedList(this);
+        }
+        savedList.show();
+    }
+
     void showPrompts() {
         if (!chatReady()) {
             return;
@@ -400,7 +523,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "9: text size\n"
                     + "7 or Close: back to the chat\n")));
             shortcuts.append(new StringItem(L.s("Ana menü", "Main menu"), L.s(
-                    "1-8: satırı doğrudan açar\n", "1-8: opens that row directly\n")));
+                    "1-9: satırı doğrudan açar\n", "1-9: opens that row directly\n")));
             shortcuts.append(new StringItem(null, L.s(
                     "Kısalt, çevir gibi işlemler hiçbir şeyi kendiliğinden göndermez: yazma kutusu hazır metinle "
                             + "açılır, Gönder'e sen basarsın.",
@@ -423,8 +546,30 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
      */
     void showActions(ChatSession.Entry e) {
         boolean reply = e.kind != ChatSession.KIND_USER;
-        int[] ids = reply ? new int[] { ACT_READ, ACT_SHORTEN, ACT_SIMPLER, ACT_TO_TR, ACT_TO_EN, ACT_ASK, ACT_EDITOR }
-                : new int[] { ACT_RESEND, ACT_EDITOR };
+        boolean entry = Cal.parse(e.text) != null;
+        Vector v = new Vector();
+        if (hasPim() && entry) {
+            v.addElement(new Integer(ACT_CALENDAR)); // Claude prepared an entry: offer it first
+        }
+        if (reply) {
+            int[] rewording = { ACT_READ, ACT_SHORTEN, ACT_SIMPLER, ACT_TO_TR, ACT_TO_EN, ACT_ASK };
+            for (int i = 0; i < rewording.length; i++) {
+                v.addElement(new Integer(rewording[i]));
+            }
+            if (hasFiles()) {
+                v.addElement(new Integer(ACT_SAVE));
+            }
+        } else {
+            v.addElement(new Integer(ACT_RESEND));
+        }
+        if (hasPim() && !entry) {
+            v.addElement(new Integer(ACT_CALENDAR));
+        }
+        v.addElement(new Integer(ACT_EDITOR));
+        int[] ids = new int[v.size()];
+        for (int i = 0; i < ids.length; i++) {
+            ids[i] = ((Integer) v.elementAt(i)).intValue();
+        }
         String[] labels = new String[ids.length];
         for (int i = 0; i < ids.length; i++) {
             labels[i] = actionLabel(ids[i]);
@@ -453,6 +598,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             return L.s("Bunun hakkında sor", "Ask about this");
         case ACT_RESEND:
             return L.s("Düzenleyip yeniden gönder", "Edit and send again");
+        case ACT_SAVE:
+            return L.s("Telefona kaydet (.txt)", "Save to phone (.txt)");
+        case ACT_CALENDAR:
+            return L.s("Takvime / yapılacaklara ekle", "Add to calendar / to-do");
         default:
             return L.s("Düzenleyicide aç", "Open in editor");
         }
@@ -482,6 +631,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             break;
         case ACT_RESEND:
             showComposer(Text.clip(e.text, ChatSession.MAX_MESSAGE));
+            break;
+        case ACT_SAVE:
+            showChat();
+            if (savedList == null) {
+                savedList = new SavedList(this);
+            }
+            savedList.save(e, chat);
+            break;
+        case ACT_CALENDAR:
+            new CalendarForm(this, e, chat).show();
             break;
         default:
             showViewer(e);
@@ -545,6 +704,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     public void commandAction(Command c, Displayable d) {
+        userActive();
         if (d == composer) {
             if (c == sendCmd) {
                 String err = session.send(composer.getString());
@@ -570,8 +730,34 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 startPairing();
             } else if (c == wizardCmd) {
                 new Setup(this).start();
+            } else if (c == dataCmd) {
+                showDataUsage();
+            } else if (c == resetSetupCmd) {
+                resetConfirm = new Alert(L.s("Kurulumu sıfırla", "Reset setup"), L.s(
+                        "Sunucu adresi, eşleştirme ve notların bu telefondan ve yedek dosyasından silinsin mi? "
+                                + "Sonra kurulum sihirbazı açılır.",
+                        "Delete the server address, pairing and your notes from this phone and from the backup "
+                                + "file? The setup wizard opens next."), null, AlertType.WARNING);
+                resetConfirm.setTimeout(Alert.FOREVER);
+                resetConfirm.addCommand(resetYesCmd);
+                resetConfirm.addCommand(resetNoCmd);
+                resetConfirm.setCommandListener(this);
+                display.setCurrent(resetConfirm);
             } else {
                 showMenu();
+            }
+        } else if (d == resetConfirm) {
+            if (c == resetYesCmd) {
+                resetSetup();
+            } else {
+                display.setCurrent(settingsForm != null ? (Displayable) settingsForm : home);
+            }
+        } else if (d == dataForm) {
+            if (c == resetCmd) {
+                DataUsage.reset();
+                showDataUsage();
+            } else {
+                display.setCurrent(settingsForm != null ? (Displayable) settingsForm : home);
             }
         } else if (d == actionList) {
             ChatSession.Entry e = actionEntry;
@@ -618,18 +804,21 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             }
             break;
         case 4:
+            showSaved();
+            break;
+        case 5:
             if (connTest == null) {
                 connTest = new ConnTest(this, null);
             }
             connTest.show(display);
             break;
-        case 5:
+        case 6:
             showSettings();
             break;
-        case 6:
+        case 7:
             showAbout();
             break;
-        case 7:
+        case 8:
             exit();
             break;
         default:
@@ -657,7 +846,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         feedbackChoice.setSelectedIndex(1, settings.vibrate);
         lightChoice = new ChoiceGroup(L.s("Ekran ışığı", "Backlight"), ChoiceGroup.MULTIPLE,
                 new String[] { L.s("Okuma modunda açık tut", "Keep on in reading mode"),
-                    L.s("Yanıt gelince yak", "Light up when a reply arrives") }, null);
+                    L.s("Yanıt gelince yak (ekran kararmışsa)", "Light up for a reply (if the screen went dark)") }, null);
         lightChoice.setSelectedIndex(0, settings.lightReading);
         lightChoice.setSelectedIndex(1, settings.lightReply);
         urlField = new TextField(L.s("Sunucu adresi (https://...)", "Server address (https://...)"), settings.url,
@@ -678,20 +867,30 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settingsForm.append(feedbackChoice);
         settingsForm.append(lightChoice);
         settingsForm.append(claudeChoice);
+        notesField = new TextField(L.s("Claude için notların", "Your notes for Claude"), settings.instructions,
+                Settings.MAX_INSTRUCTIONS, TextField.ANY);
+        settingsForm.append(notesField);
+        settingsForm.append(new StringItem(null, L.s(
+                "Örnek: \"Adım Emir, İstanbul'dayım, kısa ve Türkçe yaz.\" Her mesajla sunucuya gönderilir.",
+                "Example: \"I'm Emir, I live in Istanbul, keep it short.\" Sent to the server with every message.")));
         settingsForm.append(urlField);
         settingsForm.append(tokenField);
         settingsForm.append(testChoice);
         settingsForm.append(new StringItem(null, L.s(
                 "Erişim kodunu yazmak yerine Seçenekler > 'Cihazı eşleştir' kullanılabilir. "
-                        + "Erişim kodu yalnızca bu telefonda saklanır ve sadece https:// adresine gönderilir. ",
+                        + "Erişim kodu bu telefonda ve (uygulama silinince kurulum gerekmesin diye) hafıza kartındaki "
+                        + "kurulum yedeğinde saklanır, sadece https:// adresine gönderilir. ",
                 "Instead of typing the access code, use Options > 'Pair this phone'. "
-                        + "The code is stored only on this phone and sent only to the https:// address. ")
+                        + "The code is stored on this phone and (so a reinstall needs no setup) in the setup backup on "
+                        + "the memory card, and sent only to the https:// address. ")
                 + (settings.connectionVerified()
                         ? L.s("Bu adres için bağlantı testi geçti.", "The connection test passed for this address.")
                         : L.s("Bu adres için bağlantı testi henüz geçmedi.", "No passed connection test for this address yet."))));
         settingsForm.addCommand(saveCmd);
         settingsForm.addCommand(pairCmd);
         settingsForm.addCommand(wizardCmd);
+        settingsForm.addCommand(dataCmd);
+        settingsForm.addCommand(resetSetupCmd);
         settingsForm.addCommand(formBackCmd);
         settingsForm.setCommandListener(this);
         display.setCurrent(settingsForm);
@@ -733,6 +932,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settings.lightReading = lightChoice.isSelected(0);
         settings.lightReply = lightChoice.isSelected(1);
         settings.webSearch = claudeChoice.isSelected(0);
+        settings.instructions = notesField.getString().trim();
         boolean keep = claudeChoice.isSelected(1);
         if (keep != settings.saveChat) {
             settings.saveChat = keep;
@@ -749,6 +949,40 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             rebuildUi();
         }
         info(err != null ? err : L.s("Kaydedildi.", "Saved."), home);
+    }
+
+    /**
+     * Forgets the setup (here and in the Backup file) and opens the wizard.
+     * The device stays paired on the server until it is revoked there.
+     */
+    private void resetSetup() {
+        String url = getAppProperty("ClaudeS40-Gateway");
+        settings.url = url == null ? "" : url.trim();
+        settings.token = "";
+        settings.verifiedUrl = "";
+        settings.setupDone = false;
+        settings.instructions = "";
+        Backup.forget(settings);
+        settings.save();
+        new Setup(this).start();
+    }
+
+    /** Mobile data used by the app (DataUsage); "Sıfırla" starts the totals again. */
+    private void showDataUsage() {
+        dataForm = new Form(L.s("Veri kullanımı", "Data usage"));
+        long[] t = DataUsage.total();
+        dataForm.append(new StringItem(L.s("Bugün", "Today"), DataUsage.describe(DataUsage.today())));
+        dataForm.append(new StringItem(L.s("Toplam, başlangıç ", "Total since ") + Text.local(t[3], false),
+                DataUsage.describe(t)));
+        dataForm.append(new StringItem(null, L.s(
+                "Yaklaşık değerler: mesajlar tam, HTTP başlıkları tahminen sayılır. Şifreli bağlantının kurulumu "
+                        + "sayılmaz, operatörün saydığı miktar daha fazladır. Test modunda veri kullanılmaz.",
+                "Estimates: messages are counted exactly, HTTP headers roughly. The encrypted connection set-up "
+                        + "is not counted, so your operator counts more. Test mode uses no data.")));
+        dataForm.addCommand(formBackCmd);
+        dataForm.addCommand(resetCmd);
+        dataForm.setCommandListener(this);
+        display.setCurrent(dataForm);
     }
 
     private void startPairing() {
@@ -804,6 +1038,11 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(null, L.s(
                 "Web araması Anthropic'in arama aracıyla sunucuda yapılır; telefonun tarayıcısı kullanılmaz.",
                 "Web search runs on the server with Anthropic's search tool, not the phone's browser.")));
+        about.append(new StringItem(null, L.s(
+                "Sabitlenen sohbetler sunucuda, sabitleme kaldırılana kadar kalır. Telefona kaydedilen yanıtlar ve "
+                        + "takvim kayıtları yalnızca telefonda durur.",
+                "Pinned chats stay on the server until unpinned. Replies saved on the phone and calendar entries "
+                        + "stay on the phone only.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
         about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));

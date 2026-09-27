@@ -256,8 +256,91 @@ final class Text {
         return two(c.get(Calendar.DAY_OF_MONTH)) + "." + two(c.get(Calendar.MONTH) + 1);
     }
 
-    private static String two(int v) {
+    /** Phone-local "dd.MM.yyyy HH:mm" (without the time if `time` is false); "-" if unknown. */
+    static String local(long ms, boolean time) {
+        if (ms <= 0) {
+            return "-";
+        }
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(ms));
+        String d = two(c.get(Calendar.DAY_OF_MONTH)) + "." + two(c.get(Calendar.MONTH) + 1) + "." + c.get(Calendar.YEAR);
+        return time ? d + " " + two(c.get(Calendar.HOUR_OF_DAY)) + ":" + two(c.get(Calendar.MINUTE)) : d;
+    }
+
+    /** Phone-local "yyyy-MM-dd HH:mm" (the server's local-time field). */
+    static String iso(long ms) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(ms));
+        return c.get(Calendar.YEAR) + "-" + two(c.get(Calendar.MONTH) + 1) + "-" + two(c.get(Calendar.DAY_OF_MONTH)) + " "
+                + two(c.get(Calendar.HOUR_OF_DAY)) + ":" + two(c.get(Calendar.MINUTE));
+    }
+
+    /** Phone-local "yyyyMMdd-HHmm", the start of a saved reply's file name. */
+    static String stamp(long ms) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(ms));
+        return c.get(Calendar.YEAR) + two(c.get(Calendar.MONTH) + 1) + two(c.get(Calendar.DAY_OF_MONTH)) + "-"
+                + two(c.get(Calendar.HOUR_OF_DAY)) + two(c.get(Calendar.MINUTE));
+    }
+
+    /**
+     * A short ASCII file-name part from the first words of a text: Turkish
+     * letters as plain Latin ones, anything else as "-", at most `max` chars.
+     */
+    static String slug(String s, int max) {
+        StringBuffer sb = new StringBuffer();
+        boolean dash = false;
+        for (int i = 0; i < s.length() && sb.length() < max; i++) {
+            char ch = Character.toLowerCase(plain(s.charAt(i)));
+            if ((ch >= 'a' && ch <= 'z') || (ch >= '0' && ch <= '9')) {
+                if (dash && sb.length() > 0) {
+                    sb.append('-');
+                }
+                sb.append(ch);
+                dash = false;
+            } else {
+                dash = true;
+            }
+        }
+        return sb.toString();
+    }
+
+    private static char plain(char ch) {
+        switch (ch) {
+        case '\u0131': // ı
+        case '\u0130': // İ
+            return 'i';
+        case '\u015F': // ş
+        case '\u015E':
+            return 's';
+        case '\u011F': // ğ
+        case '\u011E':
+            return 'g';
+        case '\u00E7': // ç
+        case '\u00C7':
+            return 'c';
+        case '\u00F6': // ö
+        case '\u00D6':
+            return 'o';
+        case '\u00FC': // ü
+        case '\u00DC':
+            return 'u';
+        default:
+            return ch;
+        }
+    }
+
+    static String two(int v) {
         return v < 10 ? "0" + v : String.valueOf(v);
+    }
+
+    /** "850 B", "12,3 KB" / "12.3 KB", "1,4 MB". */
+    static String bytes(long n) {
+        if (n < 1024) {
+            return n + " B";
+        }
+        long tenths = n < 1024L * 1024 ? n * 10 / 1024 : n * 10 / (1024L * 1024);
+        return tenths / 10 + L.s(",", ".") + tenths % 10 + (n < 1024L * 1024 ? " KB" : " MB");
     }
 
     static int parseInt(String s, int fallback) {

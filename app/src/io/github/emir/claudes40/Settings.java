@@ -16,8 +16,11 @@ import javax.microedition.rms.RecordStoreException;
  * connection test last passed, look & feel (theme, text size, sound,
  * vibration, language), web search on/off and whether the last chat is kept
  * on the phone (ChatStore; off by default), and whether the setup wizard was
- * finished or skipped, and the two backlight options. No chat content is stored here.
- * Format 1-4 records (0.1.x-0.4.x) are still read.
+ * finished or skipped, the two backlight options and the user's notes for
+ * Claude (sent with every message). No chat content is stored here. The
+ * setup part is also kept outside the app (Backup), so reinstalling does
+ * not need the setup wizard again.
+ * Format 1-5 records (0.1.x-0.6.x) are still read.
  *
  * The access code is typed on the phone by the user; it is never part of
  * the JAR/JAD. Removing the application deletes this record store.
@@ -25,7 +28,9 @@ import javax.microedition.rms.RecordStoreException;
 final class Settings {
 
     private static final String STORE = "cs40cfg";
-    private static final int FORMAT = 5;
+    private static final int FORMAT = 6;
+    /** Longest note for Claude (the server keeps at most 300 characters). */
+    static final int MAX_INSTRUCTIONS = 300;
 
     String url = "";
     String token = "";
@@ -50,6 +55,10 @@ final class Settings {
     boolean lightReading = true;
     /** Light the screen up when a reply arrives. */
     boolean lightReply = true;
+    /** The user's notes for Claude ("my name is..., answer briefly"); "" if none. */
+    String instructions = "";
+    /** load() found saved settings; false right after installing (Backup may restore them). */
+    boolean stored;
 
     boolean connectionVerified() {
         return url.length() > 0 && url.equals(verifiedUrl);
@@ -67,6 +76,7 @@ final class Settings {
             byte[] b = rs.getRecord(1);
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(b));
             int format = in.readInt();
+            stored = format >= 1 && format <= FORMAT;
             if (format >= 1 && format <= FORMAT) {
                 url = in.readUTF();
                 token = in.readUTF();
@@ -87,10 +97,13 @@ final class Settings {
                 saveChat = in.readBoolean();
             }
             // settings from before 0.5.0 belong to a phone that is already set up
-            setupDone = format == FORMAT ? in.readBoolean() : format >= 1 && format < FORMAT;
-            if (format == FORMAT) {
+            setupDone = format >= 5 && format <= FORMAT ? in.readBoolean() : format >= 1 && format < 5;
+            if (format >= 5 && format <= FORMAT) {
                 lightReading = in.readBoolean();
                 lightReply = in.readBoolean();
+            }
+            if (format >= 6 && format <= FORMAT) {
+                instructions = in.readUTF();
             }
         } catch (RecordStoreException e) {
             // first start: nothing stored yet
@@ -101,6 +114,9 @@ final class Settings {
         }
         if (url.length() == 0 && defaultUrl != null) {
             url = defaultUrl.trim(); // nothing saved yet: use ClaudeS40-Gateway from the JAD
+        }
+        if (stored) {
+            Backup.loaded(this);
         }
     }
 
@@ -125,6 +141,7 @@ final class Settings {
             out.writeBoolean(setupDone);
             out.writeBoolean(lightReading);
             out.writeBoolean(lightReply);
+            out.writeUTF(instructions);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);
@@ -133,6 +150,8 @@ final class Settings {
             } else {
                 rs.setRecord(1, b, 0, b.length);
             }
+            stored = true;
+            Backup.changed(this);
             return null;
         } catch (RecordStoreException e) {
             return L.s("Ayarlar kaydedilemedi: ", "Could not save settings: ") + e.getMessage();

@@ -1,6 +1,6 @@
 # Claude S40 phone app: CLDC 1.1 / MIDP 2.0 MIDlet.
 #
-#   make           build + 42 package checks + reproducible rebuild
+#   make           build + package checks + reproducible rebuild
 #   make build     -> dist/ClaudeS40.jar, dist/ClaudeS40.jad, dist/SHA256SUMS
 #   make check     checks only (after build)
 #   make emu       optional FreeJ2ME screenshots (FREEJ2ME=path/to/classes;
@@ -20,6 +20,9 @@ DEPS  ?= .deps/j2me
 ECJ   := $(DEPS)/ecj-3.33.0.jar
 CLDC  := $(DEPS)/cldcapi11-2.0.4.jar
 MIDP  := $(DEPS)/midpapi20-2.0.4.jar
+# JSR 75: FileConnection API from MicroEmulator, PIM API from compile-only
+# stubs (stubs/jsr75-pim). Optional on the phone: only Files and Pim use them.
+JSR75 := $(DEPS)/microemu-jsr-75-2.0.4.jar
 PROGUARD := $(DEPS)/proguard-7.9.1/lib/proguard.jar
 
 # class version 46.0 (as the MIDlets shipped on Series 40 3rd Edition phones)
@@ -33,6 +36,8 @@ LOCAL ?= app.local.properties
 FILE_BASE := $(shell sed -n 's/^FILE_BASE=//p' app.properties)
 
 SRCS := $(shell find src -name '*.java' | sort)
+STUB_SRCS := $(shell find stubs -name '*.java' | sort)
+STUBS = $(BUILD)/stubs
 
 .PHONY: all build check deps clean emu promo
 
@@ -42,20 +47,23 @@ deps:
 	@tools/fetch_deps.sh $(DEPS)
 
 build: deps
-	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(DIST)
-	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res
+	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS) $(DIST)
+	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS)
 	$(PYTHON) tools/make_art.py icon $(BUILD)/res/icon.png
 	$(JAVA) -jar $(ECJ) -source $(SOURCE_LEVEL) -target $(TARGET_LEVEL) \
-		-bootclasspath $(CLDC):$(MIDP) -encoding UTF-8 -g:none \
+		-bootclasspath $(CLDC) -encoding UTF-8 -g:none \
+		-failOnWarning -d $(STUBS) $(STUB_SRCS)
+	$(JAVA) -jar $(ECJ) -source $(SOURCE_LEVEL) -target $(TARGET_LEVEL) \
+		-bootclasspath $(CLDC):$(MIDP):$(JSR75):$(STUBS) -encoding UTF-8 -g:none \
 		-failOnWarning -d $(BUILD)/classes $(SRCS)
 	$(JAVA) -jar $(PROGUARD) @claude-s40.pro \
 		-injars $(BUILD)/classes -outjars $(BUILD)/preverified \
-		-libraryjars $(CLDC) -libraryjars $(MIDP)
+		-libraryjars $(CLDC) -libraryjars $(MIDP) -libraryjars $(JSR75) -libraryjars $(STUBS)
 	$(PYTHON) tools/package.py app.properties $(BUILD)/preverified $(DIST) $(LOCAL) $(BUILD)/res
 
 check:
 	@test -f $(DIST)/SHA256SUMS || { echo "run 'make build' first" >&2; exit 1; }
-	$(PYTHON) tools/check.py app.properties $(DIST) $(CLDC) $(MIDP)
+	$(PYTHON) tools/check.py app.properties $(DIST) $(CLDC) $(MIDP) $(JSR75) $(STUBS)
 	@echo "reproducibility: clean rebuild into $(BUILD)/repro"
 	@rm -rf $(BUILD)/repro
 	@$(MAKE) --no-print-directory BUILD=$(BUILD)/repro/build DIST=$(BUILD)/repro/dist build >$(BUILD)/repro.log 2>&1 \

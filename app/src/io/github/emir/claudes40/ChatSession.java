@@ -389,6 +389,19 @@ final class ChatSession implements Runnable, Net.Listener {
         return null;
     }
 
+    /** The chat with this id was deleted elsewhere (ChatList): if it is open, start afresh. */
+    void forget(String conv) {
+        synchronized (this) {
+            if (state != STATE_IDLE || !conversation.equals(conv)) {
+                return;
+            }
+            resetLocal();
+            ChatStore.delete();
+            add(KIND_INFO, L.s("Bu sohbet sunucudan silindi.", "This chat was deleted from the server."), false);
+        }
+        changed(false);
+    }
+
     private void resetLocal() {
         entries.removeAllElements();
         conversation = "";
@@ -473,11 +486,41 @@ final class ChatSession implements Runnable, Net.Listener {
             mockReply(text, conv);
             return;
         }
-        Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token,
-                S40Message.format(new String[] { "request", "conversation", "search" },
-                        new String[] { id, conv, s.webSearch ? "1" : "0" }, text),
-                midlet.userAgent(), this);
+        Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token, chatBody(s, id, conv, text), midlet.userAgent(),
+                this);
         finishChat(r);
+    }
+
+    /**
+     * The /v1/chat request. Optional fields (0.7+, ignored by older servers):
+     * the user's notes for Claude, and "calendar" + the phone's clock when
+     * the phone can add calendar entries (Claude then may end a reply with an
+     * entry line, see Cal).
+     */
+    private static String chatBody(Settings s, String id, String conv, String text) {
+        Vector k = new Vector();
+        Vector v = new Vector();
+        k.addElement("request");
+        v.addElement(id);
+        k.addElement("conversation");
+        v.addElement(conv);
+        k.addElement("search");
+        v.addElement(s.webSearch ? "1" : "0");
+        if (s.instructions.trim().length() > 0) {
+            k.addElement("instructions");
+            v.addElement(s.instructions.trim());
+        }
+        if (ClaudeS40MIDlet.hasPim()) {
+            k.addElement("calendar");
+            v.addElement("1");
+            k.addElement("local-time");
+            v.addElement(Text.iso(System.currentTimeMillis()));
+        }
+        String[] keys = new String[k.size()];
+        String[] values = new String[v.size()];
+        k.copyInto(keys);
+        v.copyInto(values);
+        return S40Message.format(keys, values, text);
     }
 
     private void mockReply(String text, String conv) {
@@ -500,6 +543,12 @@ final class ChatSession implements Runnable, Net.Listener {
                     "[Test mode] This is not a real Claude reply. No network was used.\n"
                     + "Your message has " + text.length() + " characters; earlier messages in this chat: "
                     + (prior - 1) + ".\nI received: \"" + text + "\"");
+            String low = text.toLowerCase();
+            if (low.indexOf("takvim") >= 0 || low.indexOf("calendar") >= 0 || low.indexOf("remind") >= 0) {
+                // a fake entry line, to try "Add to calendar" without the network
+                reply += "\nEVENT: " + Text.iso(System.currentTimeMillis() + 24L * 60 * 60 * 1000).substring(0, 10)
+                        + " 15:00 | " + L.s("Test modu etkinliği", "Test mode event");
+            }
             conversation = conv.length() > 0 ? conv : "test";
             add(KIND_TEST, reply, false);
             resolved();

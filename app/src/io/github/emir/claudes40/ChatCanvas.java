@@ -137,6 +137,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     public void commandAction(Command c, Displayable d) {
+        midlet.userActive();
         String err = null;
         if (c == writeCmd) {
             err = write();
@@ -185,11 +186,20 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     public void sessionChanged(boolean newReply) {
+        boolean calendar = false;
         synchronized (this) {
             if (newReply) {
                 jumpToLast = true;
                 if (reading) {
                     newWhileReading = true;
+                } else if (ClaudeS40MIDlet.hasPim()) {
+                    // a reply with a calendar entry: select it, so the centre key offers "Add to calendar"
+                    ChatSession.Entry[] es = session.snapshot();
+                    ChatSession.Entry last = es.length > 0 ? es[es.length - 1] : null;
+                    if (last != null && isReply(last.kind) && Cal.parse(last.text) != null) {
+                        sel = last.uid;
+                        calendar = true;
+                    }
                 }
             }
             if (session.typing()) {
@@ -208,7 +218,11 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         }
         updateCommands();
         updateAnimation();
-        repaint();
+        if (calendar) {
+            toast(L.s("Orta tuş: takvime ekle", "Centre key: add to calendar"));
+        } else {
+            repaint();
+        }
     }
 
     private synchronized void updateCommands() {
@@ -384,6 +398,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         synchronized (this) {
             lastKey = System.currentTimeMillis();
         }
+        midlet.userActive();
         String err = null;
         if (keyCode == KEY_NUM5) {
             if (!repeat && !session.busy()) {
@@ -705,7 +720,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             b.lines = new Vector();
             boolean bubble = isBubble(e.kind);
             if (bubble) {
-                Text.layout(e.text, f, maxBubble - 2 * BUBBLE_PAD, b.lines);
+                Text.layout(Cal.shown(e.text), f, maxBubble - 2 * BUBBLE_PAD, b.lines);
             } else {
                 Vector plain = new Vector();
                 Text.wrap(e.text, f, w - 4 * PAD, plain);
@@ -942,17 +957,18 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         rEntry = e;
         rLines.removeAllElements();
         Font f = Theme.font;
-        Text.layout(e.text, f, w - 2 * RPAD, rLines);
+        String shown = Cal.shown(e.text);
+        Text.layout(shown, f, w - 2 * RPAD, rLines);
         rFooter = null;
         if (e.truncated || e.more()) {
             Text.Line gap = new Text.Line();
             gap.gap = true;
             gap.s = "";
-            gap.off = e.text.length();
+            gap.off = shown.length();
             rLines.addElement(gap);
             rFooter = new Text.Line();
             rFooter.s = "";
-            rFooter.off = e.text.length();
+            rFooter.off = shown.length();
             rLines.addElement(rFooter);
         }
         int top = 0;

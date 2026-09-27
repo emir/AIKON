@@ -2,11 +2,12 @@
 """
 Verify a MIDlet JAR/JAD pair against app.properties and the target platform.
 
-  check.py app.properties DIST_DIR CLDC_JAR MIDP_JAR
+  check.py app.properties DIST_DIR CLDC_JAR MIDP_JAR [OPTIONAL_API_JAR_OR_DIR...]
 
 Claude S40 specifics: exact
-name/file checks, only MIDlet-Permissions-Opt = Connector.https, no plain
-http:// URL in the classes, and a secret scan of every packaged byte.
+name/file checks, only MIDlet-Permissions-Opt = Connector.https, no plain http:// URL in the classes, and a secret scan of every packaged
+byte. The optional JSR 75 APIs (FileConnection, PIM) may only be used by
+the classes Files and Pim, so phones without them never load such a class.
 
 Exit 0 only if every check passes. Checks:
   zip integrity, manifest first, attribute agreement manifest/JAD/properties,
@@ -14,8 +15,8 @@ Exit 0 only if every check passes. Checks:
   Jar-URL/Jar-Size, class file version 46.0, Java ME preverification
   (StackMap where needed, no jsr/ret, no Java 6 StackMapTable), every
   referenced class and member resolves to the JAR or the CLDC 1.1/MIDP 2.0
-  API, no platform classes packaged, no permissions / notify URLs / push,
-  SHA256SUMS.
+  (+ JSR 75) API, JSR 75 only in Files/Pim, no platform classes packaged,
+  no mandatory permissions / notify URLs / push, SHA256SUMS.
 """
 
 import hashlib
@@ -35,6 +36,9 @@ ALLOWED_ATTRS = {"Manifest-Version", "MIDlet-Name", "MIDlet-Vendor",
 EXPECTED_NAME = "Claude S40"
 EXPECTED_FILE_BASE = "ClaudeS40"
 ONLY_PERMISSION = "javax.microedition.io.Connector.https"
+# optional JSR 75 packages and the only classes allowed to reference them
+OPTIONAL_PACKAGES = ("javax/microedition/io/file/", "javax/microedition/pim/")
+OPTIONAL_USERS = {"Files", "Pim"}
 # secret-looking content that must never be in the JAR/JAD
 SECRET_PATTERNS = [
     (rb"sk-ant-", "Anthropic API key prefix"),
@@ -213,9 +217,17 @@ def read_props(path):
     return p
 
 
-def load_api(jars):
+def load_api(paths):
+    """Classes from API jars or class directories (compile-only stubs)."""
     api = {}
-    for j in jars:
+    for j in paths:
+        if os.path.isdir(j):
+            for dp, _, fn in os.walk(j):
+                for f in fn:
+                    if f.endswith(".class"):
+                        c = parse_class(open(os.path.join(dp, f), "rb").read())
+                        api[c["this"]] = c
+            continue
         z = zipfile.ZipFile(j)
         for n in z.namelist():
             if n.endswith(".class"):
@@ -226,6 +238,7 @@ def load_api(jars):
 
 def main():
     props_path, dist, cldc, midp = sys.argv[1:5]
+    optional_api = sys.argv[5:]
     p = read_props(props_path)
     results = []
 
@@ -295,6 +308,13 @@ def main():
 
     # classes
     api = load_api([cldc, midp])
+    optional = load_api(optional_api)
+    # only the javax API from these jars (the MicroEmulator jar also has its implementation)
+    optional = {n: c for n, c in optional.items() if n.startswith(OPTIONAL_PACKAGES)}
+    check("JSR 75 API present for the reference check (FileConnection, PIM)",
+          "javax/microedition/io/file/FileConnection" in optional and "javax/microedition/pim/PIM" in optional,
+          sorted(optional)[:4])
+    api.update(optional)
     classes = {}
     for n in names:
         if n.endswith(".class"):
@@ -404,10 +424,22 @@ def main():
                 continue
             if not resolve(owner, kind, name, desc):
                 unresolved_mem.append(f"{owner}.{name}{desc}")
-    check("every referenced class is in the JAR or CLDC 1.1/MIDP 2.0 API",
+    check("every referenced class is in the JAR or CLDC 1.1/MIDP 2.0 (+ JSR 75) API",
           not unresolved_cls, sorted(unresolved_cls))
-    check("every referenced field/method exists in the JAR or CLDC 1.1/MIDP 2.0 API",
+    check("every referenced field/method exists in the JAR or CLDC 1.1/MIDP 2.0 (+ JSR 75) API",
           not unresolved_mem, unresolved_mem)
+
+    # a phone without JSR 75 must never load a class that refers to it
+    users = set()
+    for c in classes.values():
+        refd = set(c["classes"]) | {r[1] for r in c["refs"]}
+        for r in c["refs"]:
+            refd.update(types_in(r[3]))
+        for _, desc, _ in c["methods"] + c["fields"]:
+            refd.update(types_in(desc))
+        if any(x.lstrip("[L").startswith(OPTIONAL_PACKAGES) for x in refd):
+            users.add(c["this"].rsplit("/", 1)[-1].split("$")[0])
+    check("JSR 75 (files, PIM) used only by Files / Pim", users <= OPTIONAL_USERS, sorted(users))
 
     chain, cur = [], main_cls
     while cur in classes:

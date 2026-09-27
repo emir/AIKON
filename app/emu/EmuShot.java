@@ -186,6 +186,13 @@ public class EmuShot {
         save("shortcuts");
         command(t("Back", "Geri"));
 
+        // a test-mode reply with a calendar entry line, shown in readable form
+        command(t("Write", "Yaz"));
+        type(t("Add to my calendar: dentist tomorrow at 15:00", "Takvimime ekle: yarın 15:00 dişçi"));
+        command(t("Send", "Gönder"));
+        Thread.sleep(2200);
+        save("chat_calendar_line");
+
         // dark theme, large text
         setting("theme", new Integer(1));
         setting("fontSize", new Integer(2));
@@ -201,11 +208,11 @@ public class EmuShot {
 
         setting("fontSize", new Integer(1));
         call("applyLook");
-        key(Mobile.KEY_NUM7);                 // About
+        key(Mobile.KEY_NUM8);                 // About
         save("about");
         command(t("Back", "Geri"));
 
-        key(Mobile.KEY_NUM8);                 // Exit
+        key(Mobile.KEY_NUM9);                 // Exit
         settle();
         System.out.println("EMU: exit did not terminate the MIDlet");
         System.exit(3);

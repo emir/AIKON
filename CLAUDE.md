@@ -12,7 +12,7 @@ devices, phone) are in `CLAUDE.local.md` (gitignored), never in tracked files.
     docs/    SETUP.md (user guide), ARCHITECTURE.md (protocol, TLS, rules)
 
     make test                     server tests (race) + app build/checks
-    make -C app                   build + 42 package checks + reproducible rebuild
+    make -C app                   build + 44 package checks + reproducible rebuild
     make -C app emu FREEJ2ME=...  optional emulator screenshots; make -C app promo
     make -C server test | docker
     server/deploy/push.sh HOST [--execute]   plan by default
@@ -33,6 +33,9 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
   String.format); every user-visible string is bilingual `L.s("Türkçe",
   "English")`; sizes from getWidth()/getHeight(), softkeys as Commands,
   arrows via getGameAction(); networking only on worker threads; HTTPS only.
+  Optional JSR 75 (files, calendar/to-do) only inside Files/Pim, called
+  after hasFiles()/hasPim() and from worker threads (check.py enforces the
+  first part); nothing is written to the calendar without the user's Save.
   Bump VERSION/BUILD in `app/app.properties` for every build given to a phone;
   never reuse a version. JAD/manifest values must stay ASCII.
 - Protocol `S40/1` is shared by phone and server: keep changes backwards

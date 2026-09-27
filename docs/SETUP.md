@@ -78,7 +78,7 @@ deploy/admin.sh $SERVER devices          # then: deploy/admin.sh $SERVER revoke 
 
 ```
 echo "GATEWAY_URL=https://$IP" > app/app.local.properties
-make -C app            # build + 42 checks + reproducible rebuild
+make -C app            # build + 44 checks + reproducible rebuild
 ls app/dist            # ClaudeS40.jad, ClaudeS40.jar, SHA256SUMS
 ```
 
@@ -177,9 +177,16 @@ server/deploy/admin.sh $SERVER logs 50           # method/path/status/TLS only, 
 server/deploy/push.sh $SERVER --execute          # update after a code change
 ```
 
-Updating the app: delete Claude S40 in the phone menu, install the new
-build, run the connection test and pair again (deleting the app deletes its
-settings), then revoke the old device.
+Updating the app: delete Claude S40 in the phone menu and install the new
+build. Since 0.7.2 the app keeps its setup (server address, access code,
+language, notes for Claude) in `ClaudeS40/claude-s40-setup.dat` on the
+memory card (or in the phone's image folder), which survives deleting the
+app: the new build restores it at its first start (the phone asks for file
+access) and needs no new pairing. Without that file (older builds, no file
+access), run the connection test and pair again, then revoke the old
+device. Settings > Options > "Reset setup" deletes the file and opens the
+setup wizard. The file holds the access code: if the memory card leaves
+your hands, revoke the device.
 
 ## Troubleshooting
 

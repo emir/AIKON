@@ -46,14 +46,36 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   (across text-size changes and loading the rest) and keeps the backlight
   on with `Display.flashBacklight` until a minute without a key press.
   Message actions only prefill the editor; every paid request still needs
-  the user's Send. Single-line texts are
+  the user's Send. A reply line `EVENT: YYYY-MM-DD HH:MM | title` or
+  `TODO: YYYY-MM-DD | title` (see "Calendar entries") is shown in a
+  readable form (`Cal`). Single-line texts are
   cut with "..." (`Text.fit`) so nothing runs off small screens.
 - Networking on worker threads only, one request at a time, HTTPS only
-  (`https://` enforced, no fallback), response body capped at 8 KiB.
+  (`https://` enforced, no fallback), response body capped at 8 KiB. Every
+  request is counted in RMS `cs40data` (`DataUsage`: requests and bytes today
+  and since a reset; bodies exact, HTTP headers estimated, the TLS
+  handshake not counted).
+- Optional JSR 75 (0.7.0): `Files` (FileConnection) saves a reply as a UTF-8
+  `.txt` in `ClaudeS40/` on the memory card, else the phone's image folder,
+  else the app's private folder, and lists/reads/deletes them ("Saved",
+  offline); `Pim` writes one calendar event or to-do the user confirmed in
+  `CalendarForm`. Only these two classes touch JSR 75 (`tools/check.py`),
+  and only after `microedition.io.file.FileConnection.version` /
+  `microedition.pim.version` say the phone has it; both run on worker
+  threads (the phone asks the user for permission). No JAD permission is
+  needed for an unsigned MIDlet. The FileConnection API comes from the
+  pinned MicroEmulator jar, the PIM API from compile-only stubs
+  (`app/stubs/jsr75-pim`, constants from the PIM 1.0 specification); neither
+  is packaged.
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
-  on/off, "keep last chat", setup wizard done, the two backlight options
-  (format 5; older records count as set up). Only with "keep last chat" on, RMS `cs40chat`
+  on/off, "keep last chat", setup wizard done, the two backlight options,
+  the user's notes for Claude (format 6; records before format 5 count as
+  set up). The setup part (URL, token, verified URL, setup done, language,
+  notes) is also written by `Backup` to `ClaudeS40/claude-s40-setup.dat`
+  (memory card or image folder, never the app's private folder) whenever
+  it changes, and restored at the first start after an install, so a new
+  build needs no new pairing; "Reset setup" deletes it. Only with "keep last chat" on, RMS `cs40chat`
   holds the last conversation (id + newest user/Claude messages, ≤ 8000
   characters) for offline reading; turning it off deletes it. Deleting the
   app deletes both.
@@ -61,8 +83,8 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   Settings choice; changing it rebuilds the screens at once.
 - Packaging is deterministic; `tools/check.py` verifies manifest/JAD
   consistency, class version, preverification (StackMap, no jsr/ret), every
-  referenced class/member against the CLDC/MIDP API, only an optional HTTPS
-  permission, no `http://` constants, and scans all bytes for secrets.
+  referenced class/member against the CLDC/MIDP (+ JSR 75) API, JSR 75
+  only in `Files`/`Pim`, only an optional HTTPS permission, no `http://` constants, and scans all bytes for secrets.
 
 ### Server
 
@@ -93,11 +115,13 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /echo` | – | ≤ 512 bytes strict UTF-8, echoed; `probe: match` for the Turkish test string |
 | `POST /v1/pair/start` | – | → `pair` (128-bit secret), `code` (6 digits, shown on the phone), `expires` |
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
-| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `search: 0` (no web search for this message), text = message |
+| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), text = message |
 | `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls Claude) |
-| `POST /v1/conversations` | Bearer token | newest 20 conversations, one line each: `id TAB updated-ms TAB messages TAB title` |
+| `POST /v1/conversations` | Bearer token | pinned, then newest conversations (20 in all), one line each: `id TAB updated-ms TAB messages TAB title`; with `pins: 1` (0.7+ phones) each line starts with `pinned TAB` (0/1) |
 | `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out |
 | `POST /v1/delete` | Bearer token | `conversation: <id>` |
+| `POST /v1/pin` | Bearer token | `conversation: <id>`, `pinned: 1` or `0` → `ok` / `conversation_not_found` / `pin_limit` (+ `max`) (0.4.0) |
+| `POST /v1/search` | Bearer token | text = query (2-100 characters) → conversations containing every word, one line each: `id TAB updated-ms TAB matching-messages TAB snippet`; case- and Turkish-letter-insensitive (`sise` finds `Şişe`); never calls Claude (0.4.0) |
 
 Chat statuses: `ok` (fields `conversation`, `truncated`, `refused`, `mock`,
 `replayed`, `remaining`, and since 0.3.0 `more` + `next` while parts of a
@@ -130,6 +154,18 @@ like "let me look" is dropped) and up to three cited host names are
 appended as `Web: a.com, b.org`. Optional approximate location for local
 results: `SEARCH_COUNTRY`, `SEARCH_CITY`, `SEARCH_TIMEZONE`.
 
+### Calendar entries (0.4.0)
+
+A phone with the JSR 75 PIM API sends `calendar: 1` and its clock. The
+system prompt then tells Claude that, only when the user asks to add
+something to the calendar, a reminder or a to-do, the answer ends with one
+line `EVENT: YYYY-MM-DD HH:MM | title` or `TODO: YYYY-MM-DD | title`, using
+the phone's local date for "tomorrow" and weekdays. The phone shows that
+line readably, selects the reply and offers "Add to calendar", which opens a
+form prefilled from it (title, date and time, calendar or to-do, alarm).
+Nothing is written to the phone's calendar before the user saves the form;
+the message actions offer the same form for any message.
+
 ## Paid calls: idempotency without "exactly once"
 
 - The phone creates a `request` id per message and keeps it until a
@@ -149,12 +185,12 @@ results: `SEARCH_COUNTRY`, `SEARCH_CITY`, `SEARCH_TIMEZONE`.
 
 | | |
 |---|---|
-| message | ≤ 1000 characters (request body ≤ 4 KiB) |
+| message | ≤ 1000 characters (request body ≤ 6 KiB, room for the user's notes) |
 | reply | sanitised (no Markdown/emoji/non-BMP), ≤ 8000 characters stored, sent in parts of ≤ 2000, `truncated` flag |
 | model | `CLAUDE_MODEL`, `max_tokens` 2048, `effort` from `CLAUDE_EFFORT`, optional server-side refusal fallback |
 | context | newest 16 messages and ≤ 16000 characters of the conversation |
-| per device | 1 request in flight, daily requests, output tokens and web searches (UTC day), ≤ 40 messages per conversation, ≤ 50 conversations |
-| retention | conversations 30 days after the last message, request records 7 days, usage 90 days (cleanup every 6 h) |
+| per device | 1 request in flight, daily requests, output tokens and web searches (UTC day), ≤ 40 messages per conversation, ≤ 50 conversations plus ≤ 10 pinned |
+| retention | conversations 30 days after the last message (pinned ones until unpinned or deleted), request records 7 days, usage 90 days (cleanup every 6 h) |
 
 All user-data tables are keyed by `device_id`: a conversation id is only
 visible to the device that created it.
