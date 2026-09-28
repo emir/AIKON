@@ -971,3 +971,26 @@ func TestSystemPromptParts(t *testing.T) {
 		}
 	}
 }
+
+// disconnectModel cancels the phone's request (a dropped connection) while
+// the paid call is running, then answers.
+type disconnectModel struct{ cancel context.CancelFunc }
+
+func (m disconnectModel) reply(ctx context.Context, h []turn, msg string, o replyOpts) (reply, error) {
+	m.cancel()
+	return mockModel{}.reply(ctx, h, msg, o)
+}
+
+func TestReplyStoredAfterDisconnect(t *testing.T) {
+	e := newEnv(t, 100)
+	tok, dev := e.pair("p")
+	ctx, cancel := context.WithCancel(context.Background())
+	e.srv.chat.model = disconnectModel{cancel}
+	req := rid()
+	e.srv.chat.chat(ctx, dev, req, "", "Merhaba", replyOpts{})
+	e.srv.chat.model = mockModel{}
+	r := e.chat(tok, req, "", "Merhaba")
+	if r.msg.get("status") != "ok" || r.msg.get("replayed") != "1" || !strings.HasPrefix(r.msg.text, "[Test mode]") {
+		t.Fatalf("billed reply lost after disconnect: %q", r.raw)
+	}
+}
