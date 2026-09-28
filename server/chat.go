@@ -238,8 +238,10 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	mu.Unlock()
 
 	// 6. the call (no lock held; the pending row keeps other requests out)
-	callCtx := context.WithoutCancel(ctx) // a phone disconnect must not turn a paid call into "unknown"
-	rep, callErr := c.model.reply(callCtx, history, message, opts)
+	// a phone disconnect must not turn a paid call into "unknown": neither the
+	// call nor recording its result below may be cancelled by the request
+	ctx = context.WithoutCancel(ctx)
+	rep, callErr := c.model.reply(ctx, history, message, opts)
 
 	mu.Lock()
 	defer mu.Unlock()
