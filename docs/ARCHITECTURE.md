@@ -67,6 +67,14 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   pinned MicroEmulator jar, the PIM API from compile-only stubs
   (`app/stubs/jsr75-pim`, constants from the PIM 1.0 specification); neither
   is packaged.
+- Optional JSR 135 recording (0.8.0): `Rec` records a voice message into
+  RAM with `RecordControl` (AMR if `audio.encodings` offers it, else 8 kHz
+  PCM WAV), only when `supports.audio.capture` is true and the class
+  exists, on a worker thread (the phone asks for microphone access).
+  `Dictation` stops at 30 s, uploads the clip to `/v1/transcribe` and opens
+  the returned text in the editor for the user to check and send. `Rec` is
+  the only JSR 135 user (`tools/check.py`); the API comes from a
+  compile-only stub (`app/stubs/jsr135-record`), not packaged.
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
   on/off, "keep last chat", setup wizard done, the two backlight options,
@@ -83,13 +91,14 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   Settings choice; changing it rebuilds the screens at once.
 - Packaging is deterministic; `tools/check.py` verifies manifest/JAD
   consistency, class version, preverification (StackMap, no jsr/ret), every
-  referenced class/member against the CLDC/MIDP (+ JSR 75) API, JSR 75
-  only in `Files`/`Pim`, only an optional HTTPS permission, no `http://` constants, and scans all bytes for secrets.
+  referenced class/member against the CLDC/MIDP (+ JSR 75/135) API, JSR 75
+  only in `Files`/`Pim`, JSR 135 recording only in `Rec`, only an optional HTTPS permission, no `http://` constants, and scans all bytes for secrets.
 
 ### Server
 
 - `main.go` wiring, TLS policy, handlers; `protocol.go` S40/1 format;
   `chat.go` chat rules; `store.go` SQLite; `claude.go` SDK call + mock;
+  `transcribe.go` voice messages (audio checks, ffmpeg, speech-to-text);
   `sanitize.go` plain-text replies for a 240x320 screen.
 - Admin API on a separate listener, bound to 127.0.0.1 on the host,
   protected by a token generated on the server; used through SSH
@@ -121,6 +130,7 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out |
 | `POST /v1/delete` | Bearer token | `conversation: <id>` |
 | `POST /v1/pin` | Bearer token | `conversation: <id>`, `pinned: 1` or `0` → `ok` / `conversation_not_found` / `pin_limit` (+ `max`) (0.4.0) |
+| `POST /v1/transcribe?request=<id>&lang=tr\|en` | Bearer token | body = a voice clip (AMR or WAV, ≤ 640 KiB, ≤ 35 s), recognised by its first bytes → `ok` + `ms` (clip length), `mock`, `remaining` (voice messages left today), text = the transcript; never calls Claude (0.5.0) |
 | `POST /v1/search` | Bearer token | text = query (2-100 characters) → conversations containing every word, one line each: `id TAB updated-ms TAB matching-messages TAB snippet`; case- and Turkish-letter-insensitive (`sise` finds `Şişe`); never calls Claude (0.4.0) |
 
 Chat statuses: `ok` (fields `conversation`, `truncated`, `refused`, `mock`,
@@ -166,6 +176,31 @@ form prefilled from it (title, date and time, calendar or to-do, alarm).
 Nothing is written to the phone's calendar before the user saves the form;
 the message actions offer the same form for any message.
 
+### Voice messages (0.5.0)
+
+The phone records up to 30 s and posts the clip to `/v1/transcribe`. The
+server checks it (AMR frame sequence or WAV header, length 0.3–35 s),
+turns AMR (and non-PCM WAV) into 16 kHz mono PCM with ffmpeg, wraps it in
+a clean WAV header and sends it to the speech-to-text service
+(`TRANSCRIBE=openai`: OpenAI's `/v1/audio/transcriptions`, model
+`TRANSCRIBE_MODEL`, default `gpt-4o-mini-transcribe`, language from the
+phone's UI language). The text comes back as one paragraph (control
+characters, emoji and non-BMP removed, ≤ 996 characters). Nothing is sent
+to Claude: the phone puts the text in the editor and the user checks,
+corrects and sends it as a normal message.
+
+The image carries its own ffmpeg, built from pinned source with only the
+AMR/WAV demuxers and decoders, raw PCM output and the pipe protocol (no
+network, no other formats); it runs on stdin/stdout with a 15 s timeout.
+The audio exists only in memory for the request. `TRANSCRIBE=mock`
+answers "[Test mode] ..." without any service; `off` (default) answers
+`unavailable`.
+
+Statuses: `ok`, `pending`, `busy`, `limit`, `request_mismatch`,
+`no_speech`, `bad_audio`, `too_short`, `too_long`, `too_large`,
+`unavailable`, `rate_limited`, `overloaded`, `upstream_error`,
+`config_error`, `billing`, `uncertain`.
+
 ## Paid calls: idempotency without "exactly once"
 
 - The phone creates a `request` id per message and keeps it until a
@@ -180,6 +215,12 @@ the message actions offer the same form for any message.
   `uncertain`.
 - The Messages API has no idempotency key, so there is no exactly-once
   guarantee.
+- Voice messages follow the same rules with their own records: the phone
+  keeps the clip and its `request` id while the screen is open, "Retry"
+  sends the same id and clip (answered from the record, SHA-256 of the
+  audio must match), "Send again" after a definite failure or `uncertain`
+  is a new id by the user's choice. The speech-to-text call has no retries
+  and a 60 s timeout; no HTTP answer means `uncertain`.
 
 ## Data and limits
 
@@ -189,8 +230,9 @@ the message actions offer the same form for any message.
 | reply | sanitised (no Markdown/emoji/non-BMP), ≤ 8000 characters stored, sent in parts of ≤ 2000, `truncated` flag |
 | model | `CLAUDE_MODEL`, `max_tokens` 2048, `effort` from `CLAUDE_EFFORT`, optional server-side refusal fallback |
 | context | newest 16 messages and ≤ 16000 characters of the conversation |
-| per device | 1 request in flight, daily requests, output tokens and web searches (UTC day), ≤ 40 messages per conversation, ≤ 50 conversations plus ≤ 10 pinned |
-| retention | conversations 30 days after the last message (pinned ones until unpinned or deleted), request records 7 days, usage 90 days (cleanup every 6 h) |
+| voice message | ≤ 30 s on the phone, ≤ 35 s and ≤ 640 KiB on the server; audio never stored; transcript ≤ 996 characters |
+| per device | 1 request and 1 voice message in flight, daily requests, output tokens, web searches and voice messages (`DAILY_TRANSCRIBE_LIMIT`, default 30; UTC day), ≤ 40 messages per conversation, ≤ 50 conversations plus ≤ 10 pinned |
+| retention | conversations 30 days after the last message (pinned ones until unpinned or deleted), request records 7 days, transcripts 1 day (for replays only), usage 90 days (cleanup every 6 h) |
 
 All user-data tables are keyed by `device_id`: a conversation id is only
 visible to the device that created it.
@@ -199,5 +241,8 @@ visible to the device that created it.
 
 JSON lines: start, TLS ClientHello summary (SNI present, versions, number of
 suites), each request (method, path, status, duration, negotiated TLS),
-upstream errors (HTTP status, Anthropic error type/message, request id).
-No message text, replies, tokens, keys or client IP addresses.
+upstream errors (HTTP status, Anthropic error type/message, request id),
+voice clips (format, bytes, length in ms) and speech-to-text errors (HTTP
+status, error type/code/message, request id).
+No message text, replies, transcripts, audio, tokens, keys or client IP
+addresses.

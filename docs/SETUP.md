@@ -154,6 +154,23 @@ phone), `S40_SEARCH_MAX_USES` (3 per message), and optionally
 search on top of tokens. Pairings and chats survive redeploys (Docker
 volume `s40data`).
 
+**Voice messages** (optional, off by default): the server turns a short
+recording into text with OpenAI's speech-to-text (paid per use, well
+under a cent per 30 s clip with the default model; check OpenAI's prices).
+
+```
+server/deploy/set-key.sh $SERVER openai          # OpenAI API key, hidden input
+S40_MOCK=0 S40_TRANSCRIBE=openai server/deploy/push.sh $SERVER --execute
+```
+
+`S40_TRANSCRIBE=mock` gives "[Test mode]" texts without a key.
+`S40_TRANSCRIBE_LIMIT` (30/day per phone), `S40_TRANSCRIBE_MODEL`
+(`gpt-4o-mini-transcribe`). On the phone: **Dictate** in the chat's
+options or in the editor, speak (up to 30 s), **Done**; the text opens in
+the editor, check it and press **Send**. Nothing reaches Claude before
+that. The phone asks for microphone access. About shows whether the phone
+can record and which formats it reports.
+
 Send "Translate to English: Günaydın" from the phone, then "Make it
 shorter" in the same chat. Then try Quick prompts → Weather: a reply
 marked "searched the web" ends with "Web: <sources>".
@@ -200,3 +217,6 @@ your hands, revoke the device.
 | "Daily limit reached" | raise `S40_REQ_LIMIT` / `S40_TOK_LIMIT` |
 | Claude no longer searches the web | the phone's daily search budget is used up (`S40_SEARCH_LIMIT`) or web search is off in Settings / `S40_SEARCH=0` |
 | "Access code invalid or revoked" | pair again |
+| No **Dictate** command | the phone does not let apps record (About → Voice recording) |
+| "Voice messages are not turned on on the server" | deploy with `S40_TRANSCRIBE=openai` (or `mock`) |
+| "The server could not read this recording" | the phone's audio format; `admin.sh logs` shows the format, size and length |

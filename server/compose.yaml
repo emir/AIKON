@@ -1,6 +1,7 @@
 # Claude S40 server. On the VPS, in this directory:
 #   certs/server-chain.pem, certs/server.key   phone-facing TLS (our own CA)
 #   secrets/anthropic_api_key                  Claude API key (only when MOCK_ANTHROPIC=0)
+#   secrets/openai_api_key                     speech-to-text key (only when TRANSCRIBE=openai)
 #   secrets/admin_token                        generated on the server by deploy/push.sh
 #   .env                                       settings below (no secrets)
 #
@@ -9,7 +10,7 @@
 services:
   server:
     build: .
-    image: claude-s40-server:0.4.0
+    image: claude-s40-server:0.5.0
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
@@ -25,6 +26,10 @@ services:
       SEARCH_COUNTRY: ${SEARCH_COUNTRY:-}
       SEARCH_CITY: ${SEARCH_CITY:-}
       SEARCH_TIMEZONE: ${SEARCH_TIMEZONE:-}
+      # voice messages: off, mock ("[Test mode]" text) or openai (paid)
+      TRANSCRIBE: ${TRANSCRIBE:-off}
+      TRANSCRIBE_MODEL: ${TRANSCRIBE_MODEL:-gpt-4o-mini-transcribe}
+      DAILY_TRANSCRIBE_LIMIT: ${DAILY_TRANSCRIBE_LIMIT:-30}
       ADMIN_LISTEN: 0.0.0.0:9090
     ports:
       - "443:8443"

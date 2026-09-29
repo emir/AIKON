@@ -46,6 +46,11 @@ CREATE TABLE IF NOT EXISTS usage (
   device_id TEXT NOT NULL, day TEXT NOT NULL, requests INTEGER NOT NULL DEFAULT 0,
   input_tokens INTEGER NOT NULL DEFAULT 0, output_tokens INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (device_id, day));
+CREATE TABLE IF NOT EXISTS transcripts (
+  device_id TEXT NOT NULL, request_id TEXT NOT NULL, audio_sha TEXT NOT NULL, state TEXT NOT NULL,
+  created_at INTEGER NOT NULL, finished_at INTEGER, audio_ms INTEGER NOT NULL DEFAULT 0,
+  text TEXT, mock INTEGER NOT NULL DEFAULT 0, error TEXT,
+  PRIMARY KEY (device_id, request_id));
 `
 
 type store struct {
@@ -69,21 +74,25 @@ func openStore(path string) (*store, error) {
 	}
 	s := &store{db: db, now: time.Now}
 	// a request left "pending" by a restart may or may not have been billed
-	if _, err := db.Exec(`UPDATE requests SET state='uncertain', error='uncertain' WHERE state='pending'`); err != nil {
-		db.Close()
-		return nil, err
+	for _, t := range []string{"requests", "transcripts"} {
+		if _, err := db.Exec(`UPDATE ` + t + ` SET state='uncertain', error='uncertain' WHERE state='pending'`); err != nil {
+			db.Close()
+			return nil, err
+		}
 	}
 	return s, nil
 }
 
 // migrate adds columns introduced after the first release (0.3.0: web
-// search counts; 0.4.0: pinned conversations). Existing databases keep their
-// data.
+// search counts; 0.4.0: pinned conversations; 0.5.0: voice message counts).
+// Existing databases keep their data.
 func migrate(db *sql.DB) error {
 	for _, c := range []struct{ table, column, def string }{
 		{"usage", "searches", "INTEGER NOT NULL DEFAULT 0"},
 		{"requests", "searches", "INTEGER NOT NULL DEFAULT 0"},
 		{"conversations", "pinned", "INTEGER NOT NULL DEFAULT 0"},
+		{"usage", "transcripts", "INTEGER NOT NULL DEFAULT 0"},
+		{"usage", "audio_ms", "INTEGER NOT NULL DEFAULT 0"},
 	} {
 		var n int
 		if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`, c.table, c.column).Scan(&n); err != nil {
@@ -553,6 +562,7 @@ func (s *store) cleanup(ctx context.Context) error {
 		    (SELECT device_id, id FROM conversations WHERE updated_at < ? AND pinned=0)`, []any{old}},
 		{`DELETE FROM conversations WHERE updated_at < ? AND pinned=0`, []any{old}},
 		{`DELETE FROM requests WHERE created_at < ? AND state != 'pending'`, []any{now - requestTTL.Milliseconds()}},
+		{`DELETE FROM transcripts WHERE created_at < ? AND state != 'pending'`, []any{now - transcriptTTL.Milliseconds()}},
 		{`DELETE FROM usage WHERE day < ?`, []any{utcDay(now - usageTTL.Milliseconds())}},
 		{`DELETE FROM pairings WHERE expires_at < ?`, []any{now}},
 	}

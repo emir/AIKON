@@ -62,6 +62,7 @@ compatibility.
 | `ChatList`, `SavedList` | chats on the server (pin, delete, search); replies saved on the phone |
 | `CalendarForm`, `Cal` | add to calendar / to-do; Claude's entry lines |
 | `Files`, `Pim` | the only JSR 75 users: .txt files, calendar and to-do list |
+| `Dictation`, `Rec` | voice message screen; `Rec` is the only JSR 135 (recording) user |
 | `DataUsage` | mobile data counter (RMS) |
 | `Backup` | setup kept in a file outside the app, restored after a reinstall |
 | `Settings` | RMS record (format 6) |

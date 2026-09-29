@@ -36,12 +36,15 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
   Optional JSR 75 (files, calendar/to-do) only inside Files/Pim, called
   after hasFiles()/hasPim() and from worker threads (check.py enforces the
   first part); nothing is written to the calendar without the user's Save.
+  Optional JSR 135 recording only inside Rec, after hasRecording(), from
+  worker threads; a transcript only fills the editor, never sends itself.
   Bump VERSION/BUILD in `app/app.properties` for every build given to a phone;
   never reuse a version. JAD/manifest values must stay ASCII.
 - Protocol `S40/1` is shared by phone and server: keep changes backwards
   compatible or bump both together (docs/ARCHITECTURE.md).
-- Paid calls: never retry automatically; keep request_id replay, the
-  pending-before-call record and `uncertain` semantics. No exactly-once claims.
+- Paid calls (Claude and speech-to-text): never retry automatically; keep
+  request_id replay, the pending-before-call record and `uncertain`
+  semantics. No exactly-once claims.
 - TLS: never add a plain-HTTP fallback, never disable certificate checks,
   never offer RC4/3DES. The phone (Nokia 6300) offers only TLS 1.0 +
   RSA/AES-CBC-SHA, no SNI; it verifies SHA-1 certificates from our root.

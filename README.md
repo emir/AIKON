@@ -39,6 +39,9 @@ search, long answers you can page through, and a UI in Turkish or English.
   and the reply carries a ready entry; the centre key opens a prefilled
   form, and only your "Save" writes it to the phone's own calendar or to-do
   list. Works from any message too.
+- **Voice messages**: press Dictate, speak up to 30 seconds; the server
+  turns it into text, which opens in the editor so you can check and fix
+  it before you send it to Claude.
 - **Your notes for Claude** (Settings): "I'm Emir, I live in Istanbul, keep
   it short" is sent with every message.
 - **Data usage**: requests and approximate kilobytes today and in total.
@@ -56,8 +59,10 @@ search, long answers you can page through, and a UI in Turkish or English.
 
 - One Go binary / Docker image that speaks TLS 1.0 to the phone with a
   certificate from your own private CA, and modern HTTPS to the Claude API.
-- Per-device access tokens through pairing, daily request, token and
-  web-search limits, no automatic retries of paid calls.
+- Per-device access tokens through pairing, daily request, token,
+  web-search and voice-message limits, no automatic retries of paid calls.
+- Optional speech-to-text for voice messages (OpenAI), with a minimal
+  ffmpeg in the image for the phone's AMR recordings.
 - SQLite for chats (30 days, pinned ones until unpinned), search over
   them, admin API on localhost only.
 
@@ -156,6 +161,9 @@ deployment), OpenSSL or LibreSSL.
   retries a paid call automatically. Web searches are billed per search and
   their results count as input tokens. Set a spending limit in the Claude
   Console.
+- Voice messages (off unless you turn them on) go to OpenAI's
+  speech-to-text, billed to your OpenAI key. The recording is not stored;
+  the text is kept for a day so a retry never pays twice.
 
 ## Contributors
 

@@ -11,6 +11,8 @@ jobs:
         with:
           go-version: "1.26"
           cache-dependency-path: server/go.sum
+      # for the AMR conversion test (skipped without ffmpeg)
+      - run: sudo apt-get update && sudo apt-get install -y --no-install-recommends ffmpeg
       - run: make -C server test
   app:
     runs-on: ubuntu-24.04

@@ -5,7 +5,8 @@
 // It replaces the Cloudflare Worker + Durable Objects and the separate TLS
 // relay. Public listener (TLS, for the phone): /health, /echo, /v1/chat,
 // /v1/more, /v1/conversations, /v1/history, /v1/delete, /v1/pin, /v1/search,
-// /v1/pair/start, /v1/pair/claim. Admin listener (plain HTTP,
+// /v1/transcribe (voice messages, see transcribe.go), /v1/pair/start,
+// /v1/pair/claim. Admin listener (plain HTTP,
 // meant to be bound to 127.0.0.1 and reached through an SSH tunnel):
 // /admin/pair/approve, /admin/devices, /admin/devices/revoke.
 //
@@ -24,6 +25,7 @@ import (
 	"log"
 	"net/http"
 	"os"
+	"os/exec"
 	"strconv"
 	"strings"
 	"time"
@@ -34,7 +36,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.4.0"
+	version      = "0.5.0"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -58,6 +60,10 @@ type config struct {
 	searchMaxUses                      int
 	searchCountry, searchCity          string
 	searchTimezone                     string
+	// voice messages: "off", "mock" or "openai"
+	transcribe, openAIKeyFile, sttModel string
+	transcribeLimit                     int
+	ffmpeg                              string
 }
 
 func env(k, def string) string {
@@ -97,7 +103,38 @@ func loadConfig() config {
 	c.searchCountry = env("SEARCH_COUNTRY", "")
 	c.searchCity = env("SEARCH_CITY", "")
 	c.searchTimezone = env("SEARCH_TIMEZONE", "")
+	c.transcribe = env("TRANSCRIBE", "off")
+	c.openAIKeyFile = env("OPENAI_API_KEY_FILE", "/run/secrets/openai_api_key")
+	c.sttModel = env("TRANSCRIBE_MODEL", defaultSTTModel)
+	c.transcribeLimit = envInt("DAILY_TRANSCRIBE_LIMIT", 30)
+	c.ffmpeg = env("FFMPEG", "ffmpeg")
 	return c
+}
+
+// setupTranscribe: the speech-to-text service for voice messages, or nil
+// when TRANSCRIBE=off. The converter (ffmpeg, needed for AMR) is nil if the
+// binary is missing; WAV from the phone still works then.
+func setupTranscribe(c config, st *store) (*transcribeService, audioConverter) {
+	var conv audioConverter
+	if p, err := exec.LookPath(c.ffmpeg); err == nil {
+		conv = ffmpegConverter{p}
+	}
+	var stt speechToText
+	switch c.transcribe {
+	case "off", "":
+		return nil, conv
+	case "mock":
+		stt = mockSTT{}
+	case "openai":
+		key := readSecret(c.openAIKeyFile)
+		if key == "" {
+			log.Fatalf("TRANSCRIBE=openai but no OpenAI API key in %s", c.openAIKeyFile)
+		}
+		stt = newOpenAISTT(key, c.sttModel)
+	default:
+		log.Fatalf("TRANSCRIBE must be off, mock or openai, not %q", c.transcribe)
+	}
+	return &transcribeService{st: st, stt: stt, limit: c.transcribeLimit}, conv
 }
 
 func readSecret(path string) string {
@@ -132,6 +169,7 @@ func main() {
 	}
 	srv := &server{cfg: c, st: st, chat: &chatService{st: st, model: m, reqLimit: c.reqLimit, tokLimit: c.tokLimit,
 		search: c.search, searchLimit: c.searchLimit}, adminToken: adminToken}
+	srv.transcriber, srv.converter = setupTranscribe(c, st)
 
 	go func() {
 		for {
@@ -155,7 +193,9 @@ func main() {
 	adm := &http.Server{Addr: c.adminListen, Handler: srv.adminMux(), ReadHeaderTimeout: 10 * time.Second}
 	go func() { log.Fatal(adm.ListenAndServe()) }()
 	logJSON(map[string]any{"evt": "start", "version": version, "listen": c.listen, "admin": c.adminListen,
-		"model": c.model, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit})
+		"model": c.model, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
+		"transcribe": c.transcribe, "stt_model": c.sttModel, "transcribe_limit": c.transcribeLimit,
+		"ffmpeg": srv.converter != nil})
 	log.Fatal(pub.ListenAndServeTLS("", ""))
 }
 
@@ -220,6 +260,9 @@ type server struct {
 	st         *store
 	chat       *chatService
 	adminToken string
+	// voice messages; transcriber is nil when TRANSCRIBE=off
+	transcriber *transcribeService
+	converter   audioConverter
 }
 
 type statusRecorder struct {
@@ -250,7 +293,7 @@ func logged(h http.Handler) http.Handler {
 func knownPath(p string) bool {
 	switch p {
 	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/conversations", "/v1/history", "/v1/delete",
-		"/v1/pin", "/v1/search", "/v1/pair/start", "/v1/pair/claim",
+		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/pair/start", "/v1/pair/claim",
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
 		return true
 	}
@@ -268,6 +311,7 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /v1/delete", s.deleteHandler)
 	mux.HandleFunc("POST /v1/pin", s.pinHandler)
 	mux.HandleFunc("POST /v1/search", s.searchHandler)
+	mux.HandleFunc("POST /v1/transcribe", s.transcribeHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -290,7 +334,7 @@ func tlsFields(r *http.Request) []kv {
 
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	f := []kv{{"status", "ok"}, {"service", service}, {"version", version}, {"environment", s.cfg.environment},
-		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"time", time.Now().UTC().Format(time.RFC3339)}}
+		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"transcribe", s.transcriber != nil}, {"time", time.Now().UTC().Format(time.RFC3339)}}
 	writeS40(w, 200, append(f, tlsFields(r)...), "Claude S40 server is running.")
 }
 
@@ -334,20 +378,29 @@ var tokenOK = func(t string) bool {
 	return true
 }
 
-// authedS40 authenticates the device and parses an S40 body.
-func (s *server) authedS40(w http.ResponseWriter, r *http.Request) (string, s40Msg, bool) {
+// authDevice returns the device of the bearer token, or answers 401/500.
+func (s *server) authDevice(w http.ResponseWriter, r *http.Request) (string, bool) {
 	t := bearer(r)
 	device := ""
 	if tokenOK(t) {
 		d, err := s.st.deviceForToken(r.Context(), t)
 		if err != nil {
 			writeS40(w, 500, []kv{{"status", "server_error"}}, "")
-			return "", s40Msg{}, false
+			return "", false
 		}
 		device = d
 	}
 	if device == "" {
 		writeS40(w, 401, []kv{{"status", "unauthorized"}}, "")
+		return "", false
+	}
+	return device, true
+}
+
+// authedS40 authenticates the device and parses an S40 body.
+func (s *server) authedS40(w http.ResponseWriter, r *http.Request) (string, s40Msg, bool) {
+	device, ok := s.authDevice(w, r)
+	if !ok {
 		return "", s40Msg{}, false
 	}
 	b, ok := readLimited(r, maxRequest)

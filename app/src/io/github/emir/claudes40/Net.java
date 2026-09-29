@@ -82,6 +82,27 @@ final class Net {
 
     static Result request(String url, String method, String auth, String body, String userAgent,
             Listener listener) {
+        byte[] payload = null;
+        if (body != null) {
+            try {
+                payload = body.getBytes("UTF-8");
+            } catch (UnsupportedEncodingException e) {
+                Result r = new Result();
+                r.error = ERR_ENCODING;
+                r.detail = L.s("UTF-8 desteklenmiyor", "UTF-8 not supported");
+                return r;
+            }
+        }
+        return send(url, method, auth, payload, "text/plain; charset=utf-8", userAgent, listener);
+    }
+
+    /** POSTs binary data (a voice clip) with the given Content-Type; the reply is S40/1 as usual. */
+    static Result upload(String url, String auth, byte[] data, String type, String userAgent, Listener listener) {
+        return send(url, "POST", auth, data, type, userAgent, listener);
+    }
+
+    private static Result send(String url, String method, String auth, byte[] payload, String type,
+            String userAgent, Listener listener) {
         Result r = new Result();
         if (!isHttps(url)) {
             r.error = ERR_NOT_HTTPS;
@@ -91,10 +112,8 @@ final class Net {
         HttpConnection c = null;
         InputStream in = null;
         OutputStream out = null;
-        byte[] payload = null;
         int received = 0;
         try {
-            payload = body == null ? null : body.getBytes("UTF-8");
             c = (HttpConnection) Connector.open(url, Connector.READ_WRITE, true);
             c.setRequestMethod(method);
             c.setRequestProperty("User-Agent", userAgent);
@@ -104,7 +123,7 @@ final class Net {
                 c.setRequestProperty("Authorization", "Bearer " + auth);
             }
             if (payload != null) {
-                c.setRequestProperty("Content-Type", "text/plain; charset=utf-8");
+                c.setRequestProperty("Content-Type", type);
                 c.setRequestProperty("Content-Length", String.valueOf(payload.length));
                 r.phase = PHASE_SEND;
                 report(listener, r.phase);

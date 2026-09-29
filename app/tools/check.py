@@ -7,7 +7,8 @@ Verify a MIDlet JAR/JAD pair against app.properties and the target platform.
 Claude S40 specifics: exact
 name/file checks, only MIDlet-Permissions-Opt = Connector.https, no plain http:// URL in the classes, and a secret scan of every packaged
 byte. The optional JSR 75 APIs (FileConnection, PIM) may only be used by
-the classes Files and Pim, so phones without them never load such a class.
+the classes Files and Pim, JSR 135 recording (RecordControl) only by Rec,
+so phones without them never load such a class.
 
 Exit 0 only if every check passes. Checks:
   zip integrity, manifest first, attribute agreement manifest/JAD/properties,
@@ -15,7 +16,8 @@ Exit 0 only if every check passes. Checks:
   Jar-URL/Jar-Size, class file version 46.0, Java ME preverification
   (StackMap where needed, no jsr/ret, no Java 6 StackMapTable), every
   referenced class and member resolves to the JAR or the CLDC 1.1/MIDP 2.0
-  (+ JSR 75) API, JSR 75 only in Files/Pim, no platform classes packaged,
+  (+ JSR 75/135) API, JSR 75 only in Files/Pim, JSR 135 recording only in
+  Rec, no platform classes packaged,
   no mandatory permissions / notify URLs / push, SHA256SUMS.
 """
 
@@ -36,9 +38,12 @@ ALLOWED_ATTRS = {"Manifest-Version", "MIDlet-Name", "MIDlet-Vendor",
 EXPECTED_NAME = "Claude S40"
 EXPECTED_FILE_BASE = "ClaudeS40"
 ONLY_PERMISSION = "javax.microedition.io.Connector.https"
-# optional JSR 75 packages and the only classes allowed to reference them
-OPTIONAL_PACKAGES = ("javax/microedition/io/file/", "javax/microedition/pim/")
-OPTIONAL_USERS = {"Files", "Pim"}
+# optional APIs and the only classes allowed to reference them:
+# JSR 75 (files, PIM) in Files/Pim, JSR 135 recording in Rec
+OPTIONAL_PACKAGES = ("javax/microedition/io/file/", "javax/microedition/pim/",
+                     "javax/microedition/media/control/RecordControl")
+OPTIONAL_USERS = {"Files", "Pim", "Rec"}
+RECORDING = "javax/microedition/media/control/RecordControl"
 # secret-looking content that must never be in the JAR/JAD
 SECRET_PATTERNS = [
     (rb"sk-ant-", "Anthropic API key prefix"),
@@ -314,6 +319,7 @@ def main():
     check("JSR 75 API present for the reference check (FileConnection, PIM)",
           "javax/microedition/io/file/FileConnection" in optional and "javax/microedition/pim/PIM" in optional,
           sorted(optional)[:4])
+    check("JSR 135 RecordControl stub present for the reference check", RECORDING in optional)
     api.update(optional)
     classes = {}
     for n in names:
@@ -424,22 +430,26 @@ def main():
                 continue
             if not resolve(owner, kind, name, desc):
                 unresolved_mem.append(f"{owner}.{name}{desc}")
-    check("every referenced class is in the JAR or CLDC 1.1/MIDP 2.0 (+ JSR 75) API",
+    check("every referenced class is in the JAR or CLDC 1.1/MIDP 2.0 (+ JSR 75/135) API",
           not unresolved_cls, sorted(unresolved_cls))
-    check("every referenced field/method exists in the JAR or CLDC 1.1/MIDP 2.0 (+ JSR 75) API",
+    check("every referenced field/method exists in the JAR or CLDC 1.1/MIDP 2.0 (+ JSR 75/135) API",
           not unresolved_mem, unresolved_mem)
 
-    # a phone without JSR 75 must never load a class that refers to it
-    users = set()
+    # a phone without JSR 75 / JSR 135 recording must never load a class that refers to it
+    users, rec_users = set(), set()
     for c in classes.values():
         refd = set(c["classes"]) | {r[1] for r in c["refs"]}
         for r in c["refs"]:
             refd.update(types_in(r[3]))
         for _, desc, _ in c["methods"] + c["fields"]:
             refd.update(types_in(desc))
+        name = c["this"].rsplit("/", 1)[-1].split("$")[0]
         if any(x.lstrip("[L").startswith(OPTIONAL_PACKAGES) for x in refd):
-            users.add(c["this"].rsplit("/", 1)[-1].split("$")[0])
-    check("JSR 75 (files, PIM) used only by Files / Pim", users <= OPTIONAL_USERS, sorted(users))
+            users.add(name)
+        if any(x.lstrip("[L").startswith(RECORDING) for x in refd):
+            rec_users.add(name)
+    check("optional APIs used only by Files / Pim / Rec", users <= OPTIONAL_USERS, sorted(users))
+    check("JSR 135 recording used only by Rec", rec_users <= {"Rec"}, sorted(rec_users))
 
     chain, cur = [], main_cls
     while cur in classes:

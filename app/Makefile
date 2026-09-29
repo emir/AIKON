@@ -22,6 +22,8 @@ CLDC  := $(DEPS)/cldcapi11-2.0.4.jar
 MIDP  := $(DEPS)/midpapi20-2.0.4.jar
 # JSR 75: FileConnection API from MicroEmulator, PIM API from compile-only
 # stubs (stubs/jsr75-pim). Optional on the phone: only Files and Pim use them.
+# JSR 135 recording (RecordControl): compile-only stub (stubs/jsr135-record),
+# used only by Rec.
 JSR75 := $(DEPS)/microemu-jsr-75-2.0.4.jar
 PROGUARD := $(DEPS)/proguard-7.9.1/lib/proguard.jar
 
@@ -51,7 +53,7 @@ build: deps
 	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS)
 	$(PYTHON) tools/make_art.py icon $(BUILD)/res/icon.png
 	$(JAVA) -jar $(ECJ) -source $(SOURCE_LEVEL) -target $(TARGET_LEVEL) \
-		-bootclasspath $(CLDC) -encoding UTF-8 -g:none \
+		-bootclasspath $(CLDC):$(MIDP) -encoding UTF-8 -g:none \
 		-failOnWarning -d $(STUBS) $(STUB_SRCS)
 	$(JAVA) -jar $(ECJ) -source $(SOURCE_LEVEL) -target $(TARGET_LEVEL) \
 		-bootclasspath $(CLDC):$(MIDP):$(JSR75):$(STUBS) -encoding UTF-8 -g:none \

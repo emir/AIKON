@@ -22,7 +22,7 @@ import javax.microedition.midlet.MIDlet;
  * Screens: animated splash (Splash), main menu (HomeCanvas), chat
  * (ChatCanvas), chats on the server (ChatList), replies saved on the phone
  * (SavedList), quick prompts (List), message editor (the phone's own
- * TextBox), add to calendar (CalendarForm), connection test (ConnTest),
+ * TextBox), voice message (Dictation), add to calendar (CalendarForm), connection test (ConnTest),
  * pairing (Pairing), first-run setup (Setup), settings, data usage,
  * shortcuts and about (Form). English or Turkish UI (L); changing the language rebuilds the
  * screens (rebuildUi), no restart needed. Networking happens only on worker
@@ -120,6 +120,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     private Command sendCmd;
     private Command composerBackCmd;
+    private Command dictateCmd;
     private Command saveCmd;
     private Command formBackCmd;
     private Command pairCmd;
@@ -188,6 +189,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private void buildUi() {
         sendCmd = new Command(L.s("Gönder", "Send"), Command.OK, 1);
         composerBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+        dictateCmd = new Command(L.s("Sesle yaz", "Dictate"), Command.SCREEN, 2);
         saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
         formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
@@ -392,6 +394,60 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         return !"-".equals(prop("microedition.pim.version"));
     }
 
+    private static int recording = -1;
+
+    /**
+     * The phone can record audio for an app (JSR 135 RecordControl, Rec):
+     * voice messages (Dictation).
+     */
+    static synchronized boolean hasRecording() {
+        if (recording < 0) {
+            boolean ok = "true".equals(prop("supports.audio.capture")) && !"false".equals(prop("supports.recording"));
+            if (ok) {
+                try {
+                    Class.forName("javax.microedition.media.control.RecordControl");
+                } catch (Throwable t) {
+                    ok = false;
+                }
+            }
+            recording = ok ? 1 : 0;
+        }
+        return recording == 1;
+    }
+
+    /** Records a voice message; its text then opens in the editor (dictated). */
+    void showDictation(boolean fromComposer) {
+        if (!chatReady()) {
+            return;
+        }
+        if (!hasRecording()) {
+            info(L.s("Bu telefon uygulamaların ses kaydetmesini desteklemiyor.",
+                    "This phone does not let apps record audio."), fromComposer ? (Displayable) composer : chat);
+            return;
+        }
+        new Dictation(this, fromComposer).start();
+    }
+
+    /** The server's text for a voice message: added to the draft, shown in the editor to check and send. */
+    void dictated(String text) {
+        String d = session.draft().trim();
+        String t = d.length() > 0 ? d + " " + text : text;
+        if (t.length() > ChatSession.MAX_MESSAGE) {
+            t = t.substring(0, ChatSession.MAX_MESSAGE);
+        }
+        session.setDraft(t);
+        showComposer(t, L.s("Kontrol edip gönderin", "Check, then send"));
+    }
+
+    /** Dictation was cancelled: back where it was opened. */
+    void dictationClosed(boolean fromComposer) {
+        if (fromComposer) {
+            showComposer(null);
+        } else {
+            showChat();
+        }
+    }
+
     /** ChatList deleted a chat on the server. */
     void chatDeleted(String id) {
         session.forget(id);
@@ -414,12 +470,21 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     /** Opens the editor with the saved draft, or with `text` if given. */
     void showComposer(String text) {
+        showComposer(text, null);
+    }
+
+    /** As above; title replaces "Message Claude" this time (a voice message to check). */
+    private void showComposer(String text, String title) {
         if (composer == null) {
             composer = new TextBox(L.s("Claude'a yaz", "Message Claude"), "", ChatSession.MAX_MESSAGE, TextField.ANY);
             composer.addCommand(sendCmd);
+            if (hasRecording()) {
+                composer.addCommand(dictateCmd);
+            }
             composer.addCommand(composerBackCmd);
             composer.setCommandListener(this);
         }
+        composer.setTitle(title != null ? title : L.s("Claude'a yaz", "Message Claude"));
         String value = text != null ? text : session.draft();
         try {
             composer.setString(value);
@@ -713,6 +778,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 } else {
                     showChat();
                 }
+            } else if (c == dictateCmd) {
+                session.setDraft(composer.getString());
+                showDictation(true);
             } else if (c == composerBackCmd) {
                 session.setDraft(composer.getString());
                 showChat();
@@ -1046,6 +1114,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
         about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));
+        about.append(new StringItem(L.s("Ses kaydı", "Voice recording"), (hasRecording() ? L.s("var", "yes")
+                : L.s("yok", "no")) + " (" + prop("audio.encodings") + ")"));
         about.addCommand(jingleCmd);
         about.addCommand(splashCmd);
         about.addCommand(formBackCmd);

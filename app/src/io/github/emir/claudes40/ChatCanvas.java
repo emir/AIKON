@@ -56,6 +56,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private final ChatSession session;
 
     final Command writeCmd = new Command(L.s("Yaz", "Write"), Command.SCREEN, 1);
+    final Command dictateCmd = new Command(L.s("Sesle yaz", "Dictate"), Command.SCREEN, 1);
     final Command moreCmd = new Command(L.s("Devamını göster", "Show the rest"), Command.SCREEN, 1);
     final Command readCmd = new Command(L.s("Okuma modu", "Reading mode"), Command.SCREEN, 2);
     final Command promptsCmd = new Command(L.s("Hızlı sorular", "Quick prompts"), Command.SCREEN, 2);
@@ -69,7 +70,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     final Command closeCmd = new Command(L.s("Kapat", "Close"), Command.BACK, 1);
 
     /** Commands in the order they are added (the phone lists them in this order). */
-    private final Command[] all = { actionsCmd, writeCmd, moreCmd, readCmd, promptsCmd, retryCmd, chatsCmd, newCmd, deleteCmd,
+    private final Command[] all = { actionsCmd, writeCmd, dictateCmd, moreCmd, readCmd, promptsCmd, retryCmd, chatsCmd, newCmd, deleteCmd,
         keysCmd, backCmd, closeCmd };
     private final boolean[] shown = new boolean[all.length];
 
@@ -141,6 +142,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         String err = null;
         if (c == writeCmd) {
             err = write();
+        } else if (c == dictateCmd) {
+            midlet.showDictation(false);
         } else if (c == promptsCmd) {
             midlet.showPrompts();
         } else if (c == retryCmd) {
@@ -241,6 +244,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 want = reading;
             } else if (c == actionsCmd) {
                 want = !reading && sel != 0;
+            } else if (c == dictateCmd) {
+                want = !reading && ClaudeS40MIDlet.hasRecording();
             } else if (c == writeCmd || c == keysCmd) {
                 want = true;
             } else {
