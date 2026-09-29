@@ -157,6 +157,10 @@ deployment), OpenSSL or LibreSSL.
   their results count as input tokens. Set a spending limit in the Claude
   Console.
 
+## Contributors
+
+- Andrew Barnes ([@Bortlesboat](https://github.com/Bortlesboat))
+
 ## License
 
 MIT, see [LICENSE](LICENSE). Copyright (c) 2026 Emir Karşıyakalı. Build-time tools are downloaded, not bundled
