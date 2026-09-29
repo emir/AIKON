@@ -73,8 +73,18 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   exists, on a worker thread (the phone asks for microphone access).
   `Dictation` stops at 30 s, uploads the clip to `/v1/transcribe` and opens
   the returned text in the editor for the user to check and send. `Rec` is
-  the only JSR 135 user (`tools/check.py`); the API comes from a
-  compile-only stub (`app/stubs/jsr135-record`), not packaged.
+  the only JSR 135 recording user (`tools/check.py`); the API comes from
+  compile-only stubs (`app/stubs/jsr135`), not packaged.
+- Photos (0.9.0): `Cam` shows a viewfinder (JSR 135 `VideoControl`,
+  `capture://image`, which the Nokia 6300 needs for snapshots, else
+  `capture://video`) and takes a 640x480 JPEG snapshot (simpler snapshot
+  parameters as fallbacks), only when `supports.video.capture` is true and
+  the class exists; `Cam` is the only JSR 135 camera user. `PhotoPicker`
+  lists folders and .jpg/.jpeg/.png files through `Files` (starting in
+  `fileconn.dir.photos`), files up to 1 MB, no thumbnails. `Photo` uploads
+  the bytes to `/v1/image` and attaches the returned id to the next
+  message; the editor then shows "Message with a photo" and offers "Remove
+  the photo". A message sent with a photo is shown with "[Photo]".
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
   on/off, "keep last chat", setup wizard done, the two backlight options,
@@ -124,10 +134,11 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /echo` | – | ≤ 512 bytes strict UTF-8, echoed; `probe: match` for the Turkish test string |
 | `POST /v1/pair/start` | – | → `pair` (128-bit secret), `code` (6 digits, shown on the phone), `expires` |
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
-| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), text = message |
+| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `image: <id>` (a photo from `/v1/image`; 0.6.0), optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), text = message |
 | `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls Claude) |
 | `POST /v1/conversations` | Bearer token | pinned, then newest conversations (20 in all), one line each: `id TAB updated-ms TAB messages TAB title`; with `pins: 1` (0.7+ phones) each line starts with `pinned TAB` (0/1) |
-| `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out |
+| `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out; with `images: 1` (0.9+ phones) a user message sent with a photo is `u N i` |
+| `POST /v1/image` | Bearer token | body = a JPEG or PNG (≤ 1 MiB) → `ok` + `image` (32 hex), `width`, `height`, `bytes`; `bad_image`, `too_large`, `limit`; never calls Claude (0.6.0) |
 | `POST /v1/delete` | Bearer token | `conversation: <id>` |
 | `POST /v1/pin` | Bearer token | `conversation: <id>`, `pinned: 1` or `0` → `ok` / `conversation_not_found` / `pin_limit` (+ `max`) (0.4.0) |
 | `POST /v1/transcribe?request=<id>&lang=tr\|en` | Bearer token | body = a voice clip (AMR or WAV, ≤ 640 KiB, ≤ 35 s), recognised by its first bytes → `ok` + `ms` (clip length), `mock`, `remaining` (voice messages left today), text = the transcript; never calls Claude (0.5.0) |
@@ -136,7 +147,7 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 Chat statuses: `ok` (fields `conversation`, `truncated`, `refused`, `mock`,
 `replayed`, `remaining`, and since 0.3.0 `more` + `next` while parts of a
 long reply are left, `searched` = number of web searches), `pending`, `busy`, `limit`, `conversation_full`,
-`conversation_not_found`, `request_mismatch`, `rate_limited`, `overloaded`,
+`conversation_not_found`, `image_not_found`, `request_mismatch`, `rate_limited`, `overloaded`,
 `billing`, `upstream_error`, `config_error`, `uncertain`, plus input errors.
 
 ### Long replies in parts (0.3.0)
@@ -175,6 +186,23 @@ line readably, selects the reply and offers "Add to calendar", which opens a
 form prefilled from it (title, date and time, calendar or to-do, alarm).
 Nothing is written to the phone's calendar before the user saves the form;
 the message actions offer the same form for any message.
+
+### Photos (0.6.0)
+
+`/v1/image` decodes the upload (JPEG or PNG; the header is checked first,
+at most 20 megapixels), scales it to at most 1024 pixels on the long side
+(Catmull-Rom) and stores it as a JPEG (quality 85) with the device. The
+same upload again returns the same id while the photo is unused. A chat
+message names it with `image: <id>`; the photo must be unused or already
+part of that conversation (`image_not_found` otherwise). The request's
+fingerprint covers the photo id, so the same `request` id with another
+photo is `request_mismatch`. After the reply the photo belongs to the
+conversation: each later message sends the newest 3 photos of the
+conversation again (about 1000 input tokens each), older ones become
+"[an earlier photo, no longer shown]". Photos are deleted with their
+conversation (delete, expiry, trim); unused ones after a day. Uploads per
+device per day: `DAILY_IMAGE_LIMIT` (default 30). The system prompt says
+photos come from a 2 MP phone camera and may be blurry.
 
 ### Voice messages (0.5.0)
 
@@ -230,9 +258,10 @@ Statuses: `ok`, `pending`, `busy`, `limit`, `request_mismatch`,
 | reply | sanitised (no Markdown/emoji/non-BMP), ≤ 8000 characters stored, sent in parts of ≤ 2000, `truncated` flag |
 | model | `CLAUDE_MODEL`, `max_tokens` 2048, `effort` from `CLAUDE_EFFORT`, optional server-side refusal fallback |
 | context | newest 16 messages and ≤ 16000 characters of the conversation |
+| photo | ≤ 1 MiB upload, ≤ 20 MP, stored ≤ 1024 px JPEG; newest 3 photos of a conversation sent with each message |
 | voice message | ≤ 30 s on the phone, ≤ 35 s and ≤ 640 KiB on the server; audio never stored; transcript ≤ 996 characters |
-| per device | 1 request and 1 voice message in flight, daily requests, output tokens, web searches and voice messages (`DAILY_TRANSCRIBE_LIMIT`, default 30; UTC day), ≤ 40 messages per conversation, ≤ 50 conversations plus ≤ 10 pinned |
-| retention | conversations 30 days after the last message (pinned ones until unpinned or deleted), request records 7 days, transcripts 1 day (for replays only), usage 90 days (cleanup every 6 h) |
+| per device | 1 request and 1 voice message in flight, daily requests, output tokens, web searches, voice messages (`DAILY_TRANSCRIBE_LIMIT`, default 30) and photo uploads (`DAILY_IMAGE_LIMIT`, default 30; UTC day), ≤ 40 messages per conversation, ≤ 50 conversations plus ≤ 10 pinned |
+| retention | conversations 30 days after the last message (pinned ones until unpinned or deleted), request records 7 days, transcripts 1 day (for replays only), photos with their conversation (unused ones 1 day), usage 90 days (cleanup every 6 h) |
 
 All user-data tables are keyed by `device_id`: a conversation id is only
 visible to the device that created it.
@@ -242,7 +271,8 @@ visible to the device that created it.
 JSON lines: start, TLS ClientHello summary (SNI present, versions, number of
 suites), each request (method, path, status, duration, negotiated TLS),
 upstream errors (HTTP status, Anthropic error type/message, request id),
-voice clips (format, bytes, length in ms) and speech-to-text errors (HTTP
+voice clips (format, bytes, length in ms), photos (bytes received and
+stored, pixel size) and speech-to-text errors (HTTP
 status, error type/code/message, request id).
-No message text, replies, transcripts, audio, tokens, keys or client IP
-addresses.
+No message text, replies, transcripts, audio, photos, tokens, keys or
+client IP addresses.

@@ -107,17 +107,13 @@ final class Splash extends Canvas {
             Logo.sparkle(g, cx - r, cy + r / 3, (6 - tw) + size / 40, Theme.accent);
         }
 
-        // title and subtitle fade in from the background colour
+        // title fades in from the background colour
         int t = frame < 12 ? 0 : Math.min(256, (frame - 12) * 32);
         g.setFont(Theme.bold);
         g.setColor(Theme.mix(Theme.bg, Theme.ink, t));
         int ty = cy + size / 2 + size / 5;
         g.drawString("Claude S40", cx, ty, Graphics.TOP | Graphics.HCENTER);
         g.setFont(Theme.small);
-        g.setColor(Theme.mix(Theme.bg, Theme.muted, t));
-        ty += Theme.bold.getHeight() + 2;
-        g.drawString(Text.fit(L.s("Cebinizde Claude, 2007 usulü", "Claude in your pocket, 2007 style"), Theme.small, w - 8),
-                cx, ty, Graphics.TOP | Graphics.HCENTER);
 
         // loading dots and disclaimer
         int dots = (frame / 3) % 4;

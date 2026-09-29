@@ -36,8 +36,9 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
   Optional JSR 75 (files, calendar/to-do) only inside Files/Pim, called
   after hasFiles()/hasPim() and from worker threads (check.py enforces the
   first part); nothing is written to the calendar without the user's Save.
-  Optional JSR 135 recording only inside Rec, after hasRecording(), from
-  worker threads; a transcript only fills the editor, never sends itself.
+  Optional JSR 135 recording only inside Rec (after hasRecording()) and
+  camera only inside Cam (after hasCamera()), from worker threads; a
+  transcript or photo only fills the editor, never sends itself.
   Bump VERSION/BUILD in `app/app.properties` for every build given to a phone;
   never reuse a version. JAD/manifest values must stay ASCII.
 - Protocol `S40/1` is shared by phone and server: keep changes backwards

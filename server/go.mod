@@ -4,6 +4,7 @@ go 1.26.5
 
 require (
 	github.com/anthropics/anthropic-sdk-go v1.75.0
+	golang.org/x/image v0.46.0
 	golang.org/x/text v0.42.0
 	modernc.org/sqlite v1.59.0
 )
@@ -25,7 +26,7 @@ require (
 	github.com/tidwall/sjson v1.2.5 // indirect
 	go.yaml.in/yaml/v4 v4.0.0-rc.2 // indirect
 	golang.org/x/sync v0.23.0 // indirect
-	golang.org/x/sys v0.47.0 // indirect
+	golang.org/x/sys v0.48.0 // indirect
 	modernc.org/libc v1.75.7 // indirect
 	modernc.org/mathutil v1.7.1 // indirect
 	modernc.org/memory v1.12.1 // indirect

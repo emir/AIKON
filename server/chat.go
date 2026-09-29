@@ -53,7 +53,7 @@ type chatResult struct {
 var statusHTTP = map[string]int{
 	"ok": 200, "pending": 202, "busy": 409, "limit": 429, "conversation_full": 409,
 	"conversation_not_found": 404, "request_mismatch": 409, "rate_limited": 503, "overloaded": 503,
-	"upstream_error": 502, "config_error": 500, "billing": 402, "uncertain": 504,
+	"upstream_error": 502, "config_error": 500, "billing": 402, "uncertain": 504, "image_not_found": 404,
 }
 
 type chatService struct {
@@ -120,6 +120,9 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	db := c.st.db
 	now := c.st.ms()
 	sha := sha256Hex(message)
+	if o.imageID != "" {
+		sha = sha256Hex(message + "\x00image:" + o.imageID) // same id with another photo is a mismatch
+	}
 
 	// 1. repeated request_id: report the record, never call again
 	var prevConv, prevSha, prevState string
@@ -184,7 +187,23 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		return r, nil
 	}
 
-	// 4. conversation
+	// 4. the photo: not used yet, or already part of this conversation
+	if o.imageID != "" {
+		data, found, err := c.st.imageFor(ctx, device, o.imageID, conv)
+		if err != nil {
+			mu.Unlock()
+			return chatResult{}, err
+		}
+		if !found {
+			mu.Unlock()
+			r := result("image_not_found", requestID)
+			r.conversation = conv
+			return r, nil
+		}
+		o.image = data
+	}
+
+	// 5. conversation
 	if conv != "" {
 		var x int
 		if db.QueryRowContext(ctx, `SELECT 1 FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&x) != nil {
@@ -210,13 +229,13 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	opts := o
 	opts.search = o.search && c.searchesLeft(ctx, device) > 0
-	history, err := c.context(ctx, device, conv)
+	history, err := c.context(ctx, device, conv, o.imageID != "")
 	if err != nil {
 		mu.Unlock()
 		return chatResult{}, err
 	}
 
-	// 5. record + count BEFORE the paid call
+	// 6. record + count BEFORE the paid call
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		mu.Unlock()
@@ -237,7 +256,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	mu.Unlock()
 
-	// 6. the call (no lock held; the pending row keeps other requests out)
+	// 7. the call (no lock held; the pending row keeps other requests out)
 	// a phone disconnect must not turn a paid call into "unknown": neither the
 	// call nor recording its result below may be cancelled by the request
 	ctx = context.WithoutCancel(ctx)
@@ -263,7 +282,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		return r, nil
 	}
 
-	// 7. store the completed exchange
+	// 8. store the completed exchange
 	text, cut := limitChars(sanitizeReply(rep.text), maxReplyChars)
 	truncated := cut || rep.cutOff
 	if rep.refused {
@@ -283,8 +302,11 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		var seq int
 		tx.QueryRowContext(ctx, `SELECT COALESCE(MAX(seq), 0) FROM messages WHERE device_id=? AND conversation_id=?`,
 			device, conv).Scan(&seq)
-		tx.ExecContext(ctx, `INSERT INTO messages (device_id, conversation_id, seq, role, content, created_at)
-			VALUES (?, ?, ?, 'user', ?, ?)`, device, conv, seq+1, message, now)
+		tx.ExecContext(ctx, `INSERT INTO messages (device_id, conversation_id, seq, role, content, created_at, image_id)
+			VALUES (?, ?, ?, 'user', ?, ?, ?)`, device, conv, seq+1, message, now, o.imageID)
+		if o.imageID != "" {
+			tx.ExecContext(ctx, `UPDATE images SET conversation_id=? WHERE device_id=? AND id=?`, conv, device, o.imageID)
+		}
 		tx.ExecContext(ctx, `INSERT INTO messages (device_id, conversation_id, seq, role, content, created_at)
 			VALUES (?, ?, ?, 'assistant', ?, ?)`, device, conv, seq+2, text, done)
 	}
@@ -305,8 +327,9 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 }
 
 // context: newest completed messages within both caps, oldest first, starting with a user turn.
-func (c *chatService) context(ctx context.Context, device, conv string) ([]turn, error) {
-	rows, err := c.st.db.QueryContext(ctx, `SELECT role, content FROM messages
+// withImage: the new message has a photo of its own (one fewer older photo is sent).
+func (c *chatService) context(ctx context.Context, device, conv string, withImage bool) ([]turn, error) {
+	rows, err := c.st.db.QueryContext(ctx, `SELECT role, content, image_id FROM messages
 		WHERE device_id=? AND conversation_id=? ORDER BY seq DESC LIMIT ?`, device, conv, contextMessages)
 	if err != nil {
 		return nil, err
@@ -316,7 +339,7 @@ func (c *chatService) context(ctx context.Context, device, conv string) ([]turn,
 	chars := 0
 	for rows.Next() {
 		var t turn
-		if err := rows.Scan(&t.role, &t.content); err != nil {
+		if err := rows.Scan(&t.role, &t.content, &t.imageID); err != nil {
 			return nil, err
 		}
 		chars += len([]rune(t.content))
@@ -324,6 +347,25 @@ func (c *chatService) context(ctx context.Context, device, conv string) ([]turn,
 			break
 		}
 		rev = append(rev, t)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rows.Close()
+	// the newest photos go to Claude again (the current message's own photo counts too)
+	shown := 0
+	if withImage {
+		shown = 1
+	}
+	for i := range rev {
+		if rev[i].imageID == "" || shown >= contextImages {
+			continue
+		}
+		c.st.db.QueryRowContext(ctx, `SELECT data FROM images WHERE device_id=? AND id=?`, device, rev[i].imageID).
+			Scan(&rev[i].image)
+		if len(rev[i].image) > 0 {
+			shown++
+		}
 	}
 	out := make([]turn, 0, len(rev))
 	for i := len(rev) - 1; i >= 0; i-- {

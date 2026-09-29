@@ -46,6 +46,11 @@ CREATE TABLE IF NOT EXISTS usage (
   device_id TEXT NOT NULL, day TEXT NOT NULL, requests INTEGER NOT NULL DEFAULT 0,
   input_tokens INTEGER NOT NULL DEFAULT 0, output_tokens INTEGER NOT NULL DEFAULT 0,
   PRIMARY KEY (device_id, day));
+CREATE TABLE IF NOT EXISTS images (
+  device_id TEXT NOT NULL, id TEXT NOT NULL, sha TEXT NOT NULL, created_at INTEGER NOT NULL,
+  conversation_id TEXT NOT NULL DEFAULT '', width INTEGER NOT NULL, height INTEGER NOT NULL, data BLOB NOT NULL,
+  PRIMARY KEY (device_id, id));
+CREATE INDEX IF NOT EXISTS images_sha ON images (device_id, sha);
 CREATE TABLE IF NOT EXISTS transcripts (
   device_id TEXT NOT NULL, request_id TEXT NOT NULL, audio_sha TEXT NOT NULL, state TEXT NOT NULL,
   created_at INTEGER NOT NULL, finished_at INTEGER, audio_ms INTEGER NOT NULL DEFAULT 0,
@@ -84,7 +89,8 @@ func openStore(path string) (*store, error) {
 }
 
 // migrate adds columns introduced after the first release (0.3.0: web
-// search counts; 0.4.0: pinned conversations; 0.5.0: voice message counts).
+// search counts; 0.4.0: pinned conversations; 0.5.0: voice message counts;
+// 0.6.0: photos in messages).
 // Existing databases keep their data.
 func migrate(db *sql.DB) error {
 	for _, c := range []struct{ table, column, def string }{
@@ -93,6 +99,8 @@ func migrate(db *sql.DB) error {
 		{"conversations", "pinned", "INTEGER NOT NULL DEFAULT 0"},
 		{"usage", "transcripts", "INTEGER NOT NULL DEFAULT 0"},
 		{"usage", "audio_ms", "INTEGER NOT NULL DEFAULT 0"},
+		{"usage", "images", "INTEGER NOT NULL DEFAULT 0"},
+		{"messages", "image_id", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		var n int
 		if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`, c.table, c.column).Scan(&n); err != nil {
@@ -330,7 +338,7 @@ func (s *store) history(ctx context.Context, device, conv string) (msgs []turn, 
 	if s.db.QueryRowContext(ctx, `SELECT 1 FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&x) != nil {
 		return nil, false, false, nil
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT role, content FROM messages
+	rows, err := s.db.QueryContext(ctx, `SELECT role, content, image_id FROM messages
 		WHERE device_id=? AND conversation_id=? ORDER BY seq DESC`, device, conv)
 	if err != nil {
 		return nil, false, false, err
@@ -340,7 +348,7 @@ func (s *store) history(ctx context.Context, device, conv string) (msgs []turn, 
 	size := 0
 	for rows.Next() {
 		var t turn
-		if err := rows.Scan(&t.role, &t.content); err != nil {
+		if err := rows.Scan(&t.role, &t.content, &t.imageID); err != nil {
 			return nil, false, false, err
 		}
 		t.content, _ = limitChars(t.content, historyMsgChars)
@@ -563,6 +571,10 @@ func (s *store) cleanup(ctx context.Context) error {
 		{`DELETE FROM conversations WHERE updated_at < ? AND pinned=0`, []any{old}},
 		{`DELETE FROM requests WHERE created_at < ? AND state != 'pending'`, []any{now - requestTTL.Milliseconds()}},
 		{`DELETE FROM transcripts WHERE created_at < ? AND state != 'pending'`, []any{now - transcriptTTL.Milliseconds()}},
+		// photos never used in a message, and photos whose conversation is gone
+		{`DELETE FROM images WHERE conversation_id='' AND created_at < ?`, []any{now - unusedImageTTL}},
+		{`DELETE FROM images WHERE conversation_id != '' AND (device_id, conversation_id) NOT IN
+		    (SELECT device_id, id FROM conversations)`, nil},
 		{`DELETE FROM usage WHERE day < ?`, []any{utcDay(now - usageTTL.Milliseconds())}},
 		{`DELETE FROM pairings WHERE expires_at < ?`, []any{now}},
 	}
@@ -582,6 +594,7 @@ func (s *store) deleteConversation(ctx context.Context, device, conv string) err
 	defer tx.Rollback()
 	for _, q := range []string{
 		`DELETE FROM messages WHERE device_id=? AND conversation_id=?`,
+		`DELETE FROM images WHERE device_id=? AND conversation_id=?`,
 		`DELETE FROM requests WHERE device_id=? AND conversation_id=? AND state != 'pending'`,
 		`DELETE FROM conversations WHERE device_id=? AND id=?`,
 	} {

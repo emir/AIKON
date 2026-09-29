@@ -586,7 +586,7 @@ func fakeModel(t *testing.T, f *fakeAPI, fallbacks bool, effort string) *claudeM
 func TestClaudeRequestShape(t *testing.T) {
 	f := &fakeAPI{status: 200, body: okBody("Ankara.", "end_turn")}
 	m := fakeModel(t, f, true, "low")
-	r, err := m.reply(context.Background(), []turn{{"user", "a"}, {"assistant", "b"}}, "c", replyOpts{})
+	r, err := m.reply(context.Background(), []turn{{role: "user", content: "a"}, {role: "assistant", content: "b"}}, "c", replyOpts{})
 	if err != nil || r.text != "Ankara." || r.outputTokens != 34 {
 		t.Fatalf("%v %+v", err, r)
 	}

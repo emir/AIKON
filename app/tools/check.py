@@ -8,7 +8,8 @@ Claude S40 specifics: exact
 name/file checks, only MIDlet-Permissions-Opt = Connector.https, no plain http:// URL in the classes, and a secret scan of every packaged
 byte. The optional JSR 75 APIs (FileConnection, PIM) may only be used by
 the classes Files and Pim, JSR 135 recording (RecordControl) only by Rec,
-so phones without them never load such a class.
+the JSR 135 camera (VideoControl) only by Cam, so phones without them never
+load such a class.
 
 Exit 0 only if every check passes. Checks:
   zip integrity, manifest first, attribute agreement manifest/JAD/properties,
@@ -17,7 +18,7 @@ Exit 0 only if every check passes. Checks:
   (StackMap where needed, no jsr/ret, no Java 6 StackMapTable), every
   referenced class and member resolves to the JAR or the CLDC 1.1/MIDP 2.0
   (+ JSR 75/135) API, JSR 75 only in Files/Pim, JSR 135 recording only in
-  Rec, no platform classes packaged,
+  Rec and camera only in Cam, no platform classes packaged,
   no mandatory permissions / notify URLs / push, SHA256SUMS.
 """
 
@@ -39,11 +40,11 @@ EXPECTED_NAME = "Claude S40"
 EXPECTED_FILE_BASE = "ClaudeS40"
 ONLY_PERMISSION = "javax.microedition.io.Connector.https"
 # optional APIs and the only classes allowed to reference them:
-# JSR 75 (files, PIM) in Files/Pim, JSR 135 recording in Rec
-OPTIONAL_PACKAGES = ("javax/microedition/io/file/", "javax/microedition/pim/",
-                     "javax/microedition/media/control/RecordControl")
-OPTIONAL_USERS = {"Files", "Pim", "Rec"}
+# JSR 75 (files, PIM) in Files/Pim, JSR 135 recording in Rec, camera in Cam
 RECORDING = "javax/microedition/media/control/RecordControl"
+CAMERA = ("javax/microedition/media/control/VideoControl", "javax/microedition/media/control/GUIControl")
+OPTIONAL_PACKAGES = ("javax/microedition/io/file/", "javax/microedition/pim/", RECORDING) + CAMERA
+OPTIONAL_USERS = {"Files", "Pim", "Rec", "Cam"}
 # secret-looking content that must never be in the JAR/JAD
 SECRET_PATTERNS = [
     (rb"sk-ant-", "Anthropic API key prefix"),
@@ -319,7 +320,8 @@ def main():
     check("JSR 75 API present for the reference check (FileConnection, PIM)",
           "javax/microedition/io/file/FileConnection" in optional and "javax/microedition/pim/PIM" in optional,
           sorted(optional)[:4])
-    check("JSR 135 RecordControl stub present for the reference check", RECORDING in optional)
+    check("JSR 135 RecordControl / VideoControl stubs present for the reference check",
+          RECORDING in optional and all(c in optional for c in CAMERA))
     api.update(optional)
     classes = {}
     for n in names:
@@ -436,7 +438,7 @@ def main():
           not unresolved_mem, unresolved_mem)
 
     # a phone without JSR 75 / JSR 135 recording must never load a class that refers to it
-    users, rec_users = set(), set()
+    users, rec_users, cam_users = set(), set(), set()
     for c in classes.values():
         refd = set(c["classes"]) | {r[1] for r in c["refs"]}
         for r in c["refs"]:
@@ -448,8 +450,11 @@ def main():
             users.add(name)
         if any(x.lstrip("[L").startswith(RECORDING) for x in refd):
             rec_users.add(name)
-    check("optional APIs used only by Files / Pim / Rec", users <= OPTIONAL_USERS, sorted(users))
+        if any(x.lstrip("[L").startswith(CAMERA) for x in refd):
+            cam_users.add(name)
+    check("optional APIs used only by Files / Pim / Rec / Cam", users <= OPTIONAL_USERS, sorted(users))
     check("JSR 135 recording used only by Rec", rec_users <= {"Rec"}, sorted(rec_users))
+    check("JSR 135 camera used only by Cam", cam_users <= {"Cam"}, sorted(cam_users))
 
     chain, cur = [], main_cls
     while cur in classes:

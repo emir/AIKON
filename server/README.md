@@ -13,7 +13,8 @@ make test        # go vet + go test -race: protocol, sanitize, health/echo,
                  # pairing/admin, chat rules, device isolation, concurrency, limits,
                  # retention/restart, SDK request shape + errors via a fake API,
                  # the Nokia's TLS offer, voice messages (audio checks, AMR via
-                 # ffmpeg if installed, replay/limits, speech-to-text fake API)
+                 # ffmpeg if installed, replay/limits, speech-to-text fake API),
+                 # photos (decode/scale limits, upload, chat context, retention)
 make docker      # linux/amd64 image, tests run inside the build too
 ```
 
@@ -32,6 +33,7 @@ Environment (see `.env.example`; `deploy/push.sh` writes `.env` from `S40_*`):
 | `TRANSCRIBE` | `off` | voice messages: `off`, `mock` ("[Test mode]" text) or `openai` (paid) |
 | `TRANSCRIBE_MODEL` | `gpt-4o-mini-transcribe` | OpenAI transcription model |
 | `DAILY_TRANSCRIBE_LIMIT` | `30` | voice messages per device, UTC day |
+| `DAILY_IMAGE_LIMIT` | `30` | photo uploads per device, UTC day |
 
 Files on the host (`~/claude-s40-server`): `certs/server-chain.pem`,
 `certs/server.key` (uid 65532, 0400), `secrets/admin_token` (generated on

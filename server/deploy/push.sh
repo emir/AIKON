@@ -11,7 +11,8 @@
 # S40_SEARCH_LIMIT (per device per day), S40_SEARCH_COUNTRY/_CITY/_TIMEZONE
 # (optional approximate location for local search results),
 # S40_TRANSCRIBE (voice messages: off (default), mock, openai),
-# S40_TRANSCRIBE_MODEL, S40_TRANSCRIBE_LIMIT (per device per day).
+# S40_TRANSCRIBE_MODEL, S40_TRANSCRIBE_LIMIT (per device per day),
+# S40_IMAGE_LIMIT (photo uploads per device per day).
 # Copies only: image, compose.yaml, .env (no secrets), server-chain.pem, server.key.
 # On the server: secrets/admin_token is generated there if missing (never
 # leaves the server); secrets/anthropic_api_key must be put there with
@@ -23,7 +24,7 @@ TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.5.0
+IMAGE=claude-s40-server:0.6.1
 MOCK=${S40_MOCK:-1}
 STT=${S40_TRANSCRIBE:-off}
 case "$STT" in off|mock|openai) ;; *) echo "S40_TRANSCRIBE must be off, mock or openai" >&2; exit 1 ;; esac
@@ -54,6 +55,7 @@ SEARCH_TIMEZONE=${S40_SEARCH_TIMEZONE:-}
 TRANSCRIBE=$STT
 TRANSCRIBE_MODEL=${S40_TRANSCRIBE_MODEL:-gpt-4o-mini-transcribe}
 DAILY_TRANSCRIBE_LIMIT=${S40_TRANSCRIBE_LIMIT:-30}
+DAILY_IMAGE_LIMIT=${S40_IMAGE_LIMIT:-30}
 ENV
 
 echo "== plan"

@@ -7,6 +7,7 @@ package main
 
 import (
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"errors"
 	"fmt"
@@ -30,6 +31,7 @@ const (
 
 const basePrompt = `You are Claude, talking to the user through "Claude S40", an unofficial client running on a Nokia 6300 (Series 40) phone with a 240x320 screen and a numeric keypad.
 Reply in the language the user writes in.
+The user may attach a photo taken with the phone's 2-megapixel camera; it can be small, dark or blurry. Describe what you can actually see and say so when something is not readable.
 Keep answers short and easy to read on a small screen: normally 2-6 sentences, at most about 120 words, unless the user explicitly asks for more detail.
 Use plain text only: no Markdown, no headings, no tables, no code blocks, no emoji. If a list helps, put each item on its own line starting with "- ".
 When the user asks to shorten, expand or rephrase, apply it to your previous answer in this conversation.`
@@ -71,6 +73,8 @@ func systemPrompt(o replyOpts, now time.Time) string {
 type turn struct {
 	role    string // "user" | "assistant"
 	content string
+	imageID string // a photo sent with this user message ("" if none)
+	image   []byte // its JPEG, when it is sent to Claude again (newest contextImages)
 }
 
 type reply struct {
@@ -90,6 +94,8 @@ type replyOpts struct {
 	calendar     bool      // the phone can add calendar / to-do entries
 	localTime    time.Time // the phone's clock (calendar only); zero if unknown
 	instructions string    // the user's own notes for Claude (Settings on the phone)
+	imageID      string    // a photo with this message (/v1/image), "" if none
+	image        []byte    // its JPEG (set by the chat service)
 }
 
 // upstreamError: kind "definite" or "uncertain"; code is the status sent to the phone.
@@ -147,12 +153,10 @@ func (m *claudeModel) reply(ctx context.Context, history []turn, message string,
 		if t.role == "assistant" {
 			role = anthropic.BetaMessageParamRoleAssistant
 		}
-		msgs = append(msgs, anthropic.BetaMessageParam{
-			Role:    role,
-			Content: []anthropic.BetaContentBlockParamUnion{anthropic.NewBetaTextBlock(t.content)},
-		})
+		msgs = append(msgs, anthropic.BetaMessageParam{Role: role, Content: userContent(t.content, t.image, t.imageID)})
 	}
-	msgs = append(msgs, anthropic.NewBetaUserMessage(anthropic.NewBetaTextBlock(message)))
+	msgs = append(msgs, anthropic.BetaMessageParam{Role: anthropic.BetaMessageParamRoleUser,
+		Content: userContent(message, o.image, o.imageID)})
 
 	params := anthropic.BetaMessageNewParams{
 		Model:     anthropic.Model(m.model),
@@ -230,6 +234,24 @@ func (m *claudeModel) reply(ctx context.Context, history []turn, message string,
 	}
 	out.text = text.String()
 	return out, nil
+}
+
+// userContent: the photo (if it is still sent) before the text, as the
+// Messages API recommends; an older photo that is no longer sent is named
+// in the text so the conversation still reads right.
+func userContent(text string, img []byte, imageID string) []anthropic.BetaContentBlockParamUnion {
+	switch {
+	case len(img) > 0:
+		return []anthropic.BetaContentBlockParamUnion{
+			anthropic.NewBetaImageBlock(anthropic.BetaBase64ImageSourceParam{
+				Data: base64.StdEncoding.EncodeToString(img), MediaType: "image/jpeg"}),
+			anthropic.NewBetaTextBlock(text),
+		}
+	case imageID != "":
+		return []anthropic.BetaContentBlockParamUnion{anthropic.NewBetaTextBlock("[an earlier photo, no longer shown]\n" + text)}
+	default:
+		return []anthropic.BetaContentBlockParamUnion{anthropic.NewBetaTextBlock(text)}
+	}
 }
 
 // hostOf returns the host name of an http(s) URL without "www.", or "".
@@ -337,6 +359,18 @@ func (mockModel) reply(ctx context.Context, history []turn, message string, o re
 	}
 	if o.instructions != "" {
 		text += fmt.Sprintf("\nYour notes for Claude: %d characters.", len([]rune(o.instructions)))
+	}
+	if len(o.image) > 0 {
+		text += fmt.Sprintf("\nPhoto: attached (%d bytes).", len(o.image))
+	}
+	shown := 0
+	for _, t := range history {
+		if len(t.image) > 0 {
+			shown++
+		}
+	}
+	if shown > 0 {
+		text += fmt.Sprintf("\nEarlier photos shown again: %d.", shown)
 	}
 	if strings.Contains(message, "[[mock:event]]") && o.calendar {
 		day := time.Now()

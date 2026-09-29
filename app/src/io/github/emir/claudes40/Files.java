@@ -9,9 +9,10 @@ import java.util.Vector;
 
 import javax.microedition.io.Connector;
 import javax.microedition.io.file.FileConnection;
+import javax.microedition.io.file.FileSystemRegistry;
 
 /**
- * Saved replies as .txt files (JSR 75 FileConnection). With Pim, the only
+ * Saved replies as .txt files, and photos to send (JSR 75 FileConnection). With Pim, the only
  * class that uses JSR 75 (tools/check.py): phones without it never load it,
  * callers check ClaudeS40MIDlet.hasFiles() first.
  *
@@ -183,6 +184,120 @@ final class Files {
                 fc.delete();
             }
         } finally {
+            close(fc);
+        }
+    }
+
+    // ------------------------------------------------------------ photos (PhotoPicker)
+
+    /** The phone's photo folder as a URL ending in '/', or null. */
+    static String photoFolder() {
+        String p = ClaudeS40MIDlet.prop("fileconn.dir.photos");
+        if (!p.startsWith("file:///")) {
+            return null;
+        }
+        return p.endsWith("/") ? p : p + "/";
+    }
+
+    /** The phone's drives as URLs ("file:///C:/", "file:///E:/"). */
+    static Vector roots() {
+        Vector out = new Vector();
+        Enumeration e = FileSystemRegistry.listRoots();
+        while (e.hasMoreElements()) {
+            String r = (String) e.nextElement();
+            out.addElement("file:///" + (r.endsWith("/") ? r : r + "/"));
+        }
+        return out;
+    }
+
+    /**
+     * Folders (names ending in '/', A-Z) and then .jpg/.jpeg/.png files
+     * (newest-looking name first: phones name photos by date or number)
+     * in a folder URL.
+     */
+    static Vector listPhotos(String dir) throws IOException {
+        Vector dirs = new Vector();
+        Vector files = new Vector();
+        FileConnection fc = null;
+        try {
+            fc = (FileConnection) Connector.open(dir, Connector.READ);
+            Enumeration e = fc.list();
+            while (e.hasMoreElements()) {
+                String n = (String) e.nextElement();
+                String low = n.toLowerCase();
+                if (n.endsWith("/")) {
+                    insert(dirs, n, true);
+                } else if (low.endsWith(".jpg") || low.endsWith(".jpeg") || low.endsWith(".png")) {
+                    insert(files, n, false);
+                }
+            }
+        } finally {
+            close(fc);
+        }
+        for (int i = 0; i < files.size(); i++) {
+            dirs.addElement(files.elementAt(i));
+        }
+        return dirs;
+    }
+
+    private static void insert(Vector v, String n, boolean ascending) {
+        String key = n.toLowerCase();
+        int at = 0;
+        while (at < v.size()) {
+            int c = ((String) v.elementAt(at)).toLowerCase().compareTo(key);
+            if (ascending ? c > 0 : c < 0) {
+                break;
+            }
+            at++;
+        }
+        v.insertElementAt(n, at);
+    }
+
+    /** Size of a file in bytes, -1 if unknown. */
+    static long size(String url) throws IOException {
+        FileConnection fc = null;
+        try {
+            fc = (FileConnection) Connector.open(url, Connector.READ);
+            return fc.exists() ? fc.fileSize() : -1;
+        } finally {
+            close(fc);
+        }
+    }
+
+    /** The whole file, or null if it is larger than max bytes. */
+    static byte[] readBytes(String url, int max) throws IOException {
+        FileConnection fc = null;
+        InputStream in = null;
+        try {
+            fc = (FileConnection) Connector.open(url, Connector.READ);
+            long size = fc.fileSize();
+            if (size > max) {
+                return null;
+            }
+            in = fc.openInputStream();
+            byte[] buf = new byte[(int) Math.max(0, size)];
+            int n = 0;
+            while (n < buf.length) {
+                int k = in.read(buf, n, buf.length - n);
+                if (k < 0) {
+                    break;
+                }
+                n += k;
+            }
+            if (n < buf.length) {
+                byte[] b = new byte[n];
+                System.arraycopy(buf, 0, b, 0, n);
+                buf = b;
+            }
+            return buf;
+        } finally {
+            if (in != null) {
+                try {
+                    in.close();
+                } catch (IOException e) {
+                    // ignore
+                }
+            }
             close(fc);
         }
     }

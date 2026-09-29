@@ -10,7 +10,7 @@
 services:
   server:
     build: .
-    image: claude-s40-server:0.5.0
+    image: claude-s40-server:0.6.1
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
@@ -30,6 +30,7 @@ services:
       TRANSCRIBE: ${TRANSCRIBE:-off}
       TRANSCRIBE_MODEL: ${TRANSCRIBE_MODEL:-gpt-4o-mini-transcribe}
       DAILY_TRANSCRIBE_LIMIT: ${DAILY_TRANSCRIBE_LIMIT:-30}
+      DAILY_IMAGE_LIMIT: ${DAILY_IMAGE_LIMIT:-30}
       ADMIN_LISTEN: 0.0.0.0:9090
     ports:
       - "443:8443"

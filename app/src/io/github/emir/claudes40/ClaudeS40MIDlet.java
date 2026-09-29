@@ -22,7 +22,7 @@ import javax.microedition.midlet.MIDlet;
  * Screens: animated splash (Splash), main menu (HomeCanvas), chat
  * (ChatCanvas), chats on the server (ChatList), replies saved on the phone
  * (SavedList), quick prompts (List), message editor (the phone's own
- * TextBox), voice message (Dictation), add to calendar (CalendarForm), connection test (ConnTest),
+ * TextBox), voice message (Dictation), photo (Photo, Cam, PhotoPicker), add to calendar (CalendarForm), connection test (ConnTest),
  * pairing (Pairing), first-run setup (Setup), settings, data usage,
  * shortcuts and about (Form). English or Turkish UI (L); changing the language rebuilds the
  * screens (rebuildUi), no restart needed. Networking happens only on worker
@@ -121,6 +121,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command sendCmd;
     private Command composerBackCmd;
     private Command dictateCmd;
+    private Command photoCmd;
+    private Command removePhotoCmd;
     private Command saveCmd;
     private Command formBackCmd;
     private Command pairCmd;
@@ -190,6 +192,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         sendCmd = new Command(L.s("Gönder", "Send"), Command.OK, 1);
         composerBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         dictateCmd = new Command(L.s("Sesle yaz", "Dictate"), Command.SCREEN, 2);
+        photoCmd = new Command(L.s("Fotoğraf ekle", "Add a photo"), Command.SCREEN, 3);
+        removePhotoCmd = new Command(L.s("Fotoğrafı kaldır", "Remove the photo"), Command.SCREEN, 3);
         saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
         formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
@@ -415,6 +419,62 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         return recording == 1;
     }
 
+    private static int camera = -1;
+
+    /** The phone lets apps use the camera (JSR 135 VideoControl, Cam). */
+    static synchronized boolean hasCamera() {
+        if (camera < 0) {
+            boolean ok = "true".equals(prop("supports.video.capture"));
+            if (ok) {
+                try {
+                    Class.forName("javax.microedition.media.control.VideoControl");
+                } catch (Throwable t) {
+                    ok = false;
+                }
+            }
+            camera = ok ? 1 : 0;
+        }
+        return camera == 1;
+    }
+
+    /** A photo can be taken or picked on this phone. */
+    static boolean hasPhotoSource() {
+        return hasCamera() || hasFiles();
+    }
+
+    /** Takes or picks a photo and uploads it; then the editor opens with it (photoAttached). */
+    void showPhoto(boolean fromComposer) {
+        if (!chatReady()) {
+            return;
+        }
+        if (!hasPhotoSource()) {
+            info(L.s("Bu telefon uygulamaların kamera veya dosya kullanmasına izin vermiyor.",
+                    "This phone does not let apps use the camera or files."), fromComposer ? (Displayable) composer : chat);
+            return;
+        }
+        new Photo(this, fromComposer).start();
+    }
+
+    /** The photo is on the server: attach it to the next message and let the user write the question. */
+    void photoAttached(String id, boolean fromComposer) {
+        session.setImage(id);
+        String d = session.draft();
+        if (d.trim().length() == 0) {
+            d = L.s("Bu fotoğrafta ne var?", "What is in this photo?");
+            session.setDraft(d);
+        }
+        showComposer(d);
+    }
+
+    /** Adding a photo was cancelled: back where it started. */
+    void photoClosed(boolean fromComposer) {
+        if (fromComposer) {
+            showComposer(null);
+        } else {
+            showChat();
+        }
+    }
+
     /** Records a voice message; its text then opens in the editor (dictated). */
     void showDictation(boolean fromComposer) {
         if (!chatReady()) {
@@ -484,7 +544,19 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             composer.addCommand(composerBackCmd);
             composer.setCommandListener(this);
         }
-        composer.setTitle(title != null ? title : L.s("Claude'a yaz", "Message Claude"));
+        // "Add a photo" or, with one attached, "Remove the photo"
+        boolean photo = session.hasImage();
+        composer.removeCommand(photoCmd);
+        composer.removeCommand(removePhotoCmd);
+        if (photo) {
+            composer.addCommand(removePhotoCmd);
+        } else if (hasPhotoSource()) {
+            composer.addCommand(photoCmd);
+        }
+        if (title == null) {
+            title = photo ? L.s("Fotoğraflı mesaj", "Message with a photo") : L.s("Claude'a yaz", "Message Claude");
+        }
+        composer.setTitle(title);
         String value = text != null ? text : session.draft();
         try {
             composer.setString(value);
@@ -781,6 +853,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             } else if (c == dictateCmd) {
                 session.setDraft(composer.getString());
                 showDictation(true);
+            } else if (c == photoCmd) {
+                session.setDraft(composer.getString());
+                showPhoto(true);
+            } else if (c == removePhotoCmd) {
+                session.clearImage();
+                session.setDraft(composer.getString());
+                showComposer(null);
             } else if (c == composerBackCmd) {
                 session.setDraft(composer.getString());
                 showChat();
@@ -1116,6 +1195,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));
         about.append(new StringItem(L.s("Ses kaydı", "Voice recording"), (hasRecording() ? L.s("var", "yes")
                 : L.s("yok", "no")) + " (" + prop("audio.encodings") + ")"));
+        about.append(new StringItem(L.s("Kamera", "Camera"), (hasCamera() ? L.s("var", "yes") : L.s("yok", "no"))
+                + " (" + prop("video.snapshot.encodings") + ")"));
         about.addCommand(jingleCmd);
         about.addCommand(splashCmd);
         about.addCommand(formBackCmd);

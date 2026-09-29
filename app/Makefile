@@ -22,8 +22,8 @@ CLDC  := $(DEPS)/cldcapi11-2.0.4.jar
 MIDP  := $(DEPS)/midpapi20-2.0.4.jar
 # JSR 75: FileConnection API from MicroEmulator, PIM API from compile-only
 # stubs (stubs/jsr75-pim). Optional on the phone: only Files and Pim use them.
-# JSR 135 recording (RecordControl): compile-only stub (stubs/jsr135-record),
-# used only by Rec.
+# JSR 135 recording (RecordControl) and camera (VideoControl): compile-only
+# stubs (stubs/jsr135), used only by Rec and Cam.
 JSR75 := $(DEPS)/microemu-jsr-75-2.0.4.jar
 PROGUARD := $(DEPS)/proguard-7.9.1/lib/proguard.jar
 

@@ -18,6 +18,9 @@ import java.util.Vector;
  *   part of the STORED reply (/v1/more); that never calls Claude again.
  * - A conversation from the server's list can be opened (/v1/history) and
  *   continued.
+ * - A photo uploaded with /v1/image (Photo) is attached to the next message
+ *   ("image" field) and kept with the request until it is resolved, so
+ *   "Tekrar dene" sends the same photo; it is dropped once a reply arrives.
  */
 final class ChatSession implements Runnable, Net.Listener {
 
@@ -119,9 +122,13 @@ final class ChatSession implements Runnable, Net.Listener {
     /** When the running request started (for the elapsed time on screen). */
     private long startedAt;
 
+    /** Photo id (/v1/image) for the next message, "" if none. */
+    private String image = "";
+
     // the request being resolved (null when none)
     private String pendingId;
     private String pendingText;
+    private String pendingImage;
     private String pendingConversation;
     private boolean canRetry;
 
@@ -241,6 +248,26 @@ final class ChatSession implements Runnable, Net.Listener {
         draft = d == null ? "" : Text.clip(d, MAX_MESSAGE);
     }
 
+    /** "[Photo] " before a message that was sent with a photo. */
+    static String photoMark() {
+        return L.s("[Fotoğraf] ", "[Photo] ");
+    }
+
+    synchronized boolean hasImage() {
+        return image.length() > 0;
+    }
+
+    /** A photo for the next message (Photo, after the upload). */
+    synchronized void setImage(String id) {
+        image = id == null ? "" : id;
+        version++;
+    }
+
+    synchronized void clearImage() {
+        image = "";
+        version++;
+    }
+
     // ------------------------------------------------------------ actions
 
     /** Returns null if started, or a reason why not. */
@@ -260,9 +287,10 @@ final class ChatSession implements Runnable, Net.Listener {
             draft = t;
             pendingId = Text.requestId();
             pendingText = t;
+            pendingImage = image.length() > 0 ? image : null;
             pendingConversation = conversation;
             canRetry = false;
-            add(KIND_USER, t, false);
+            add(KIND_USER, pendingImage != null ? photoMark() + t : t, false);
             begin(JOB_CHAT);
         }
         changed(false);
@@ -407,6 +435,7 @@ final class ChatSession implements Runnable, Net.Listener {
         conversation = "";
         pendingId = null;
         pendingText = null;
+        pendingImage = null;
         canRetry = false;
         status = "";
         version++;
@@ -453,10 +482,12 @@ final class ChatSession implements Runnable, Net.Listener {
         String text;
         String conv;
         Entry more;
+        String img;
         synchronized (this) {
             j = job;
             id = pendingId;
             text = pendingText;
+            img = pendingImage;
             conv = j == JOB_DELETE ? conversation : j == JOB_HISTORY ? jobConversation : pendingConversation;
             more = jobEntry;
         }
@@ -477,17 +508,17 @@ final class ChatSession implements Runnable, Net.Listener {
         }
         if (j == JOB_HISTORY) {
             Net.Result r = Net.request(s.url + "/v1/history", "POST", s.token,
-                    S40Message.format(new String[] { "conversation" }, new String[] { conv }, ""),
+                    S40Message.format(new String[] { "conversation", "images" }, new String[] { conv, "1" }, ""),
                     midlet.userAgent(), this);
             finishHistory(r, conv);
             return;
         }
         if (s.testMode) {
-            mockReply(text, conv);
+            mockReply(text, conv, img != null);
             return;
         }
-        Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token, chatBody(s, id, conv, text), midlet.userAgent(),
-                this);
+        Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token, chatBody(s, id, conv, text, img),
+                midlet.userAgent(), this);
         finishChat(r);
     }
 
@@ -495,9 +526,9 @@ final class ChatSession implements Runnable, Net.Listener {
      * The /v1/chat request. Optional fields (0.7+, ignored by older servers):
      * the user's notes for Claude, and "calendar" + the phone's clock when
      * the phone can add calendar entries (Claude then may end a reply with an
-     * entry line, see Cal).
+     * entry line, see Cal). 0.9+: "image" names a photo uploaded with /v1/image.
      */
-    private static String chatBody(Settings s, String id, String conv, String text) {
+    private static String chatBody(Settings s, String id, String conv, String text, String img) {
         Vector k = new Vector();
         Vector v = new Vector();
         k.addElement("request");
@@ -506,6 +537,10 @@ final class ChatSession implements Runnable, Net.Listener {
         v.addElement(conv);
         k.addElement("search");
         v.addElement(s.webSearch ? "1" : "0");
+        if (img != null && img.length() == 32) { // not the test mode's stand-in
+            k.addElement("image");
+            v.addElement(img);
+        }
         if (s.instructions.trim().length() > 0) {
             k.addElement("instructions");
             v.addElement(s.instructions.trim());
@@ -523,7 +558,7 @@ final class ChatSession implements Runnable, Net.Listener {
         return S40Message.format(keys, values, text);
     }
 
-    private void mockReply(String text, String conv) {
+    private void mockReply(String text, String conv, boolean photo) {
         phase(Net.PHASE_RESPONSE);
         try {
             Thread.sleep(1500); // long enough to see the typing animation
@@ -543,6 +578,9 @@ final class ChatSession implements Runnable, Net.Listener {
                     "[Test mode] This is not a real Claude reply. No network was used.\n"
                     + "Your message has " + text.length() + " characters; earlier messages in this chat: "
                     + (prior - 1) + ".\nI received: \"" + text + "\"");
+            if (photo) {
+                reply += L.s("\nFotoğraf: eklendi (sunucuya gönderilmedi).", "\nPhoto: attached (not sent to a server).");
+            }
             String low = text.toLowerCase();
             if (low.indexOf("takvim") >= 0 || low.indexOf("calendar") >= 0 || low.indexOf("remind") >= 0) {
                 // a fake entry line, to try "Add to calendar" without the network
@@ -551,6 +589,7 @@ final class ChatSession implements Runnable, Net.Listener {
             }
             conversation = conv.length() > 0 ? conv : "test";
             add(KIND_TEST, reply, false);
+            dropSentImage();
             resolved();
         }
         changed(true);
@@ -599,6 +638,7 @@ final class ChatSession implements Runnable, Net.Listener {
                 add(new Entry(m.flag("mock") ? KIND_TEST : KIND_CLAUDE, m.text, cut, System.currentTimeMillis(),
                         Text.parseInt(m.field("searched"), 0), m.field("request"), next));
             }
+            dropSentImage();
             resolved();
             return true;
         }
@@ -658,6 +698,13 @@ final class ChatSession implements Runnable, Net.Listener {
         } else if ("rate_limited".equals(st) || "overloaded".equals(st)) {
             status = L.s("Claude meşgul", "Claude is busy");
             msg = L.s("Claude şu an meşgul. Birazdan yeniden gönderin.", "Claude is busy right now. Send again shortly.");
+        } else if ("image_not_found".equals(st)) {
+            status = L.s("Fotoğraf yok", "Photo not found");
+            msg = L.s("Fotoğraf sunucuda bulunamadı: bir gün içinde kullanılmamış ya da başka bir sohbette kullanılmış. "
+                    + "Fotoğrafı yeniden ekleyin; mesajınız taslakta duruyor.",
+                    "The photo is not on the server: unused for a day, or used in another chat. Add it again; "
+                    + "your message is kept as a draft.");
+            image = "";
         } else if ("too_large".equals(st)) {
             status = L.s("Mesaj uzun", "Too long");
             msg = L.s("Mesaj çok uzun.", "The message is too long.");
@@ -666,11 +713,19 @@ final class ChatSession implements Runnable, Net.Listener {
             msg = L.s("Yanıt alınamadı (", "No reply (") + (st.length() > 0 ? st : "?") + ").";
         }
         add(KIND_ERROR, msg, false);
-        // definite answer: forget the id, keep the draft
+        // definite answer: forget the id, keep the draft (and the photo)
         pendingId = null;
         pendingText = null;
+        pendingImage = null;
         canRetry = false;
         return false;
+    }
+
+    /** Called with the lock held: the photo went out with a reply, so the next message has none. */
+    private void dropSentImage() {
+        if (pendingImage != null && pendingImage.equals(image)) {
+            image = "";
+        }
     }
 
     /** Called with the lock held after a successful exchange. */
@@ -680,6 +735,7 @@ final class ChatSession implements Runnable, Net.Listener {
         draft = "";
         pendingId = null;
         pendingText = null;
+        pendingImage = null;
         canRetry = false;
         version++;
     }
@@ -755,12 +811,16 @@ final class ChatSession implements Runnable, Net.Listener {
                 break;
             }
             char role = t.charAt(pos);
-            int len = Text.parseInt(t.substring(pos + 2, nl), -1);
+            // "u N" or, for a message sent with a photo, "u N i" (images: 1)
+            String head = t.substring(pos + 2, nl);
+            boolean photo = head.endsWith(" i");
+            int len = Text.parseInt(photo ? head.substring(0, head.length() - 2) : head, -1);
             int start = nl + 1;
             if (len < 0 || start + len > n) {
                 break; // cut body: drop the incomplete message
             }
-            entries.addElement(new Entry(role == 'a' ? KIND_CLAUDE : KIND_USER, t.substring(start, start + len), false,
+            String body = t.substring(start, start + len);
+            entries.addElement(new Entry(role == 'a' ? KIND_CLAUDE : KIND_USER, photo ? photoMark() + body : body, false,
                     0, 0, null, null));
             pos = start + len + 1;
         }

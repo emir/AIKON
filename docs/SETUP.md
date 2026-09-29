@@ -171,6 +171,15 @@ the editor, check it and press **Send**. Nothing reaches Claude before
 that. The phone asks for microphone access. About shows whether the phone
 can record and which formats it reports.
 
+**Photos** (always on, no extra key): in the chat's options or in the
+editor, **Add a photo** → take one with the camera or choose one from the
+phone (up to 1 MB); it is uploaded, then the editor opens with "What is in
+this photo?" to change and **Send**. Follow-up questions in the same chat
+still show Claude the photo. `S40_IMAGE_LIMIT` (30 uploads/day per phone).
+Each photo adds about 1000 input tokens to every message in its chat
+(the newest 3 photos are sent). About shows whether the phone lets apps
+use the camera.
+
 Send "Translate to English: Günaydın" from the phone, then "Make it
 shorter" in the same chat. Then try Quick prompts → Weather: a reply
 marked "searched the web" ends with "Web: <sources>".
@@ -219,4 +228,6 @@ your hands, revoke the device.
 | "Access code invalid or revoked" | pair again |
 | No **Dictate** command | the phone does not let apps record (About → Voice recording) |
 | "Voice messages are not turned on on the server" | deploy with `S40_TRANSCRIBE=openai` (or `mock`) |
+| No **Add a photo** command | the phone lets apps use neither the camera nor files (About → Camera) |
+| "The photo is too large" from the gallery | over 1 MB: take it with the app's camera (640x480) |
 | "The server could not read this recording" | the phone's audio format; `admin.sh logs` shows the format, size and length |

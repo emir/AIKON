@@ -5,7 +5,8 @@
 // It replaces the Cloudflare Worker + Durable Objects and the separate TLS
 // relay. Public listener (TLS, for the phone): /health, /echo, /v1/chat,
 // /v1/more, /v1/conversations, /v1/history, /v1/delete, /v1/pin, /v1/search,
-// /v1/transcribe (voice messages, see transcribe.go), /v1/pair/start,
+// /v1/transcribe (voice messages, see transcribe.go), /v1/image (photos,
+// see image.go), /v1/pair/start,
 // /v1/pair/claim. Admin listener (plain HTTP,
 // meant to be bound to 127.0.0.1 and reached through an SSH tunnel):
 // /admin/pair/approve, /admin/devices, /admin/devices/revoke.
@@ -26,6 +27,7 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -36,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.5.0"
+	version      = "0.6.1"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -64,6 +66,7 @@ type config struct {
 	transcribe, openAIKeyFile, sttModel string
 	transcribeLimit                     int
 	ffmpeg                              string
+	imageLimit                          int // photo uploads per device per UTC day
 }
 
 func env(k, def string) string {
@@ -108,6 +111,7 @@ func loadConfig() config {
 	c.sttModel = env("TRANSCRIBE_MODEL", defaultSTTModel)
 	c.transcribeLimit = envInt("DAILY_TRANSCRIBE_LIMIT", 30)
 	c.ffmpeg = env("FFMPEG", "ffmpeg")
+	c.imageLimit = envInt("DAILY_IMAGE_LIMIT", 30)
 	return c
 }
 
@@ -186,7 +190,8 @@ func main() {
 	}
 	pub := &http.Server{
 		Addr: c.listen, Handler: srv.publicMux(), TLSConfig: tlsCfg,
-		ReadHeaderTimeout: 30 * time.Second, ReadTimeout: 60 * time.Second, WriteTimeout: 120 * time.Second,
+		// a 1 MB photo over EDGE can take a minute or two to arrive
+		ReadHeaderTimeout: 30 * time.Second, ReadTimeout: 180 * time.Second, WriteTimeout: 240 * time.Second,
 		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){}, // HTTP/1.1 only
 		ErrorLog:     log.New(handshakeLog{}, "", 0),
 	}
@@ -195,7 +200,7 @@ func main() {
 	logJSON(map[string]any{"evt": "start", "version": version, "listen": c.listen, "admin": c.adminListen,
 		"model": c.model, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
 		"transcribe": c.transcribe, "stt_model": c.sttModel, "transcribe_limit": c.transcribeLimit,
-		"ffmpeg": srv.converter != nil})
+		"ffmpeg": srv.converter != nil, "image_limit": c.imageLimit})
 	log.Fatal(pub.ListenAndServeTLS("", ""))
 }
 
@@ -235,7 +240,12 @@ func phoneTLS(certFile, keyFile string) (*tls.Config, error) {
 
 type handshakeLog struct{}
 
-// Write keeps net/http's handshake errors (useful for phones) without the remote address.
+// ipRE matches IPv4 and bracketed IPv6 addresses, with an optional port.
+var ipRE = regexp.MustCompile(`\b\d{1,3}(\.\d{1,3}){3}(:\d+)?\b|\[[0-9A-Fa-f:.%a-z]+\](:\d+)?`)
+
+// Write keeps net/http's handshake errors (useful for phones) without any
+// address: net/http puts the client's in "from ADDR: " and, for read
+// errors, in "read tcp LOCAL->REMOTE", so every address is masked.
 func (handshakeLog) Write(p []byte) (int, error) {
 	s := strings.TrimSpace(string(p))
 	if i := strings.Index(s, " from "); i >= 0 {
@@ -243,6 +253,7 @@ func (handshakeLog) Write(p []byte) (int, error) {
 			s = s[:i] + s[i+6+j:]
 		}
 	}
+	s = ipRE.ReplaceAllString(s, "[addr]")
 	logJSON(map[string]any{"evt": "http_error", "detail": truncate(s, 200)})
 	return len(p), nil
 }
@@ -293,7 +304,7 @@ func logged(h http.Handler) http.Handler {
 func knownPath(p string) bool {
 	switch p {
 	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/conversations", "/v1/history", "/v1/delete",
-		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/pair/start", "/v1/pair/claim",
+		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/image", "/v1/pair/start", "/v1/pair/claim",
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
 		return true
 	}
@@ -312,6 +323,7 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /v1/pin", s.pinHandler)
 	mux.HandleFunc("POST /v1/search", s.searchHandler)
 	mux.HandleFunc("POST /v1/transcribe", s.transcribeHandler)
+	mux.HandleFunc("POST /v1/image", s.imageHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
@@ -334,7 +346,7 @@ func tlsFields(r *http.Request) []kv {
 
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	f := []kv{{"status", "ok"}, {"service", service}, {"version", version}, {"environment", s.cfg.environment},
-		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"transcribe", s.transcriber != nil}, {"time", time.Now().UTC().Format(time.RFC3339)}}
+		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"transcribe", s.transcriber != nil}, {"images", true}, {"time", time.Now().UTC().Format(time.RFC3339)}}
 	writeS40(w, 200, append(f, tlsFields(r)...), "Claude S40 server is running.")
 }
 
@@ -426,9 +438,9 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	reqID, conv := m.get("request"), m.get("conversation")
+	reqID, conv, img := m.get("request"), m.get("conversation"), m.get("image")
 	msg := strings.TrimSpace(norm.NFC.String(m.text))
-	if !idRE.MatchString(reqID) || (conv != "" && !convRE.MatchString(conv)) {
+	if !idRE.MatchString(reqID) || (conv != "" && !convRE.MatchString(conv)) || (img != "" && !imageIDRE.MatchString(img)) {
 		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
 		return
 	}
@@ -441,7 +453,7 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	o := replyOpts{search: m.get("search") != "0", calendar: m.get("calendar") == "1",
-		instructions: cleanInstructions(m.get("instructions"))}
+		instructions: cleanInstructions(m.get("instructions")), imageID: img}
 	if o.calendar {
 		// the phone's own clock, for "tomorrow" and weekdays; ignored if malformed
 		if t, err := time.Parse("2006-01-02 15:04", m.get("local-time")); err == nil {
@@ -599,7 +611,8 @@ func (s *server) searchHandler(w http.ResponseWriter, r *http.Request) {
 
 // historyHandler returns the newest messages of a conversation, oldest
 // first, each as "u N" or "a N" (N = UTF-16 length, as Java counts), a
-// newline, the text and a newline.
+// newline, the text and a newline. With "images: 1" (0.9+ phones) a user
+// message that had a photo is "u N i"; older phones never get the "i".
 func (s *server) historyHandler(w http.ResponseWriter, r *http.Request) {
 	device, m, ok := s.authedS40(w, r)
 	if !ok {
@@ -610,6 +623,7 @@ func (s *server) historyHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
 		return
 	}
+	images := m.get("images") == "1"
 	msgs, older, found, err := s.st.history(r.Context(), device, conv)
 	if err != nil {
 		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
@@ -625,7 +639,11 @@ func (s *server) historyHandler(w http.ResponseWriter, r *http.Request) {
 		if t.role == "assistant" {
 			role = "a"
 		}
-		fmt.Fprintf(&b, "%s %d\n%s\n", role, len(utf16.Encode([]rune(t.content))), t.content)
+		mark := ""
+		if images && t.imageID != "" {
+			mark = " i"
+		}
+		fmt.Fprintf(&b, "%s %d%s\n%s\n", role, len(utf16.Encode([]rune(t.content))), mark, t.content)
 	}
 	writeS40(w, 200, []kv{{"status", "ok"}, {"conversation", conv}, {"count", len(msgs)}, {"older", older}}, b.String())
 }
