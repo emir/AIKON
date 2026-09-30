@@ -174,14 +174,9 @@ final class Net {
         } catch (CertificateException e) {
             r.error = ERR_CERTIFICATE;
             // S60 reports TLS alerts as CertificateException too; its message
-            // carries the Symbian error code (e.g. -7547), so keep a message
-            // with a number in it (MIDP's default text only repeats the reason)
-            String m = e.getMessage();
-            boolean code = false;
-            for (int i = 0; m != null && i < m.length() && !code; i++) {
-                code = Character.isDigit(m.charAt(i));
-            }
-            r.detail = L.s("Sertifika: ", "Certificate: ") + certReason(e.getReason()) + (code ? " [" + m + "]" : "")
+            // carries the Symbian error code (e.g. -7547): show only that code
+            String code = symbianCode(e.getMessage());
+            r.detail = L.s("Sertifika: ", "Certificate: ") + certReason(e.getReason()) + (code != null ? " [" + code + "]" : "")
                     + certSubject(e.getCertificate());
         } catch (IOException e) {
             r.error = ERR_IO;
@@ -279,6 +274,21 @@ final class Net {
             return "";
         }
         return L.s("\nKonu: ", "\nSubject: ") + c.getSubject() + L.s("\nVeren: ", "\nIssuer: ") + c.getIssuer();
+    }
+
+    /** The first negative number in a message ("-7547"), or null. */
+    static String symbianCode(String m) {
+        for (int i = 0; m != null && i + 1 < m.length(); i++) {
+            if (m.charAt(i) == '-' && Character.isDigit(m.charAt(i + 1))
+                    && (i == 0 || !Character.isDigit(m.charAt(i - 1)))) {
+                int j = i + 1;
+                while (j < m.length() && Character.isDigit(m.charAt(j))) {
+                    j++;
+                }
+                return m.substring(i, j);
+            }
+        }
+        return null;
     }
 
     static String certReason(byte reason) {

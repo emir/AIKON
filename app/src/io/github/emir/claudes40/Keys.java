@@ -14,10 +14,21 @@ final class Keys {
     /** The centre key as Nokia phones report it. */
     static final int SELECT = -5;
 
+    /** Set once a QWERTY letter or Enter has been mapped (Shortcuts screen). */
+    static boolean qwerty;
+
     private Keys() {
     }
 
     static int map(int k) {
+        int m = letter(k);
+        if (m != k) {
+            qwerty = true;
+        }
+        return m;
+    }
+
+    private static int letter(int k) {
         switch (k) {
         case 'r': case 'R': return Canvas.KEY_NUM1;
         case 't': case 'T': return Canvas.KEY_NUM2;
