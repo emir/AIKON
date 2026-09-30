@@ -177,6 +177,7 @@ deployment), OpenSSL or LibreSSL.
 ## Contributors
 
 - Andrew Barnes ([@Bortlesboat](https://github.com/Bortlesboat))
+- Alex Halloran ([@XanderHalloran](https://github.com/XanderHalloran))
 
 ## License
 
