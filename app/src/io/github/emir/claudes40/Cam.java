@@ -270,7 +270,8 @@ final class Cam extends Canvas implements CommandListener, Runnable {
 
     protected void keyPressed(int keyCode) {
         midlet.userActive();
-        if (keyCode == KEY_NUM5 || getGameAction(keyCode) == FIRE) {
+        keyCode = Keys.map(keyCode); // QWERTY phones: G = 5, Enter / raw centre key = FIRE
+        if (keyCode == KEY_NUM5 || Keys.action(this, keyCode) == FIRE) {
             shoot();
         }
     }

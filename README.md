@@ -87,7 +87,9 @@ Start-up animation: [docs/images/splash.gif](docs/images/splash.gif).
 > Unofficial side project. Not made, endorsed or supported by Anthropic or
 > Nokia. See [TRADEMARKS.md](TRADEMARKS.md).
 
-Tested on a **Nokia 6300 (RM-217, firmware V06.60)**. Other Series 40
+Tested on a **Nokia 6300 (RM-217, firmware V06.60)**, and on a **Nokia E63**
+(Symbian S60 3rd Edition FP1, 320x240, QWERTY, over WLAN; see
+[docs/SETUP.md](docs/SETUP.md#5-install-the-app-on-the-phone)). Other Series 40
 phones (CLDC 1.1 / MIDP 2.0, 240x320) may work but are untested.
 
 ## How it works

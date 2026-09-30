@@ -34,8 +34,9 @@ import javax.microedition.lcdui.Graphics;
  * request, otherwise it opens the editor. Other scrolling ends a selection.
  *
  * Softkeys are standard Commands; scrolling uses getGameAction(). Number
- * keys are checked before game actions (Nokia maps 2/4/6/8/5 to both); the
- * Shortcuts screen (midlet.showShortcuts) lists them. Sizes come from
+ * keys are checked before game actions (Nokia maps 2/4/6/8/5 to both);
+ * QWERTY letters are mapped to digits by Keys first. The Shortcuts screen
+ * (midlet.showShortcuts) lists them. Sizes come from
  * getWidth()/getHeight() and font metrics only; single-line texts are cut
  * with "..." (Text.fit) so no string runs off the screen.
  */
@@ -405,6 +406,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     private void key(int keyCode, boolean repeat) {
+        keyCode = Keys.map(keyCode);
         synchronized (this) {
             lastKey = System.currentTimeMillis();
         }
@@ -441,7 +443,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
 
     /** Chat view: scrolling keys. Returns false if the key is not used. */
     private boolean chatKey(int keyCode) {
-        int action = gameAction(keyCode);
+        int action = Keys.action(this, keyCode);
         if (action == FIRE) {
             // a selected message: its actions; after an error: retry; else write
             if (selected() != 0) {
@@ -465,7 +467,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         boolean hadSel;
         synchronized (this) {
             hadSel = sel != 0;
-            sel = 0; // plain scrolling ends the selection
             int line = Theme.font.getHeight();
             int page = Math.max(line, viewH() - line);
             switch (keyCode) {
@@ -491,9 +492,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 } else if (action == RIGHT) {
                     scroll += page;
                 } else {
-                    return false;
+                    return false; // unused keys (e.g. Fn) keep the selection
                 }
             }
+            sel = 0; // plain scrolling ends the selection
             followTyping = false;
             jumpToLast = false;
         }
@@ -506,7 +508,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
 
     /** Reading mode: paging keys. Returns false if the key is not used. */
     private boolean readingKey(int keyCode) {
-        int action = gameAction(keyCode);
+        int action = Keys.action(this, keyCode);
         boolean loadMore = false;
         synchronized (this) {
             readLayout(getWidth());
@@ -561,14 +563,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         }
         repaint();
         return true;
-    }
-
-    private int gameAction(int keyCode) {
-        try {
-            return getGameAction(keyCode);
-        } catch (IllegalArgumentException e) {
-            return 0;
-        }
     }
 
     private synchronized int selected() {

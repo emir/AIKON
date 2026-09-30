@@ -35,7 +35,8 @@ ALLOWED_ATTRS = {"Manifest-Version", "MIDlet-Name", "MIDlet-Vendor",
                  "MIDlet-Version", "MIDlet-Description", "MIDlet-1",
                  "MicroEdition-Configuration", "MicroEdition-Profile",
                  "MIDlet-Permissions-Opt", "ClaudeS40-Build", "ClaudeS40-Gateway",
-                 "MIDlet-Jar-URL", "MIDlet-Jar-Size"}
+                 "MIDlet-Jar-URL", "MIDlet-Jar-Size",
+                 "Nokia-MIDlet-S60-Selection-Key-Compatibility"}
 EXPECTED_NAME = "Claude S40"
 EXPECTED_FILE_BASE = "ClaudeS40"
 ONLY_PERMISSION = "javax.microedition.io.Connector.https"

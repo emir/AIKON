@@ -9,7 +9,9 @@ import javax.microedition.lcdui.Graphics;
 
 /**
  * Main menu with drawn icons. UP/DOWN (game actions) move, FIRE or "Seç"
- * opens, number keys 1-9 (Canvas.KEY_NUMx constants) jump directly.
+ * opens, number keys 1-9 (Canvas.KEY_NUMx constants) jump directly; the
+ * QWERTY N key (9 after Keys.map) only moves to Exit, so a stray N never
+ * quits. On short landscape screens (E63) each row is one line.
  * Softkeys are standard Commands.
  */
 final class HomeCanvas extends Canvas implements CommandListener {
@@ -54,18 +56,17 @@ final class HomeCanvas extends Canvas implements CommandListener {
     }
 
     protected void keyPressed(int keyCode) {
+        int raw = keyCode;
+        keyCode = Keys.map(keyCode);
         if (keyCode >= KEY_NUM1 && keyCode <= KEY_NUM9) {
             selected = keyCode - KEY_NUM1;
             repaint();
-            midlet.menuSelected(selected);
+            if (selected != titles.length - 1 || raw == KEY_NUM9) { // a stray QWERTY N must not quit
+                midlet.menuSelected(selected);
+            }
             return;
         }
-        int action;
-        try {
-            action = getGameAction(keyCode);
-        } catch (IllegalArgumentException e) {
-            return;
-        }
+        int action = Keys.action(this, keyCode);
         if (action == UP) {
             selected = (selected + titles.length - 1) % titles.length;
         } else if (action == DOWN) {
@@ -80,7 +81,10 @@ final class HomeCanvas extends Canvas implements CommandListener {
     }
 
     protected void keyRepeated(int keyCode) {
-        keyPressed(keyCode);
+        int action = Keys.action(this, keyCode);
+        if (keyCode < 0 && (action == UP || action == DOWN)) { // only the arrows repeat
+            keyPressed(keyCode);
+        }
     }
 
     protected void paint(Graphics g) {
@@ -110,12 +114,18 @@ final class HomeCanvas extends Canvas implements CommandListener {
         int rowH = Math.max(f.getHeight() + sm.getHeight() + 6, 30);
         int footH = sm.getHeight() + 4;
         int area = h - headH - footH;
+        // landscape only (e.g. E63: 320x240 minus the S60 status and softkey bars)
+        boolean compact = w > h && area / rowH < 4;
+        if (compact) {
+            rowH = Math.max(f.getHeight() + 8, 26);
+        }
         int visible = Math.max(1, area / rowH);
         if (selected < top) {
             top = selected;
         } else if (selected >= top + visible) {
             top = selected - visible + 1;
         }
+        top = Math.max(0, Math.min(top, titles.length - visible)); // no empty slots after a text size change
         int y = headH + Math.max(2, (area - visible * rowH) / 2);
         for (int i = top; i < titles.length && i < top + visible; i++) {
             boolean sel = i == selected;
@@ -125,17 +135,19 @@ final class HomeCanvas extends Canvas implements CommandListener {
                 g.setColor(Theme.accent);
                 g.fillRoundRect(MARGIN / 2, y + 1, 4, rowH - 2, 4, 4);
             }
-            int ic = rowH - 12;
+            int ic = compact ? rowH - 6 : rowH - 12; // the icons need about 20 px
             icon(g, i, MARGIN + 4 + ic / 2, y + rowH / 2, ic, sel);
             int x = MARGIN + ic + 14;
             String num = String.valueOf(i + 1);
             int textW = w - x - MARGIN - 6 - sm.stringWidth(num);
             g.setFont(f);
             g.setColor(Theme.ink);
-            g.drawString(Text.fit(titles[i], f, textW), x, y + 3, Graphics.TOP | Graphics.LEFT);
+            g.drawString(Text.fit(titles[i], f, textW), x, compact ? y + (rowH - f.getHeight()) / 2 : y + 3, Graphics.TOP | Graphics.LEFT);
             g.setFont(sm);
             g.setColor(Theme.muted);
-            g.drawString(Text.fit(midlet.homeHint(i, hints[i]), sm, textW), x, y + 3 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
+            if (!compact) {
+                g.drawString(Text.fit(midlet.homeHint(i, hints[i]), sm, textW), x, y + 3 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
+            }
             g.drawString(num, w - MARGIN - 2, y + rowH / 2 - sm.getHeight() / 2, Graphics.TOP | Graphics.RIGHT);
             y += rowH;
         }

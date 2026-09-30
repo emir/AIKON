@@ -46,6 +46,9 @@ def attributes(p, local):
         ("MicroEdition-Profile", p["PROFILE"]),
         ("MIDlet-Permissions-Opt", p["PERMISSIONS_OPT"]),
         ("ClaudeS40-Build", p["BUILD"]),
+        # S60 (e.g. Nokia C5-00): deliver the centre key to Canvas.keyPressed
+        # instead of opening the Options menu; ignored by Series 40.
+        ("Nokia-MIDlet-S60-Selection-Key-Compatibility", "true"),
     ]
     url = local.get("GATEWAY_URL", "")
     if url:

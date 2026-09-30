@@ -173,7 +173,16 @@ final class Net {
             r.detail = L.s("Bağlantı türü desteklenmiyor: ", "Connection type not supported: ") + e.getMessage();
         } catch (CertificateException e) {
             r.error = ERR_CERTIFICATE;
-            r.detail = L.s("Sertifika: ", "Certificate: ") + certReason(e.getReason()) + certSubject(e.getCertificate());
+            // S60 reports TLS alerts as CertificateException too; its message
+            // carries the Symbian error code (e.g. -7547), so keep a message
+            // with a number in it (MIDP's default text only repeats the reason)
+            String m = e.getMessage();
+            boolean code = false;
+            for (int i = 0; m != null && i < m.length() && !code; i++) {
+                code = Character.isDigit(m.charAt(i));
+            }
+            r.detail = L.s("Sertifika: ", "Certificate: ") + certReason(e.getReason()) + (code ? " [" + m + "]" : "")
+                    + certSubject(e.getCertificate());
         } catch (IOException e) {
             r.error = ERR_IO;
             r.detail = e.getClass().getName() + ": " + e.getMessage();
@@ -277,7 +286,9 @@ final class Net {
         case CertificateException.UNRECOGNIZED_ISSUER:
             return L.s("tanınmayan sertifika otoritesi (telefonda kök sertifika yok)", "unknown certificate authority (root not on the phone)");
         case CertificateException.EXPIRED:
-            return L.s("süresi dolmuş", "expired");
+            // S60 also reports a not-yet-valid certificate as EXPIRED
+            return L.s("süresi dolmuş veya henüz geçerli değil (telefonun tarihi / saat dilimi?)",
+                    "expired or not yet valid (phone date / time zone?)");
         case CertificateException.NOT_YET_VALID:
             return L.s("henüz geçerli değil (telefon saati?)", "not yet valid (phone clock?)");
         case CertificateException.SITENAME_MISMATCH:
@@ -307,7 +318,7 @@ final class Net {
         case ERR_PERMISSION:
             return L.s("Java ağ izni verilmedi. Uygulama ayarlarından ağ erişimine izin verin.", "Java network access was denied. Allow it in the application settings.");
         case ERR_NO_CONNECTION_TYPE:
-            return L.s("HTTPS bağlantısı açılamadı. Java erişim noktası (mobil veri) ayarını kontrol edin.", "Could not open HTTPS. Check the Java access point (mobile data).");
+            return L.s("HTTPS bağlantısı açılamadı. Java erişim noktası (mobil veri / WLAN) ayarını kontrol edin.", "Could not open HTTPS. Check the Java access point (mobile data / WLAN).");
         case ERR_CERTIFICATE:
             return L.s("Güvenli bağlantı kurulamadı (sertifika/TLS). ", "Secure connection failed (certificate/TLS). ") + r.detail;
         case ERR_ENCODING:

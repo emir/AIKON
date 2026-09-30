@@ -39,7 +39,9 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 
 - High-level `List`/`Form`/`TextBox` for input and settings; custom
   `Canvas` screens (splash, home, chat) sized from `getWidth()/getHeight()`,
-  softkeys as `Command`s, arrows via `getGameAction()`. Replies are laid
+  softkeys as `Command`s, arrows via `getGameAction()` (through `Keys`,
+  which first maps the letter codes of QWERTY S60 phones such as the Nokia
+  E63 to digits and never turns a letter into a game action). Replies are laid
   out by `Text.layout`: paragraphs, "- " items with a dot and "1. " items
   with their number, both with a hanging indent. Reading mode pages through
   one reply with whole lines only and keeps its place by character offset

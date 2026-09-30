@@ -661,6 +661,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "7 or Close: back to the chat\n")));
             shortcuts.append(new StringItem(L.s("Ana menü", "Main menu"), L.s(
                     "1-9: satırı doğrudan açar\n", "1-9: opens that row directly\n")));
+            shortcuts.append(new StringItem(L.s("QWERTY klavye", "QWERTY keyboard"), L.s(
+                    "Rakamlar harf tuşlarında: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\n"
+                    + "Enter: orta tuş gibi\n"
+                    + "Ana menüde N yalnızca Çıkış'a gider (kapatmaz)\n",
+                    "Digits sit on letter keys: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\n"
+                    + "Enter: same as the centre key\n"
+                    + "On the main menu, N only moves to Exit (does not quit)\n")));
             shortcuts.append(new StringItem(null, L.s(
                     "Kısalt, çevir gibi işlemler hiçbir şeyi kendiliğinden göndermez: yazma kutusu hazır metinle "
                             + "açılır, Gönder'e sen basarsın.",

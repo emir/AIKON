@@ -56,6 +56,7 @@ compatibility.
 |---|---|
 | `ClaudeS40MIDlet` | lifecycle, navigation, settings/about forms, quick prompts |
 | `Splash`, `HomeCanvas`, `ChatCanvas` | custom screens |
+| `Keys` | QWERTY S60 phones (Nokia E63): letter key codes to digits, Enter and the raw centre key to the centre key |
 | `ChatSession` | conversation state, request ids, retry rules, statuses |
 | `Net` | one HTTPS request with phase-aware error reporting |
 | `ConnTest`, `Pairing` | connection test, pairing flow |

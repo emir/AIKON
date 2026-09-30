@@ -102,6 +102,21 @@ Pick one:
 On the Nokia 6300 the app appears under Menu → Applications → Collection.
 The first network access asks for permission; allow it.
 
+**Symbian S60 (tested: Nokia E63, S60 3rd Edition FP1).**
+
+- **Installing:** use the browser (OTA). Files sent over Bluetooth from Windows
+  opened from the Messaging inbox with "Messaging feature not supported".
+  The app appears under Menu → Installat.
+- **Permissions:** an unsigned app cannot get "Always allowed" network
+  access on S60 3rd Edition. Go to App. mgr. → Claude S40 → Options →
+  Open (or Settings). Set Network access to "Ask first time" (one question
+  per start), and Access point to your access point (e.g. WLAN), so it is not
+  asked for every request. Leave the app with the Menu key instead of Exit to
+  keep the answer.
+- **Keys:** the QWERTY keyboard sends letters, not digits. The app maps
+  them (R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = \*, J = #),
+  and Enter works as the centre key.
+
 ## 6. Put your root CA on the phone
 
 The phone must trust your root before the connection test can pass.
@@ -112,7 +127,9 @@ The phone must trust your root before the connection test can pass.
 3. On the phone's browser open `http://<server-ip>/ca.cer`. Before saving,
    compare the fingerprint the phone shows with the printed one. **Do not
    save it if it differs.** Save it as an authority certificate and allow
-   it for applications / connections if asked.
+   it for applications / connections if asked. On S60 the trust setting that
+   HTTPS needs is **Internet** (Certificate management → the certificate →
+   Options → Trust settings); App. installation is not needed.
 4. Close 80/tcp again.
 
 Also make sure the phone's mobile data works (open any plain `http://` page
