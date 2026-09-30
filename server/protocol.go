@@ -111,16 +111,35 @@ func writeS40(w http.ResponseWriter, code int, fields []kv, text string) {
 	io.WriteString(w, body)
 }
 
-// readLimited returns nil, false if the body exceeds max bytes.
-func readLimited(r *http.Request, max int64) ([]byte, bool) {
+var errTooLarge = errors.New("body too large")
+
+// readLimited reads the body: errTooLarge if it exceeds max bytes, the read
+// error if it could not be read whole (e.g. the phone's connection dropped
+// mid-upload), which is not a size problem.
+func readLimited(r *http.Request, max int64) ([]byte, error) {
 	if r.ContentLength > max {
-		return nil, false
+		return nil, errTooLarge
 	}
 	b, err := io.ReadAll(io.LimitReader(r.Body, max+1))
-	if err != nil || int64(len(b)) > max {
-		return nil, false
+	if err != nil {
+		return nil, err
 	}
-	return b, true
+	if int64(len(b)) > max {
+		return nil, errTooLarge
+	}
+	return b, nil
+}
+
+// writeBodyErr answers a readLimited error: 413 too_large, or 400
+// bad_request for a body that could not be read. The log line names the
+// path and the byte count, never the error text (it carries addresses).
+func writeBodyErr(w http.ResponseWriter, r *http.Request, err error, max int64, fields ...kv) {
+	if errors.Is(err, errTooLarge) {
+		writeS40(w, 413, append(append([]kv{{"status", "too_large"}}, fields...), kv{"max", max}), "")
+		return
+	}
+	logJSON(map[string]any{"evt": "body_read_error", "path": r.URL.Path, "content_length": r.ContentLength})
+	writeS40(w, 400, append([]kv{{"status", "bad_request"}}, fields...), "")
 }
 
 // decodeUTF8 is strict: invalid sequences are rejected, not replaced.

@@ -4,12 +4,14 @@ import (
 	"bytes"
 	"context"
 	"encoding/binary"
+	"errors"
 	"hash/crc32"
 	"image"
 	"image/color"
 	"image/jpeg"
 	"image/png"
 	"log"
+	"net/http/httptest"
 	"os"
 	"strings"
 	"testing"
@@ -271,5 +273,38 @@ func TestHandshakeLogHasNoAddresses(t *testing.T) {
 	}
 	if !strings.Contains(out, "connection reset by peer") || !strings.Contains(out, "[addr]") {
 		t.Fatalf("detail lost:\n%s", out)
+	}
+}
+
+// dropReader returns part of a body, then fails as a dropped connection does.
+type dropReader struct{ sent bool }
+
+func (d *dropReader) Read(p []byte) (int, error) {
+	if d.sent {
+		return 0, errors.New("read tcp 10.0.0.1:443->10.0.0.2:5555: i/o timeout")
+	}
+	d.sent = true
+	return copy(p, photo(64, 64, 1)[:100]), nil
+}
+
+// An upload that drops midway is bad_request, not too_large, and the log
+// does not carry the error text (it holds addresses).
+func TestImageUploadDropped(t *testing.T) {
+	e := newEnv(t, 10)
+	tok, _ := e.pair("phone")
+	var logs bytes.Buffer
+	log.SetOutput(&logs)
+	defer log.SetOutput(os.Stderr)
+	req := httptest.NewRequest("POST", "https://s40.test/v1/image", &dropReader{})
+	req.ContentLength = 500000
+	req.Header.Set("Authorization", "Bearer "+tok)
+	w := httptest.NewRecorder()
+	e.pub.ServeHTTP(w, req)
+	m, _ := parseS40(w.Body.String())
+	if w.Code != 400 || m.get("status") != "bad_request" {
+		t.Fatalf("%d %q", w.Code, w.Body.String())
+	}
+	if !strings.Contains(logs.String(), `"evt":"body_read_error"`) || strings.Contains(logs.String(), "10.0.0.") {
+		t.Fatalf("log: %s", logs.String())
 	}
 }

@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.6.1"
+	version      = "0.6.2"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -351,9 +351,9 @@ func (s *server) health(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) echo(w http.ResponseWriter, r *http.Request) {
-	b, ok := readLimited(r, maxEcho)
-	if !ok {
-		writeS40(w, 413, []kv{{"status", "too_large"}, {"max", maxEcho}}, "")
+	b, err := readLimited(r, maxEcho)
+	if err != nil {
+		writeBodyErr(w, r, err, maxEcho)
 		return
 	}
 	text, ok := decodeUTF8(b)
@@ -415,9 +415,9 @@ func (s *server) authedS40(w http.ResponseWriter, r *http.Request) (string, s40M
 	if !ok {
 		return "", s40Msg{}, false
 	}
-	b, ok := readLimited(r, maxRequest)
-	if !ok {
-		writeS40(w, 413, []kv{{"status", "too_large"}, {"max", maxRequest}}, "")
+	b, err := readLimited(r, maxRequest)
+	if err != nil {
+		writeBodyErr(w, r, err, maxRequest)
 		return "", s40Msg{}, false
 	}
 	text, ok := decodeUTF8(b)
@@ -684,11 +684,11 @@ func (s *server) pairStart(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) pairClaim(w http.ResponseWriter, r *http.Request) {
-	b, ok := readLimited(r, maxPairClaim)
+	b, rerr := readLimited(r, maxPairClaim)
 	text, ok2 := decodeUTF8(b)
 	m, err := parseS40(text)
 	pair := m.get("pair")
-	if !ok || !ok2 || err != nil || len(pair) != 32 || strings.Trim(pair, "0123456789abcdef") != "" {
+	if rerr != nil || !ok2 || err != nil || len(pair) != 32 || strings.Trim(pair, "0123456789abcdef") != "" {
 		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
 		return
 	}

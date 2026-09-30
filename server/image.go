@@ -136,9 +136,9 @@ func (s *server) imageHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	b, ok := readLimited(r, maxImageUpload)
-	if !ok {
-		writeS40(w, 413, []kv{{"status", "too_large"}, {"max", maxImageUpload}}, "")
+	b, err := readLimited(r, maxImageUpload)
+	if err != nil {
+		writeBodyErr(w, r, err, maxImageUpload)
 		return
 	}
 	img, err := processImage(b)

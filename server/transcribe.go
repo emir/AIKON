@@ -533,9 +533,9 @@ func (s *server) transcribeHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 503, []kv{{"status", "unavailable"}, {"request", reqID}}, "")
 		return
 	}
-	b, ok := readLimited(r, maxAudioBytes)
-	if !ok {
-		writeS40(w, 413, []kv{{"status", "too_large"}, {"request", reqID}, {"max", maxAudioBytes}}, "")
+	b, err := readLimited(r, maxAudioBytes)
+	if err != nil {
+		writeBodyErr(w, r, err, maxAudioBytes, kv{"request", reqID})
 		return
 	}
 	clip, err := decodeClip(r.Context(), s.converter, b)

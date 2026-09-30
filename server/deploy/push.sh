@@ -24,7 +24,7 @@ TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.6.1
+IMAGE=claude-s40-server:0.6.2
 MOCK=${S40_MOCK:-1}
 STT=${S40_TRANSCRIBE:-off}
 case "$STT" in off|mock|openai) ;; *) echo "S40_TRANSCRIBE must be off, mock or openai" >&2; exit 1 ;; esac
