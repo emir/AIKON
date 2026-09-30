@@ -7,6 +7,7 @@ client for Nokia Series 40 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus the
 small Go server it talks to. Type on the keypad, get Claude's answer on a
 240x320 screen: with today's news, weather and exchange rates from web
 search, long answers you can page through, and a UI in Turkish or English.
+It also runs on Symbian S60 QWERTY phones such as the Nokia E63.
 
 **Video:** [Claude S40 on a Nokia 6300, on X](https://x.com/EmirKarsiyakali/status/2104183718483018026)
 
@@ -52,7 +53,8 @@ search, long answers you can page through, and a UI in Turkish or English.
   message, add to my calendar, summarize, fix my writing, ...).
 - **Setup wizard** on first start: language, server address, connection
   test, pairing with a 6-digit code (no long code to type).
-- **Keypad-first**: every screen works with the keypad; a Shortcuts screen
+- **Keypad-first**: every screen works with the keypad (on QWERTY phones
+  like the E63, the digits printed on the letter keys); a Shortcuts screen
   lists every key. Retry after an error is one key and never charges twice.
 - **Look and feel**: light and dark theme, three text sizes, start-up
   animation and jingle, reply chime, vibration and backlight. Texts are
@@ -110,7 +112,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~100 KB JAR, English + Turkish UI (see Features). Reproducible build with 44 package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~130 KB JAR, English + Turkish UI (see Features). Reproducible build with 47 package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
@@ -141,7 +143,7 @@ Full guide: **[docs/SETUP.md](docs/SETUP.md)**. In short:
 ## Development
 
 ```
-make test          # server: go vet + go test -race; app: build + 44 checks + reproducibility
+make test          # server: go vet + go test -race; app: build + 47 checks + reproducibility
 make -C app        # phone app only (downloads pinned build tools to app/.deps)
 make -C server test
 ```

@@ -23,7 +23,7 @@ test mode with fake replies.
 
 ```
 cp app.local.properties.example app.local.properties   # set GATEWAY_URL=https://<your server>
-make            # downloads pinned tools to .deps/j2me (SHA-256 checked), builds, runs 44 checks twice
+make            # downloads pinned tools to .deps/j2me (SHA-256 checked), builds, runs 47 checks twice
 ```
 
 Output: `dist/ClaudeS40.jad`, `dist/ClaudeS40.jar` (~100 KB), `dist/SHA256SUMS`.
