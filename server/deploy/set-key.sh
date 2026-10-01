@@ -5,13 +5,15 @@
 #   deploy/set-key.sh SSH_TARGET            Claude API key (secrets/anthropic_api_key)
 #   deploy/set-key.sh SSH_TARGET openai     OpenAI key (secrets/openai_api_key)
 #   deploy/set-key.sh SSH_TARGET xai        xAI key (secrets/xai_api_key)
+#   deploy/set-key.sh SSH_TARGET gemini     Gemini API key (secrets/gemini_api_key)
 set -eu
-TARGET=${1:?usage: deploy/set-key.sh SSH_TARGET [openai|xai]}
+TARGET=${1:?usage: deploy/set-key.sh SSH_TARGET [openai|xai|gemini]}
 case "${2:-anthropic}" in
 anthropic) FILE=anthropic_api_key NAME="Claude API key" PREFIX=sk-ant- ;;
 openai) FILE=openai_api_key NAME="OpenAI API key" PREFIX=sk- ;;
 xai) FILE=xai_api_key NAME="xAI API key" PREFIX=xai- ;;
-*) echo "usage: deploy/set-key.sh SSH_TARGET [openai|xai]" >&2; exit 1 ;;
+gemini) FILE=gemini_api_key NAME="Gemini API key" PREFIX=AIza ;;
+*) echo "usage: deploy/set-key.sh SSH_TARGET [openai|xai|gemini]" >&2; exit 1 ;;
 esac
 printf '%s (input hidden): ' "$NAME"
 stty -echo; IFS= read -r KEY; stty echo; echo

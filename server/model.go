@@ -204,11 +204,15 @@ type modelEntry struct {
 	m                   model
 }
 
-// catalog: the configured models; the first one is the default (older
-// phones and new conversations without a choice).
-type catalog struct{ list []modelEntry }
+// catalog: the configured models in picker order; the default (older
+// phones and new conversations without a choice) is the first one unless
+// DEFAULT_MODEL names another.
+type catalog struct {
+	list   []modelEntry
+	defIdx int
+}
 
-func (c *catalog) def() *modelEntry { return &c.list[0] }
+func (c *catalog) def() *modelEntry { return &c.list[c.defIdx] }
 
 func (c *catalog) get(id string) (*modelEntry, bool) {
 	for i := range c.list {
@@ -221,16 +225,16 @@ func (c *catalog) get(id string) (*modelEntry, bool) {
 
 // singleModel: a catalog of one model (tests, and the plain Claude setup).
 func singleModel(id, label string, m model) *catalog {
-	return &catalog{[]modelEntry{{id: id, label: label, provider: "anthropic", search: true, m: m}}}
+	return &catalog{list: []modelEntry{{id: id, label: label, provider: "anthropic", search: true, m: m}}}
 }
 
 // modelSpec: one item of MODELS, "provider:model-id" or "provider:model-id=Label".
 type modelSpec struct{ provider, id, label string }
 
-var defaultLabels = map[string]string{"anthropic": "Claude", "openai": "ChatGPT", "xai": "Grok"}
+var defaultLabels = map[string]string{"anthropic": "Claude", "openai": "ChatGPT", "xai": "Grok", "gemini": "Gemini"}
 
 // providerNames: how the phone groups the models (first step of its picker).
-var providerNames = map[string]string{"anthropic": "Claude", "openai": "OpenAI", "xai": "Grok"}
+var providerNames = map[string]string{"anthropic": "Claude", "openai": "OpenAI", "xai": "Grok", "gemini": "Gemini"}
 
 const maxLabel = 20
 
@@ -246,7 +250,7 @@ func parseModels(s string) ([]modelSpec, error) {
 		id, label, _ := strings.Cut(rest, "=")
 		id, label = strings.TrimSpace(id), strings.TrimSpace(label)
 		if _, known := defaultLabels[prov]; !ok || !known || id == "" {
-			return nil, fmt.Errorf("MODELS: %q is not provider:model-id[=Label] with provider anthropic, openai or xai", item)
+			return nil, fmt.Errorf("MODELS: %q is not provider:model-id[=Label] with provider anthropic, openai, xai or gemini", item)
 		}
 		if !modelIDRE.MatchString(id) {
 			return nil, fmt.Errorf("MODELS: bad model id %q", id)

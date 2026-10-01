@@ -172,13 +172,19 @@ long reply are left, `searched` = number of web searches, and since server
 
 ### Models (server 0.7.0)
 
-`MODELS=provider:model-id[=Name],...` lists the models the server offers;
-the first is the default. Providers: `anthropic` (Claude, official SDK),
-`openai` and `xai` (Grok), the last two through their Responses APIs
-(`POST /v1/responses`, `store: false`, photos as `input_image` data URIs,
-the `web_search` tool, `url_citation` sources). Each provider needs its
-own key file (`anthropic_api_key`, `openai_api_key`, `xai_api_key`); the
-server does not start with a model whose key is missing. An empty
+`MODELS=provider:model-id[=Name],...` lists the models the server offers,
+in picker order; the default is the first, or `DEFAULT_MODEL` (0.7.2).
+Providers: `anthropic` (Claude, official SDK), `openai` and `xai` (Grok)
+through their Responses APIs (`POST /v1/responses`, `store: false`,
+photos as `input_image` data URIs, the `web_search` tool, `url_citation`
+sources), and `gemini` (0.7.2) through `generateContent`
+(`systemInstruction`, photos as `inline_data`, `thinkingLevel` from
+`GEMINI_EFFORT`, Grounding with Google Search; sources are the grounding
+chunks' site names, the search count is the number of search queries;
+there is no per-message search limit). Each provider needs its own key
+file (`anthropic_api_key`, `openai_api_key`, `xai_api_key`,
+`gemini_api_key`); the server does not start with a model whose key is
+missing. An empty
 `MODELS` keeps the single `CLAUDE_MODEL` of earlier versions. Names are
 ASCII, at most 20 characters; the system prompt introduces the model by
 its name. `MODELS` is a curated list of current models, not everything a

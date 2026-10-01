@@ -7,7 +7,8 @@
 # Env (S40_ prefix, so unrelated CLAUDE_* shell variables are never picked
 # up): PKI_DIR (default ~/.config/claude-s40/pki), S40_MOCK (default 1),
 # S40_MODEL, S40_EFFORT, S40_FALLBACKS, S40_MODELS (provider:model-id[=Label],...;
-# empty = only S40_MODEL), S40_OPENAI_EFFORT, S40_XAI_EFFORT, S40_REQ_LIMIT, S40_TOK_LIMIT,
+# empty = only S40_MODEL), S40_DEFAULT_MODEL (a model id; empty = the first),
+# S40_OPENAI_EFFORT, S40_XAI_EFFORT, S40_GEMINI_EFFORT, S40_REQ_LIMIT, S40_TOK_LIMIT,
 # S40_ENVIRONMENT, S40_SEARCH (1/0), S40_SEARCH_MAX_USES (per message),
 # S40_SEARCH_LIMIT (per device per day), S40_SEARCH_COUNTRY/_CITY/_TIMEZONE
 # (optional approximate location for local search results),
@@ -18,19 +19,20 @@
 # On the server: secrets/admin_token is generated there if missing (never
 # leaves the server); secrets/anthropic_api_key must be put there with
 # deploy/set-key.sh (and secrets/openai_api_key / secrets/xai_api_key with
-# "set-key.sh TARGET openai|xai" for TRANSCRIBE=openai and openai:/xai: models). The CA key never leaves the Mac.
+# "set-key.sh TARGET openai|xai|gemini" for TRANSCRIBE=openai and
+# openai:/xai:/gemini: models). The CA key never leaves the Mac.
 set -eu
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.7.1
+IMAGE=claude-s40-server:0.7.2
 MOCK=${S40_MOCK:-1}
 STT=${S40_TRANSCRIBE:-off}
 MODELS=${S40_MODELS:-}
 # providers that need a key on the server (with MOCK=0)
-PROVIDERS=$(printf '%s' "${MODELS:-anthropic:}" | tr ',' '\n' | sed -nE 's/^ *(anthropic|openai|xai):.*/\1/p' | sort -u | tr '\n' ' ')
+PROVIDERS=$(printf '%s' "${MODELS:-anthropic:}" | tr ',' '\n' | sed -nE 's/^ *(anthropic|openai|xai|gemini):.*/\1/p' | sort -u | tr '\n' ' ')
 case "$STT" in off|mock|openai) ;; *) echo "S40_TRANSCRIBE must be off, mock or openai" >&2; exit 1 ;; esac
 
 for f in server-chain.pem server.key; do
@@ -48,8 +50,10 @@ CLAUDE_MODEL=${S40_MODEL:-claude-opus-5}
 CLAUDE_EFFORT=${S40_EFFORT:-low}
 CLAUDE_FALLBACKS=${S40_FALLBACKS:-default}
 MODELS=$MODELS
+DEFAULT_MODEL=${S40_DEFAULT_MODEL:-}
 OPENAI_EFFORT=${S40_OPENAI_EFFORT:-low}
 XAI_EFFORT=${S40_XAI_EFFORT:-}
+GEMINI_EFFORT=${S40_GEMINI_EFFORT:-low}
 MOCK_ANTHROPIC=$MOCK
 DAILY_REQUEST_LIMIT=${S40_REQ_LIMIT:-100}
 DAILY_OUTPUT_TOKEN_LIMIT=${S40_TOK_LIMIT:-100000}

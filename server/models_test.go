@@ -13,7 +13,7 @@ import (
 // twoModels: Claude (default) and a Grok mock that records its calls.
 func twoModels(e *tenv) *recModel {
 	grok := &recModel{label: "Grok"}
-	e.srv.chat.models = &catalog{[]modelEntry{
+	e.srv.chat.models = &catalog{list: []modelEntry{
 		{id: "claude-opus-5", label: "Claude", provider: "anthropic", search: true, m: mockModel{}},
 		{id: "grok-y", label: "Grok", provider: "xai", search: false, m: grok},
 	}}

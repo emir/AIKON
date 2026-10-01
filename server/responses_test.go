@@ -247,6 +247,16 @@ func TestBuildCatalog(t *testing.T) {
 	if _, ok := cat.get("nope"); ok {
 		t.Fatal("unknown model found")
 	}
+	// DEFAULT_MODEL picks the default without changing the order
+	c.defaultModel = "claude-opus-5"
+	if cat, err := buildCatalog(c, secret); err != nil || cat.def().id != "claude-opus-5" || cat.list[0].id != "gpt-x" {
+		t.Fatal(err)
+	}
+	c.defaultModel = "nope"
+	if _, err := buildCatalog(c, secret); err == nil {
+		t.Fatal("unknown DEFAULT_MODEL accepted")
+	}
+	c.defaultModel = ""
 	// a model without its key: refuse to start
 	c.models = "xai:grok-y"
 	if _, err := buildCatalog(c, secret); err == nil || !strings.Contains(err.Error(), "xai") {

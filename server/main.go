@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.7.1"
+	version      = "0.7.2"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -58,6 +58,8 @@ type config struct {
 	// only Claude (CLAUDE_MODEL), as before
 	models                              string
 	openAIEffort, xaiEffort, xaiKeyFile string
+	geminiEffort, geminiKeyFile         string
+	defaultModel                        string // DEFAULT_MODEL: a model id from MODELS, "" = the first
 	fallbacks, mock                     bool
 	reqLimit                            int
 	tokLimit                            int64
@@ -105,6 +107,9 @@ func loadConfig() config {
 	c.openAIEffort = env("OPENAI_EFFORT", "low")
 	c.xaiEffort = env("XAI_EFFORT", "")
 	c.xaiKeyFile = env("XAI_API_KEY_FILE", "/run/secrets/xai_api_key")
+	c.geminiEffort = env("GEMINI_EFFORT", "low")
+	c.defaultModel = env("DEFAULT_MODEL", "")
+	c.geminiKeyFile = env("GEMINI_API_KEY_FILE", "/run/secrets/gemini_api_key")
 	c.mock = env("MOCK_ANTHROPIC", "0") == "1"
 	c.reqLimit = envInt("DAILY_REQUEST_LIMIT", 100)
 	c.tokLimit = int64(envInt("DAILY_OUTPUT_TOKEN_LIMIT", 100000))
@@ -156,7 +161,8 @@ func buildCatalog(c config, secret func(string) string) (*catalog, error) {
 	if err != nil {
 		return nil, err
 	}
-	keyFiles := map[string]string{"anthropic": c.apiKeyFile, "openai": c.openAIKeyFile, "xai": c.xaiKeyFile}
+	keyFiles := map[string]string{"anthropic": c.apiKeyFile, "openai": c.openAIKeyFile, "xai": c.xaiKeyFile,
+		"gemini": c.geminiKeyFile}
 	search := searchConfig{maxUses: int64(max(1, c.searchMaxUses)), country: c.searchCountry,
 		city: c.searchCity, timezone: c.searchTimezone}
 	cat := &catalog{}
@@ -185,8 +191,21 @@ func buildCatalog(c config, secret func(string) string) (*catalog, error) {
 			rm := newResponsesModel(p, key, sp.id, sp.label, effort)
 			rm.search = search
 			e.m = rm
+		case "gemini":
+			e.m = newGeminiModel(key, sp.id, sp.label, c.geminiEffort)
 		}
 		cat.list = append(cat.list, e)
+	}
+	if c.defaultModel != "" {
+		found := false
+		for i, e := range cat.list {
+			if e.id == c.defaultModel {
+				cat.defIdx, found = i, true
+			}
+		}
+		if !found {
+			return nil, fmt.Errorf("DEFAULT_MODEL %q is not in MODELS", c.defaultModel)
+		}
 	}
 	return cat, nil
 }
@@ -249,7 +268,7 @@ func main() {
 	adm := &http.Server{Addr: c.adminListen, Handler: srv.adminMux(), ReadHeaderTimeout: 10 * time.Second}
 	go func() { log.Fatal(adm.ListenAndServe()) }()
 	logJSON(map[string]any{"evt": "start", "version": version, "listen": c.listen, "admin": c.adminListen,
-		"models": modelIDs(models), "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
+		"models": modelIDs(models), "default_model": models.def().id, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
 		"transcribe": c.transcribe, "stt_model": c.sttModel, "transcribe_limit": c.transcribeLimit,
 		"ffmpeg": srv.converter != nil, "image_limit": c.imageLimit})
 	log.Fatal(pub.ListenAndServeTLS("", ""))
