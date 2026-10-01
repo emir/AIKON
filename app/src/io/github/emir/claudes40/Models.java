@@ -17,7 +17,8 @@ import javax.microedition.rms.RecordStoreException;
 
 /**
  * The models the server offers (/v1/models, server 0.7.0+) and the picker
- * for them. The list is kept in RMS "cs40models" (with the model chosen last
+ * for them: first the provider (Claude, OpenAI, Grok...), then one of its
+ * models; with a single provider the first step is skipped. The list is kept in RMS "cs40models" (with the model chosen last
  * for new chats), so the picker opens at once and works offline; it is only
  * fetched when the picker is opened without a list or with "Refresh", on a
  * worker thread. Choosing a model never sends anything by itself: the
@@ -26,7 +27,8 @@ import javax.microedition.rms.RecordStoreException;
 final class Models implements CommandListener, Runnable {
 
     private static final String STORE = "cs40models";
-    private static final int FORMAT = 1;
+    /** 2: with each model's provider (format 1 lists are fetched again). */
+    private static final int FORMAT = 2;
 
     /** Picker for a new chat, or for switching the current one. */
     static final int FOR_NEW = 0;
@@ -36,6 +38,8 @@ final class Models implements CommandListener, Runnable {
 
     private static String[] ids = new String[0];
     private static String[] names = new String[0];
+    /** Provider name of each model ("Claude", "OpenAI"...; "" from a 0.7.0 server). */
+    private static String[] providers = new String[0];
     private static String defaultId = "";
     /** Chosen last for a new chat; "" = the server's default. */
     private static String last = "";
@@ -85,12 +89,15 @@ final class Models implements CommandListener, Runnable {
             int n = in.readInt();
             String[] i2 = new String[n];
             String[] n2 = new String[n];
+            String[] p2 = new String[n];
             for (int i = 0; i < n; i++) {
                 i2[i] = in.readUTF();
                 n2[i] = in.readUTF();
+                p2[i] = in.readUTF();
             }
             ids = i2;
             names = n2;
+            providers = p2;
             defaultId = def;
             last = l;
         } catch (RecordStoreException e) {
@@ -114,6 +121,7 @@ final class Models implements CommandListener, Runnable {
             for (int i = 0; i < ids.length; i++) {
                 out.writeUTF(ids[i]);
                 out.writeUTF(names[i]);
+                out.writeUTF(providers[i]);
             }
             out.close();
             byte[] b = bo.toByteArray();
@@ -136,6 +144,7 @@ final class Models implements CommandListener, Runnable {
     static synchronized void clear() {
         ids = new String[0];
         names = new String[0];
+        providers = new String[0];
         defaultId = "";
         last = "";
         loaded = true;
@@ -158,7 +167,8 @@ final class Models implements CommandListener, Runnable {
 
     /**
      * Fetches the list (worker thread only). Lines: id TAB name TAB search
-     * TAB photos. Returns null, or why it failed.
+     * TAB photos TAB provider (the provider since server 0.7.1). Returns
+     * null, or why it failed.
      */
     private static String fetch(ClaudeS40MIDlet midlet) {
         Settings s = midlet.settings;
@@ -178,6 +188,7 @@ final class Models implements CommandListener, Runnable {
         }
         Vector vi = new Vector();
         Vector vn = new Vector();
+        Vector vp = new Vector();
         String t = m.text;
         int pos = 0;
         while (pos < t.length()) {
@@ -189,6 +200,9 @@ final class Models implements CommandListener, Runnable {
             if (t1 > 0 && t2 > t1 + 1) {
                 vi.addElement(line.substring(0, t1));
                 vn.addElement(line.substring(t1 + 1, t2));
+                int t3 = line.indexOf('\t', t2 + 1);
+                int t4 = t3 < 0 ? -1 : line.indexOf('\t', t3 + 1);
+                vp.addElement(t4 < 0 ? "" : line.substring(t4 + 1).trim());
             }
         }
         if (vi.size() == 0) {
@@ -197,8 +211,10 @@ final class Models implements CommandListener, Runnable {
         synchronized (Models.class) {
             ids = new String[vi.size()];
             names = new String[vn.size()];
+            providers = new String[vp.size()];
             vi.copyInto(ids);
             vn.copyInto(names);
+            vp.copyInto(providers);
             defaultId = m.field("default").length() > 0 ? m.field("default") : ids[0];
             loaded = true;
             save();
@@ -215,20 +231,28 @@ final class Models implements CommandListener, Runnable {
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Displayable back;
     private final int purpose;
-    /** Ids in list order; empty while loading or on error. */
+    /** Model ids, or provider names on the first step, in list order. */
     private String[] shown = new String[0];
     private boolean loading;
+    /** The provider whose models are shown; null on the first step. */
+    private String provider;
+    /** True while the providers are listed (more than one provider). */
+    private boolean choosingProvider;
 
     Models(ClaudeS40MIDlet midlet, int purpose, Displayable back) {
         this.midlet = midlet;
         this.purpose = purpose;
         this.back = back;
-        list = new List(purpose == FOR_NEW ? L.s("Yeni sohbet: model", "New chat: model") : L.s("Model", "Model"),
-                List.IMPLICIT);
+        list = new List(title(), List.IMPLICIT);
         list.setSelectCommand(chooseCmd);
         list.addCommand(refreshCmd);
         list.addCommand(backCmd);
         list.setCommandListener(this);
+    }
+
+    private String title() {
+        String t = purpose == FOR_NEW ? L.s("Yeni sohbet", "New chat") : L.s("Model", "Model");
+        return provider != null && provider.length() > 0 ? t + ": " + provider : t;
     }
 
     void show(Display display) {
@@ -247,6 +271,7 @@ final class Models implements CommandListener, Runnable {
             }
             loading = true;
             shown = new String[0];
+            provider = null;
         }
         list.deleteAll();
         list.append(L.s("Yükleniyor...", "Loading..."), null);
@@ -261,19 +286,42 @@ final class Models implements CommandListener, Runnable {
         fill(error);
     }
 
-    /** Shows the kept list; the current model is marked. */
+    /**
+     * Shows the providers, or the models of the chosen provider (all models
+     * when there is only one provider); the current choice is marked.
+     */
     private void fill(String error) {
         String current = purpose == FOR_NEW ? startId() : midlet.session().modelId();
         String[] i2;
         String[] n2;
+        String[] p2;
         String mark;
         synchronized (Models.class) {
             load();
             i2 = ids;
             n2 = names;
+            p2 = providers;
             mark = purpose == FOR_SWITCH ? L.s(" (şu an)", " (now)")
                     : current.equals(last) ? L.s(" (son seçim)", " (last used)") : L.s(" (varsayılan)", " (default)");
         }
+        String currentProvider = "";
+        Vector groups = new Vector();
+        for (int i = 0; i < i2.length; i++) {
+            if (!groups.contains(p2[i])) {
+                groups.addElement(p2[i]);
+            }
+            if (i2[i].equals(current)) {
+                currentProvider = p2[i];
+            }
+        }
+        boolean step1;
+        String prov;
+        synchronized (this) {
+            step1 = provider == null && groups.size() > 1;
+            prov = provider;
+            choosingProvider = step1;
+        }
+        list.setTitle(title());
         list.deleteAll();
         if (error != null) {
             list.append(L.s("Hata: ", "Error: ") + error, null);
@@ -282,26 +330,57 @@ final class Models implements CommandListener, Runnable {
                     ? L.s("Test modunda liste sunucudan alınamaz.", "In test mode the list cannot come from the server.")
                     : L.s("Liste boş. 'Listeyi yenile'yi seçin.", "No list yet. Choose 'Refresh the list'."), null);
         }
+        Vector v = new Vector();
         int sel = -1;
-        for (int i = 0; i < i2.length; i++) {
-            boolean now = i2[i].equals(current);
-            list.append(n2[i] + (now ? mark : ""), null);
-            if (now) {
-                sel = list.size() - 1;
+        if (step1) {
+            for (int i = 0; i < groups.size(); i++) {
+                String g = (String) groups.elementAt(i);
+                boolean now = g.equals(currentProvider);
+                list.append((g.length() > 0 ? g : L.s("Diğer", "Other")) + (now ? mark : ""), null);
+                v.addElement(g);
+                if (now) {
+                    sel = list.size() - 1;
+                }
             }
+        } else {
+            for (int i = 0; i < i2.length; i++) {
+                if (prov != null && !p2[i].equals(prov)) {
+                    continue;
+                }
+                boolean now = i2[i].equals(current);
+                list.append(n2[i] + (now ? mark : ""), null);
+                v.addElement(i2[i]);
+                if (now) {
+                    sel = list.size() - 1;
+                }
+            }
+        }
+        if (sel < 0 && v.size() > 0) {
+            sel = list.size() - v.size(); // the first choice, after any note
         }
         if (sel >= 0) {
             list.setSelectedIndex(sel, true);
         }
+        String[] out = new String[v.size()];
+        v.copyInto(out);
         synchronized (this) {
-            shown = i2; // after any error line: the kept list stays choosable
+            shown = out; // after any error line: the kept list stays choosable
         }
     }
 
     public void commandAction(Command c, Displayable d) {
         midlet.userActive();
         if (c == backCmd) {
-            midlet.display().setCurrent(back);
+            boolean up;
+            synchronized (this) {
+                up = provider != null; // from the models back to the providers
+                provider = null;
+            }
+            if (up) {
+                fill(null);
+            } else {
+                midlet.display().setCurrent(back);
+            }
         } else if (c == refreshCmd) {
             if (midlet.settings.testMode) {
                 midlet.info(L.s("Test modunda ağ kullanılmaz.", "Test mode uses no network."), list);
@@ -310,11 +389,20 @@ final class Models implements CommandListener, Runnable {
             }
         } else if (c == chooseCmd || c == List.SELECT_COMMAND) {
             String id;
+            boolean step1;
             synchronized (this) {
                 int i = list.getSelectedIndex() - (list.size() - shown.length);
                 id = i >= 0 && i < shown.length ? shown[i] : null;
+                step1 = choosingProvider;
+                if (id != null && step1) {
+                    provider = id;
+                }
             }
             if (id == null) {
+                return;
+            }
+            if (step1) {
+                fill(null); // the models of this provider
                 return;
             }
             String err;

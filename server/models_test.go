@@ -1,8 +1,13 @@
 package main
 
 import (
+	"context"
+	"encoding/json"
+	"net/http/httptest"
 	"strings"
 	"testing"
+
+	"github.com/anthropics/anthropic-sdk-go/option"
 )
 
 // twoModels: Claude (default) and a Grok mock that records its calls.
@@ -30,7 +35,7 @@ func TestModelsList(t *testing.T) {
 	r := e.do("POST", "/v1/models", tok, "S40/1\n\n")
 	l := listLines(r)
 	if r.msg.get("status") != "ok" || r.msg.get("default") != "claude-opus-5" || len(l) != 2 ||
-		strings.Join(l[0], "|") != "claude-opus-5|Claude|1|1" || strings.Join(l[1], "|") != "grok-y|Grok|0|1" {
+		strings.Join(l[0], "|") != "claude-opus-5|Claude|1|1|Claude" || strings.Join(l[1], "|") != "grok-y|Grok|0|1|Grok" {
 		t.Fatalf("%q", r.raw)
 	}
 	// search off on the server: no model offers it
@@ -136,5 +141,44 @@ func TestMigrateModelColumns(t *testing.T) {
 	twoModels(e)
 	if r := e.chat(tok, rid(), conv, "devam"); r.msg.get("model") != "claude-opus-5" {
 		t.Fatalf("%q", r.raw)
+	}
+}
+
+// Haiku 4.5: no effort, no server-side fallback, the basic web search tool;
+// the model is introduced by its label.
+func TestClaudeHaikuRequest(t *testing.T) {
+	f := &fakeAPI{status: 200, body: okBody("x", "end_turn")}
+	ts := httptest.NewServer(f)
+	t.Cleanup(ts.Close)
+	m := newClaudeModel("sk-ant-test-not-a-real-key", "claude-haiku-4-5", "low", true, option.WithBaseURL(ts.URL))
+	m.name = "Claude Haiku 4.5"
+	if _, err := m.reply(context.Background(), nil, "c", replyOpts{search: true}); err != nil {
+		t.Fatal(err)
+	}
+	b := f.bodies[0]
+	if _, ok := b["output_config"]; ok {
+		t.Fatal("effort sent to Haiku")
+	}
+	if _, ok := b["fallbacks"]; ok || f.hdrs[0].Get("Anthropic-Beta") != "" {
+		t.Fatal("fallbacks sent to Haiku")
+	}
+	tool := b["tools"].([]any)[0].(map[string]any)
+	sys, _ := json.Marshal(b["system"])
+	if tool["type"] != "web_search_20250305" || !strings.Contains(string(sys), "You are Claude Haiku 4.5, talking") {
+		t.Fatalf("%v %s", tool, sys)
+	}
+
+	// Opus 5.5 keeps all three
+	f2 := &fakeAPI{status: 200, body: okBody("x", "end_turn")}
+	ts2 := httptest.NewServer(f2)
+	t.Cleanup(ts2.Close)
+	newClaudeModel("sk-ant-test-not-a-real-key", "claude-opus-5-5", "low", true, option.WithBaseURL(ts2.URL)).
+		reply(context.Background(), nil, "c", replyOpts{search: true})
+	b2 := f2.bodies[0]
+	if b2["fallbacks"] != "default" || b2["tools"].([]any)[0].(map[string]any)["type"] != "web_search_20260209" {
+		t.Fatalf("%v", b2)
+	}
+	if oc, _ := b2["output_config"].(map[string]any); oc["effort"] != "low" {
+		t.Fatalf("%v", b2["output_config"])
 	}
 }

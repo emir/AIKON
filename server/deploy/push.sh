@@ -25,7 +25,7 @@ TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.7.0
+IMAGE=claude-s40-server:0.7.1
 MOCK=${S40_MOCK:-1}
 STT=${S40_TRANSCRIBE:-off}
 MODELS=${S40_MODELS:-}

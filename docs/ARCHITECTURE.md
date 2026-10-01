@@ -103,9 +103,12 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   reading; turning it off deletes it. Deleting the app deletes both.
 - Models (0.10.0, server 0.7.0+): `Models` keeps the server's model list
   (`/v1/models`) and the model chosen last for new chats in RMS
-  `cs40models`; it is fetched only when the picker opens without a list or
-  with "Refresh the list" ("Reset setup" deletes it). "New chat" opens the
-  picker when more than one model is offered (or none is known yet);
+  `cs40models` (format 2 with each model's provider); it is fetched only
+  when the picker opens without a list or with "Refresh the list" ("Reset
+  setup" deletes it). The picker lists the providers first (Claude, OpenAI,
+  Grok), then that provider's models (0.10.2; one provider: models at
+  once). "New chat" opens the picker when more than one model is offered
+  (or none is known yet);
   Options > Model switches the open chat from the next message on. The
   choice is sent as `model:` with the next message only (and kept with its
   request id for "Retry"); choosing never sends anything. Replies are
@@ -150,7 +153,7 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
 | `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `image: <id>` (a photo from `/v1/image`; 0.6.0), optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), optional `model: <id>` (from `/v1/models`; this and the following messages of the conversation go to that model; server 0.7.0), text = message |
 | `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls a model) |
-| `POST /v1/models` | Bearer token | the models the phone may choose, default first, one line each: `id TAB name TAB search (0/1) TAB photos (0/1)`; field `default: <id>`; never calls a model (server 0.7.0) |
+| `POST /v1/models` | Bearer token | the models the phone may choose, default first, one line each: `id TAB name TAB search (0/1) TAB photos (0/1) TAB provider` (provider name since 0.7.1: Claude, OpenAI, Grok); field `default: <id>`; never calls a model (server 0.7.0) |
 | `POST /v1/conversations` | Bearer token | pinned, then newest conversations (20 in all), one line each: `id TAB updated-ms TAB messages TAB title`; with `pins: 1` (0.7+ phones) each line starts with `pinned TAB` (0/1); with `models: 1` the conversation's model id comes before the title (`... messages TAB model TAB title`, empty for conversations from before server 0.7.0) |
 | `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out; with `images: 1` (0.9+ phones) a user message sent with a photo is `u N i`; with `models: 1` a reply is `a N m=<model id>` (server 0.7.0; marks are space-separated, unknown ones are ignored) |
 | `POST /v1/image` | Bearer token | body = a JPEG or PNG (≤ 1 MiB) → `ok` + `image` (32 hex), `width`, `height`, `bytes`; `bad_image`, `too_large`, `limit`; never calls Claude (0.6.0) |
@@ -178,7 +181,10 @@ own key file (`anthropic_api_key`, `openai_api_key`, `xai_api_key`); the
 server does not start with a model whose key is missing. An empty
 `MODELS` keeps the single `CLAUDE_MODEL` of earlier versions. Names are
 ASCII, at most 20 characters; the system prompt introduces the model by
-its name.
+its name. `MODELS` is a curated list of current models, not everything a
+provider serves. Claude models get `effort`, server-side fallbacks and
+`web_search_20260209`, except Haiku 4.5, which takes none of the first
+two and only `web_search_20250305`.
 
 A conversation has a model: a new one starts with the phone's `model:`
 or the default; a message with another `model:` switches the

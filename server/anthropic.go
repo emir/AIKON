@@ -31,10 +31,24 @@ const (
 type claudeModel struct {
 	client    anthropic.Client
 	model     string
+	name      string // how the model is introduced in the system prompt
 	effort    string
 	fallbacks bool
-	search    searchConfig
-	now       func() time.Time
+	// basicSearch: web_search_20250305 for models without the dynamic-filtering
+	// variant (Haiku 4.5); otherwise web_search_20260209
+	basicSearch bool
+	search      searchConfig
+	now         func() time.Time
+}
+
+// claudeFeatures: what a Claude model accepts beyond the basics. Haiku 4.5
+// rejects output_config.effort, has no server-side fallback and only the
+// basic web search tool; the current Opus/Sonnet/Fable models take all three.
+func claudeFeatures(modelID string) (effort, fallbacks, dynamicSearch bool) {
+	if strings.HasPrefix(modelID, "claude-haiku-") {
+		return false, false, false
+	}
+	return true, true, true
 }
 
 // searchConfig: Anthropic's server-side web search tool. Every search is
@@ -52,13 +66,19 @@ func newClaudeModel(apiKey, modelID, effort string, fallbacks bool, opts ...opti
 		option.WithMaxRetries(0),
 		option.WithRequestTimeout(upstreamTimeout),
 	}
+	withEffort, withFallbacks, dynamicSearch := claudeFeatures(modelID)
+	if !withEffort {
+		effort = ""
+	}
 	return &claudeModel{
-		client:    anthropic.NewClient(append(base, opts...)...),
-		model:     modelID,
-		effort:    effort,
-		fallbacks: fallbacks,
-		search:    searchConfig{maxUses: 3},
-		now:       time.Now,
+		client:      anthropic.NewClient(append(base, opts...)...),
+		model:       modelID,
+		name:        "Claude",
+		effort:      effort,
+		fallbacks:   fallbacks && withFallbacks,
+		basicSearch: !dynamicSearch,
+		search:      searchConfig{maxUses: 3},
+		now:         time.Now,
 	}
 }
 
@@ -77,7 +97,7 @@ func (m *claudeModel) reply(ctx context.Context, history []turn, message string,
 	params := anthropic.BetaMessageNewParams{
 		Model:     anthropic.Model(m.model),
 		MaxTokens: maxTokens,
-		System:    []anthropic.BetaTextBlockParam{{Text: systemPrompt("Claude", o, m.now())}},
+		System:    []anthropic.BetaTextBlockParam{{Text: systemPrompt(m.name, o, m.now())}},
 		Messages:  msgs,
 	}
 	if m.effort != "" {
@@ -88,9 +108,8 @@ func (m *claudeModel) reply(ctx context.Context, history []turn, message string,
 		params.Fallbacks = anthropic.BetaFallbacksParamUnion{OfDefault: constant.ValueOf[constant.Default]()}
 	}
 	if o.search {
-		ws := &anthropic.BetaWebSearchTool20260209Param{MaxUses: anthropic.Int(max(1, m.search.maxUses))}
+		var loc anthropic.BetaUserLocationParam
 		if m.search.country != "" || m.search.city != "" || m.search.timezone != "" {
-			loc := anthropic.BetaUserLocationParam{}
 			if m.search.country != "" {
 				loc.Country = anthropic.String(m.search.country)
 			}
@@ -100,9 +119,15 @@ func (m *claudeModel) reply(ctx context.Context, history []turn, message string,
 			if m.search.timezone != "" {
 				loc.Timezone = anthropic.String(m.search.timezone)
 			}
-			ws.UserLocation = loc
 		}
-		params.Tools = []anthropic.BetaToolUnionParam{{OfWebSearchTool20260209: ws}}
+		uses := anthropic.Int(max(1, m.search.maxUses))
+		if m.basicSearch {
+			params.Tools = []anthropic.BetaToolUnionParam{{OfWebSearchTool20250305: &anthropic.BetaWebSearchTool20250305Param{
+				MaxUses: uses, UserLocation: loc}}}
+		} else {
+			params.Tools = []anthropic.BetaToolUnionParam{{OfWebSearchTool20260209: &anthropic.BetaWebSearchTool20260209Param{
+				MaxUses: uses, UserLocation: loc}}}
+		}
 	}
 
 	var out reply

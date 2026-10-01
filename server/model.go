@@ -229,6 +229,9 @@ type modelSpec struct{ provider, id, label string }
 
 var defaultLabels = map[string]string{"anthropic": "Claude", "openai": "ChatGPT", "xai": "Grok"}
 
+// providerNames: how the phone groups the models (first step of its picker).
+var providerNames = map[string]string{"anthropic": "Claude", "openai": "OpenAI", "xai": "Grok"}
+
 const maxLabel = 20
 
 func parseModels(s string) ([]modelSpec, error) {

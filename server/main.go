@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.7.0"
+	version      = "0.7.1"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -174,6 +174,7 @@ func buildCatalog(c config, secret func(string) string) (*catalog, error) {
 		switch sp.provider {
 		case "anthropic":
 			cm := newClaudeModel(key, sp.id, c.effort, c.fallbacks)
+			cm.name = sp.label
 			cm.search = search
 			e.m = cm
 		case "openai", "xai":
@@ -590,14 +591,16 @@ func (s *server) moreHandler(w http.ResponseWriter, r *http.Request) {
 }
 
 // modelsHandler lists the models the phone may choose, default first, one
-// per line: id TAB name TAB search (0/1) TAB photos (0/1). Never calls a model.
+// per line: id TAB name TAB search (0/1) TAB photos (0/1) TAB provider
+// (Claude, OpenAI, Grok: 0.10.2+ phones pick the provider first; older ones
+// read only the first two fields). Never calls a model.
 func (s *server) modelsHandler(w http.ResponseWriter, r *http.Request) {
 	if _, _, ok := s.authedS40(w, r); !ok {
 		return
 	}
 	var b strings.Builder
 	for _, e := range s.chat.models.list {
-		fmt.Fprintf(&b, "%s\t%s\t%d\t1\n", e.id, e.label, b2i(e.search && s.chat.search))
+		fmt.Fprintf(&b, "%s\t%s\t%d\t1\t%s\n", e.id, e.label, b2i(e.search && s.chat.search), providerNames[e.provider])
 	}
 	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(s.chat.models.list)}, {"default", s.chat.models.def().id}}, b.String())
 }
