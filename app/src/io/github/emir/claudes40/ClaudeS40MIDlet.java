@@ -292,6 +292,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
     }
 
+    /**
+     * Setup complete: a short note that closes by itself (no "Dismiss"
+     * needed), then the chat, whose own screen says how to write.
+     */
+    void setupDone(String message) {
+        Alert a = new Alert(null, message, null, AlertType.CONFIRMATION);
+        a.setTimeout(1800);
+        display.setCurrent(a, chat);
+    }
+
     void setupFinished(String message) {
         info(message, settings.ready() ? (Displayable) chat : home);
     }

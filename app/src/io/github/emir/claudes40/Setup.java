@@ -207,8 +207,11 @@ final class Setup implements CommandListener {
         Settings s = midlet.settings;
         s.setupDone = true;
         String err = s.save();
-        midlet.setupFinished(err != null ? err : s.ready()
-                ? L.s("Kurulum tamam. Yazmak için orta tuş.", "All set. Centre key to write.")
+        if (err == null && s.ready()) {
+            midlet.setupDone(L.s("Kurulum tamam!", "All set!"));
+            return;
+        }
+        midlet.setupFinished(err != null ? err
                 : L.s("Kurulum kaydedildi. Eksik adımları Ayarlar'dan tamamlayabilirsin.",
                         "Setup saved. Finish the missing steps from Settings."));
     }
