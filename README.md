@@ -8,7 +8,7 @@
 
 ![AIKON: today's AI on a 2007 Nokia](docs/images/cover.png)
 
-**Today's AI on a 2007 Nokia.** AIKON is an unofficial AI chat client for
+**Today's AI on a 2007 Nokia.** AIKON is an AI chat client for
 Nokia Series 40 and Symbian S60 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus
 the small Go server it talks to. Pick a model per chat (Claude, OpenAI, Gemini or Grok),
 type on the keypad, get the answer on a 240x320 screen: with today's news,
@@ -102,7 +102,7 @@ calendar API, so the harness turns the calendar actions on for these
 screens and never saves); the cover is a drawing.
 Start-up animation: [docs/images/splash.gif](docs/images/splash.gif).
 
-> Unofficial side project. Not made, endorsed or supported by Anthropic,
+> Independent side project. Not made, endorsed or supported by Anthropic,
 > OpenAI, Google, xAI or Nokia. See [TRADEMARKS.md](TRADEMARKS.md).
 
 Tested on a **Nokia 6300 (RM-217, firmware V06.60)**, and on a **Nokia E63**

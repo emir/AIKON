@@ -1147,7 +1147,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             int ty = y + BUBBLE_PAD;
             int mx = x + BUBBLE_PAD;
             if (b.kind == ChatSession.KIND_CLAUDE) {
-                Logo.draw(g, mx + 4, ty + sm.getHeight() / 2, 10, 100, 0);
+                Logo.draw(g, mx + 4, ty + sm.getHeight() / 2, 10, 100, Logo.ALL);
                 mx += 12;
             }
             g.setFont(sm);
@@ -1317,7 +1317,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         int y = top + Math.max(PAD, (vh - groupH) * 2 / 5);
         int bottom = top + vh;
         if (logo) {
-            Logo.draw(g, cx, y + size / 2, size, 100, 0);
+            Logo.draw(g, cx, y + size / 2, size, 100, Logo.ALL);
             y += size + 12;
         }
         g.setFont(Theme.bold);
@@ -1340,7 +1340,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         boolean test = midlet.settings.testMode;
         g.setColor(test ? Theme.testBar : Theme.bar);
         g.fillRect(0, 0, w, bh);
-        Logo.draw(g, PAD + bh / 2 - 2, bh / 2, bh - 6, 100, 0);
+        Logo.draw(g, PAD + bh / 2 - 2, bh / 2, bh - 6, 100, Logo.ALL);
         int right = w - PAD;
         String rem = session.remaining();
         if (test || rem.length() > 0) {

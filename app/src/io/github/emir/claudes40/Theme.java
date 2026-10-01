@@ -5,7 +5,7 @@ import javax.microedition.lcdui.Font;
 /**
  * Colours and fonts for the custom screens. Two palettes (light "Gündüz",
  * dark "Gece") and three text sizes, chosen in Ayarlar. Warm paper
- * background and a terracotta accent to match the Claude-style spark.
+ * background and a terracotta accent, the colour of the AIKON mark.
  */
 final class Theme {
 

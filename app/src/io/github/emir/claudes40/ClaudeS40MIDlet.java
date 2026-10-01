@@ -17,7 +17,7 @@ import javax.microedition.lcdui.TextField;
 import javax.microedition.midlet.MIDlet;
 
 /**
- * AIKON (formerly Claude S40): an unofficial AI chat client for Nokia Series 40
+ * AIKON (formerly Claude S40): an AI chat client for Nokia Series 40
  * and Symbian S60 (QWERTY, e.g. E63) phones.
  * The package, class and RMS names keep the old name.
  *
@@ -67,7 +67,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         "What can I cook with: ",
         "Help me decide, short pros and cons: ",
         "Step by step, at most 5 steps: how do I ",
-        "Roast this phone. It's a Nokia 6300 from 2007 and it's talking to you.",
+        "Roast this phone. It's an old Nokia and it's talking to you.",
     };
 
     static final String[] TITLES_TR = {
@@ -96,7 +96,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         "Elimde şunlar var, ne pişirebilirim: ",
         "Karar vermeme yardım et, kısa artı ve eksiler: ",
         "En fazla 5 adımda anlat, nasıl yapılır: ",
-        "Bu telefonu roastla. 2007 yapımı bir Nokia 6300 ve şu an seninle konuşuyor.",
+        "Bu telefonu roastla. Eski bir Nokia ve şu an seninle konuşuyor.",
     };
 
     final Settings settings = new Settings();
@@ -351,7 +351,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         String left = session.remainingToday();
         return left.length() > 0 ? L.s("Hazır · bugün " + left + " hak kaldı", "Ready · " + left + " left today")
-                : L.s("Hazır · Nokia 6300'de yapay zekâ", "Ready · AI on a Nokia 6300");
+                : L.s("Hazır · eski Nokia'da yeni yapay zekâ", "Ready · new AI on an old Nokia");
     }
 
     /** Second line of a home row; the Chat row shows the draft or the last message. */
@@ -1230,8 +1230,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "kadar kalır. Telefonda yalnızca 'Son sohbeti telefonda sakla' açıksa son sohbet tutulur; "
                     + "kaydedilen yanıtlar ve takvim kayıtları yalnızca telefonda durur."
                     + "\n\nWeb araması sunucuda, modelin sağlayıcısının arama aracıyla yapılır; telefonun tarayıcısı "
-                    + "kullanılmaz."
-                    + "\n\nTest edilen cihaz: Nokia 6300 RM-217, V06.60. Diğer cihazlar test edilmedi.",
+                    + "kullanılmaz.",
                     "The AI does not run on the phone: messages travel over an encrypted link to the server and on to "
                     + "the chosen model's provider (Anthropic, OpenAI, Google, xAI). Not an official app of these "
                     + "providers or of Nokia."
@@ -1239,8 +1238,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "The phone keeps the last chat only if 'Keep last chat on phone' is on; saved replies and "
                     + "calendar entries stay on the phone only."
                     + "\n\nWeb search runs on the server with the model provider's search tool, not the phone's "
-                    + "browser."
-                    + "\n\nTested on: Nokia 6300 RM-217, firmware V06.60. Other phones are untested.");
+                    + "browser.");
         }
         return L.s("Yapay zekâ için notların: kendinden ve nasıl yanıt istediğinden kısaca söz et, örneğin \"Adım Emir, "
                 + "İstanbul'dayım, kısa ve Türkçe yaz.\" Her mesajla sunucuya gönderilir."
@@ -1263,8 +1261,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(attr("MIDlet-Name"),
                 L.s("Sürüm ", "Version ") + attr("MIDlet-Version") + L.s(" (derleme ", " (build ")
                         + attr("ClaudeS40-Build") + ")"));
-        about.append(new StringItem(null, L.s("Nokia S40 ve S60 telefonlar için resmî olmayan yapay zekâ istemcisi.",
-                "An unofficial AI chat client for Nokia S40 and S60 phones.")));
+        about.append(new StringItem(null, L.s("Nokia S40 ve S60 telefonlar için yapay zekâ sohbeti.",
+                "AI chat for Nokia S40 and S60 phones.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
         about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));

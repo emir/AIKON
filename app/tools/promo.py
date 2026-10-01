@@ -184,7 +184,7 @@ def cover(out, W=1280, H=640, S=3):
         d.rounded_rectangle([cx * S, cy * S, (cx + cw) * S, (cy + 40) * S], radius=20 * S, fill=(246, 227, 217))
         d.text(((cx + cw / 2) * S, (cy + 20) * S), c, font=f, fill=ACCENT, anchor="mm")
         cx += cw + 12
-    d.text((x * S, (H - 44) * S), "Unofficial client. Not made or endorsed by Anthropic, OpenAI, Google, xAI or Nokia.",
+    d.text((x * S, (H - 44) * S), "Not made or endorsed by Anthropic, OpenAI, Google, xAI or Nokia.",
            font=font(19 * S), fill=MUTED)
     img.resize((W, H), Image.LANCZOS).save(out)
 

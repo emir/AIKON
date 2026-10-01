@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 """
-Draws the app's spark (same geometry as Logo.java) with Pillow.
+Draws the AIKON mark (same geometry as Logo.java: a speech bubble holding a
+3x3 keypad) with Pillow.
 
   make_art.py icon OUT.png          46x48 MIDlet icon (transparent), packaged in the JAR
   make_art.py logo OUT.png [SIZE]   large logo for README / social posts
@@ -8,40 +9,34 @@ Draws the app's spark (same geometry as Logo.java) with Pillow.
 Supersampled 8x and downscaled for smooth edges. Deterministic output
 (no timestamps in the PNG).
 """
-import math
 import sys
 
 from PIL import Image, ImageDraw
 
-SPARK = (0xD9, 0x77, 0x57, 255)
-RAYS = [100, 82, 94, 78, 100, 86, 92, 80, 98, 84, 90, 79]   # Logo.RAYS
+SPARK = (0xD9, 0x77, 0x57, 255)   # Theme.spark (light palette)
+KEY = (0xFB, 0xF3, 0xEE, 255)     # Logo.KEY
 
 
-def spark(draw, cx, cy, r, color=SPARK):
-    """Same geometry as Logo.draw(): tapered rays with rounded tips + core."""
-    n = len(RAYS)
-    base = max(1.0, r * 0.17)
-    tip = max(1.0, r * 0.09)
-    for i, pct in enumerate(RAYS):
-        a = math.radians(i * 360 / n)
-        ca, sa = math.cos(a), math.sin(a)
-        ln = r * pct / 100 - tip / 2
-        px, py = -sa, ca
-        pts = [(cx + px * base / 2, cy + py * base / 2),
-               (cx + ca * ln + px * tip / 2, cy + sa * ln + py * tip / 2),
-               (cx + ca * ln - px * tip / 2, cy + sa * ln - py * tip / 2),
-               (cx - px * base / 2, cy - py * base / 2)]
-        draw.polygon(pts, fill=color)
-        ex, ey = cx + ca * ln, cy + sa * ln
-        draw.ellipse([ex - tip / 2, ey - tip / 2, ex + tip / 2, ey + tip / 2], fill=color)
-    core = max(2, r * 0.24)
-    draw.ellipse([cx - core, cy - core, cx + core, cy + core], fill=color)
+def mark(draw, cx, cy, s, color=SPARK, key=KEY):
+    """Same geometry as Logo.draw(): rounded bubble, tail bottom left, 3x3 keys."""
+    w, h = s, s * 0.80
+    x0, y0 = cx - w / 2, cy - h / 2 - s * 0.06
+    draw.rounded_rectangle([x0, y0, x0 + w, y0 + h], radius=s * 0.24, fill=color)
+    tx, bottom = x0 + w * 0.20, y0 + h - 1
+    draw.polygon([(tx, bottom), (tx + w * 0.24, bottom), (x0 + w * 0.10, bottom + s * 0.20)], fill=color)
+    pad_x, pad_y = w * 0.25, h * 0.24
+    gx, gy = (w - 2 * pad_x) / 2, (h - 2 * pad_y) / 2
+    r = s * 0.065
+    for i in range(9):
+        px, py = x0 + pad_x + (i % 3) * gx, y0 + pad_y + (i // 3) * gy
+        draw.ellipse([px - r, py - r, px + r, py + r], fill=key)
 
 
 def render(w, h, radius_frac, bg=(0, 0, 0, 0), ss=8):
+    """radius_frac: the mark's width as twice this fraction of the smaller side (as for the old spark)."""
     big = Image.new("RGBA", (w * ss, h * ss), bg)
     d = ImageDraw.Draw(big)
-    spark(d, w * ss / 2, h * ss / 2, min(w, h) * ss * radius_frac)
+    mark(d, w * ss / 2, h * ss / 2, min(w, h) * ss * radius_frac * 2)
     return big.resize((w, h), Image.LANCZOS)
 
 

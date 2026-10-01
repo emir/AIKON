@@ -101,7 +101,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.setColor(Theme.bar);
         g.fillRect(0, 0, w, headH);
         int ls = headH - 12;
-        Logo.draw(g, MARGIN + ls / 2 + 2, headH / 2, ls, 100, 0);
+        Logo.draw(g, MARGIN + ls / 2 + 2, headH / 2, ls, 100, Logo.ALL);
         int tx = MARGIN + ls + 10;
         g.setColor(Theme.barInk);
         g.setFont(f);
@@ -155,7 +155,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         // footer
         g.setFont(sm);
         g.setColor(Theme.muted);
-        g.drawString(Text.fit(L.s("Resmî olmayan istemci · ", "Unofficial client · ") + midlet.attr("MIDlet-Version"), sm,
+        g.drawString(Text.fit(L.s("Sürüm ", "Version ") + midlet.attr("MIDlet-Version"), sm,
                 w - 2 * MARGIN), w / 2, h - footH + 2, Graphics.TOP | Graphics.HCENTER);
     }
 
