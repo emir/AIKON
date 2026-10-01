@@ -4,7 +4,7 @@
 //
 // It replaces the Cloudflare Worker + Durable Objects and the separate TLS
 // relay. Public listener (TLS, for the phone): /health, /echo, /v1/chat,
-// /v1/more, /v1/conversations, /v1/history, /v1/delete, /v1/pin, /v1/search,
+// /v1/more, /v1/models, /v1/conversations, /v1/history, /v1/delete, /v1/pin, /v1/search,
 // /v1/transcribe (voice messages, see transcribe.go), /v1/image (photos,
 // see image.go), /v1/pair/start,
 // /v1/pair/claim. Admin listener (plain HTTP,
@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.6.2"
+	version      = "0.7.0"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -353,7 +353,7 @@ func logged(h http.Handler) http.Handler {
 
 func knownPath(p string) bool {
 	switch p {
-	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/conversations", "/v1/history", "/v1/delete",
+	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/models", "/v1/conversations", "/v1/history", "/v1/delete",
 		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/image", "/v1/pair/start", "/v1/pair/claim",
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
 		return true
@@ -367,6 +367,7 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /echo", s.echo)
 	mux.HandleFunc("POST /v1/chat", s.chatHandler)
 	mux.HandleFunc("POST /v1/more", s.moreHandler)
+	mux.HandleFunc("POST /v1/models", s.modelsHandler)
 	mux.HandleFunc("POST /v1/conversations", s.conversationsHandler)
 	mux.HandleFunc("POST /v1/history", s.historyHandler)
 	mux.HandleFunc("POST /v1/delete", s.deleteHandler)
@@ -488,9 +489,10 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	reqID, conv, img := m.get("request"), m.get("conversation"), m.get("image")
+	reqID, conv, img, model := m.get("request"), m.get("conversation"), m.get("image"), m.get("model")
 	msg := strings.TrimSpace(norm.NFC.String(m.text))
-	if !idRE.MatchString(reqID) || (conv != "" && !convRE.MatchString(conv)) || (img != "" && !imageIDRE.MatchString(img)) {
+	if !idRE.MatchString(reqID) || (conv != "" && !convRE.MatchString(conv)) || (img != "" && !imageIDRE.MatchString(img)) ||
+		(model != "" && !modelIDRE.MatchString(model)) {
 		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
 		return
 	}
@@ -503,7 +505,7 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	o := replyOpts{search: m.get("search") != "0", calendar: m.get("calendar") == "1",
-		instructions: cleanInstructions(m.get("instructions")), imageID: img}
+		instructions: cleanInstructions(m.get("instructions")), imageID: img, model: model}
 	if o.calendar {
 		// the phone's own clock, for "tomorrow" and weekdays; ignored if malformed
 		if t, err := time.Parse("2006-01-02 15:04", m.get("local-time")); err == nil {
@@ -522,6 +524,9 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if res.status == "ok" {
 		f = append(f, kv{"truncated", res.truncated}, kv{"refused", res.refused}, kv{"mock", res.mock})
+		if res.model != "" {
+			f = append(f, kv{"model", res.model}, kv{"model-name", res.label})
+		}
 		if res.replayed {
 			f = append(f, kv{"replayed", true})
 		}
@@ -584,11 +589,26 @@ func (s *server) moreHandler(w http.ResponseWriter, r *http.Request) {
 	writeS40(w, 200, f, res.text)
 }
 
+// modelsHandler lists the models the phone may choose, default first, one
+// per line: id TAB name TAB search (0/1) TAB photos (0/1). Never calls a model.
+func (s *server) modelsHandler(w http.ResponseWriter, r *http.Request) {
+	if _, _, ok := s.authedS40(w, r); !ok {
+		return
+	}
+	var b strings.Builder
+	for _, e := range s.chat.models.list {
+		fmt.Fprintf(&b, "%s\t%s\t%d\t1\n", e.id, e.label, b2i(e.search && s.chat.search))
+	}
+	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(s.chat.models.list)}, {"default", s.chat.models.def().id}}, b.String())
+}
+
 // conversationsHandler lists the pinned, then the newest conversations, one
 // per line: id TAB updated (ms) TAB messages TAB title. With "pins: 1"
 // (0.7+ phones) each line starts with the pinned flag instead:
 // pinned (0/1) TAB id TAB updated TAB messages TAB title. Older phones read
 // everything after the third tab as the title, so they never get the flag.
+// With "models: 1" the conversation's model id ("" if older than server
+// 0.7.0) comes before the title: ... messages TAB model TAB title.
 func (s *server) conversationsHandler(w http.ResponseWriter, r *http.Request) {
 	device, m, ok := s.authedS40(w, r)
 	if !ok {
@@ -599,13 +619,17 @@ func (s *server) conversationsHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
 		return
 	}
-	pins := m.get("pins") == "1"
+	pins, models := m.get("pins") == "1", m.get("models") == "1"
 	var b strings.Builder
 	for _, c := range list {
 		if pins {
 			fmt.Fprintf(&b, "%d\t", b2i(c.pinned))
 		}
-		fmt.Fprintf(&b, "%s\t%d\t%d\t%s\n", c.id, c.updated, c.messages, c.title)
+		fmt.Fprintf(&b, "%s\t%d\t%d\t", c.id, c.updated, c.messages)
+		if models {
+			b.WriteString(c.model + "\t")
+		}
+		b.WriteString(c.title + "\n")
 	}
 	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(list)}}, b.String())
 }
@@ -673,7 +697,7 @@ func (s *server) historyHandler(w http.ResponseWriter, r *http.Request) {
 		writeS40(w, 400, []kv{{"status", "bad_request"}}, "")
 		return
 	}
-	images := m.get("images") == "1"
+	images, models := m.get("images") == "1", m.get("models") == "1"
 	msgs, older, found, err := s.st.history(r.Context(), device, conv)
 	if err != nil {
 		writeS40(w, 500, []kv{{"status", "server_error"}}, "")
@@ -692,6 +716,9 @@ func (s *server) historyHandler(w http.ResponseWriter, r *http.Request) {
 		mark := ""
 		if images && t.imageID != "" {
 			mark = " i"
+		}
+		if models && t.model != "" {
+			mark += " m=" + t.model
 		}
 		fmt.Fprintf(&b, "%s %d%s\n%s\n", role, len(utf16.Encode([]rune(t.content))), mark, t.content)
 	}

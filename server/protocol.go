@@ -28,6 +28,8 @@ var (
 	keyRE       = regexp.MustCompile(`^[a-z0-9-]{1,32}$`)
 	idRE        = regexp.MustCompile(`^[A-Za-z0-9-]{8,40}$`)
 	convRE      = regexp.MustCompile(`^[0-9a-f]{16}$`)
+	// a provider's model id, as listed in MODELS and sent by the phone
+	modelIDRE = regexp.MustCompile(`^[A-Za-z0-9][A-Za-z0-9._:/-]{0,63}$`)
 )
 
 type s40Msg struct {

@@ -915,15 +915,24 @@ func TestSnippet(t *testing.T) {
 }
 
 type recModel struct {
-	mu   sync.Mutex
-	last replyOpts
+	mu    sync.Mutex
+	last  replyOpts
+	n     int
+	label string
 }
 
 func (m *recModel) reply(ctx context.Context, h []turn, msg string, o replyOpts) (reply, error) {
 	m.mu.Lock()
 	m.last = o
+	m.n++
 	m.mu.Unlock()
-	return mockModel{}.reply(ctx, h, msg, o)
+	return mockModel{label: m.label}.reply(ctx, h, msg, o)
+}
+
+func (m *recModel) calls() int {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	return m.n
 }
 
 func TestChatOptions(t *testing.T) {

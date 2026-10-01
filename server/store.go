@@ -90,7 +90,8 @@ func openStore(path string) (*store, error) {
 
 // migrate adds columns introduced after the first release (0.3.0: web
 // search counts; 0.4.0: pinned conversations; 0.5.0: voice message counts;
-// 0.6.0: photos in messages).
+// 0.6.0: photos in messages; 0.7.0: the model of a conversation, request
+// and reply, "" before).
 // Existing databases keep their data.
 func migrate(db *sql.DB) error {
 	for _, c := range []struct{ table, column, def string }{
@@ -101,6 +102,9 @@ func migrate(db *sql.DB) error {
 		{"usage", "audio_ms", "INTEGER NOT NULL DEFAULT 0"},
 		{"usage", "images", "INTEGER NOT NULL DEFAULT 0"},
 		{"messages", "image_id", "TEXT NOT NULL DEFAULT ''"},
+		{"conversations", "model", "TEXT NOT NULL DEFAULT ''"},
+		{"requests", "model", "TEXT NOT NULL DEFAULT ''"},
+		{"messages", "model", "TEXT NOT NULL DEFAULT ''"},
 	} {
 		var n int
 		if err := db.QueryRow(`SELECT COUNT(*) FROM pragma_table_info(?) WHERE name=?`, c.table, c.column).Scan(&n); err != nil {
@@ -298,12 +302,13 @@ type convInfo struct {
 	messages int
 	title    string
 	pinned   bool
+	model    string // "" for conversations from before 0.7.0
 }
 
 // conversations: the device's pinned conversations, then the newest ones,
 // with a title taken from the first user message.
 func (s *store) conversations(ctx context.Context, device string) ([]convInfo, error) {
-	rows, err := s.db.QueryContext(ctx, `SELECT c.id, c.updated_at, c.pinned,
+	rows, err := s.db.QueryContext(ctx, `SELECT c.id, c.updated_at, c.pinned, c.model,
 		  (SELECT COUNT(*) FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id),
 		  COALESCE((SELECT content FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id
 		    AND m.role='user' ORDER BY seq LIMIT 1), '')
@@ -317,7 +322,7 @@ func (s *store) conversations(ctx context.Context, device string) ([]convInfo, e
 	for rows.Next() {
 		var c convInfo
 		var pinned int
-		if err := rows.Scan(&c.id, &c.updated, &pinned, &c.messages, &c.title); err != nil {
+		if err := rows.Scan(&c.id, &c.updated, &pinned, &c.model, &c.messages, &c.title); err != nil {
 			return nil, err
 		}
 		c.pinned = pinned == 1
@@ -338,7 +343,7 @@ func (s *store) history(ctx context.Context, device, conv string) (msgs []turn, 
 	if s.db.QueryRowContext(ctx, `SELECT 1 FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&x) != nil {
 		return nil, false, false, nil
 	}
-	rows, err := s.db.QueryContext(ctx, `SELECT role, content, image_id FROM messages
+	rows, err := s.db.QueryContext(ctx, `SELECT role, content, image_id, model FROM messages
 		WHERE device_id=? AND conversation_id=? ORDER BY seq DESC`, device, conv)
 	if err != nil {
 		return nil, false, false, err
@@ -348,7 +353,7 @@ func (s *store) history(ctx context.Context, device, conv string) (msgs []turn, 
 	size := 0
 	for rows.Next() {
 		var t turn
-		if err := rows.Scan(&t.role, &t.content, &t.imageID); err != nil {
+		if err := rows.Scan(&t.role, &t.content, &t.imageID, &t.model); err != nil {
 			return nil, false, false, err
 		}
 		t.content, _ = limitChars(t.content, historyMsgChars)

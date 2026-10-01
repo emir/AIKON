@@ -222,7 +222,7 @@ func TestParseModels(t *testing.T) {
 		}
 	}
 	for _, bad := range []string{"", ",", "claude-opus-5", "google:gemini", "openai:", "openai:a b",
-		"openai:x=" + strings.Repeat("L", maxLabel+1), "openai:x,xai:x"} {
+		"openai:x=" + strings.Repeat("L", maxLabel+1), "openai:x,xai:x", "openai:x=Grök", "openai:x=a\tb"} {
 		if _, err := parseModels(bad); err == nil {
 			t.Fatalf("accepted %q", bad)
 		}

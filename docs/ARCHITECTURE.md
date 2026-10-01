@@ -136,10 +136,11 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /echo` | – | ≤ 512 bytes strict UTF-8, echoed; `probe: match` for the Turkish test string |
 | `POST /v1/pair/start` | – | → `pair` (128-bit secret), `code` (6 digits, shown on the phone), `expires` |
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
-| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `image: <id>` (a photo from `/v1/image`; 0.6.0), optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), text = message |
-| `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls Claude) |
-| `POST /v1/conversations` | Bearer token | pinned, then newest conversations (20 in all), one line each: `id TAB updated-ms TAB messages TAB title`; with `pins: 1` (0.7+ phones) each line starts with `pinned TAB` (0/1) |
-| `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out; with `images: 1` (0.9+ phones) a user message sent with a photo is `u N i` |
+| `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `image: <id>` (a photo from `/v1/image`; 0.6.0), optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), optional `model: <id>` (from `/v1/models`; this and the following messages of the conversation go to that model; server 0.7.0), text = message |
+| `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls a model) |
+| `POST /v1/models` | Bearer token | the models the phone may choose, default first, one line each: `id TAB name TAB search (0/1) TAB photos (0/1)`; field `default: <id>`; never calls a model (server 0.7.0) |
+| `POST /v1/conversations` | Bearer token | pinned, then newest conversations (20 in all), one line each: `id TAB updated-ms TAB messages TAB title`; with `pins: 1` (0.7+ phones) each line starts with `pinned TAB` (0/1); with `models: 1` the conversation's model id comes before the title (`... messages TAB model TAB title`, empty for conversations from before server 0.7.0) |
+| `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out; with `images: 1` (0.9+ phones) a user message sent with a photo is `u N i`; with `models: 1` a reply is `a N m=<model id>` (server 0.7.0; marks are space-separated, unknown ones are ignored) |
 | `POST /v1/image` | Bearer token | body = a JPEG or PNG (≤ 1 MiB) → `ok` + `image` (32 hex), `width`, `height`, `bytes`; `bad_image`, `too_large`, `limit`; never calls Claude (0.6.0) |
 | `POST /v1/delete` | Bearer token | `conversation: <id>` |
 | `POST /v1/pin` | Bearer token | `conversation: <id>`, `pinned: 1` or `0` → `ok` / `conversation_not_found` / `pin_limit` (+ `max`) (0.4.0) |
@@ -148,9 +149,35 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 
 Chat statuses: `ok` (fields `conversation`, `truncated`, `refused`, `mock`,
 `replayed`, `remaining`, and since 0.3.0 `more` + `next` while parts of a
-long reply are left, `searched` = number of web searches), `pending`, `busy`, `limit`, `conversation_full`,
-`conversation_not_found`, `image_not_found`, `request_mismatch`, `rate_limited`, `overloaded`,
+long reply are left, `searched` = number of web searches, and since server
+0.7.0 `model` + `model-name` = the model that answered), `pending`, `busy`, `limit`, `conversation_full`,
+`conversation_not_found`, `image_not_found`, `model_unavailable` (the named model is not offered),
+`request_mismatch`, `rate_limited`, `overloaded`,
 `billing`, `upstream_error`, `config_error`, `uncertain`, plus input errors.
+
+### Models (server 0.7.0)
+
+`MODELS=provider:model-id[=Name],...` lists the models the server offers;
+the first is the default. Providers: `anthropic` (Claude, official SDK),
+`openai` and `xai` (Grok), the last two through their Responses APIs
+(`POST /v1/responses`, `store: false`, photos as `input_image` data URIs,
+the `web_search` tool, `url_citation` sources). Each provider needs its
+own key file (`anthropic_api_key`, `openai_api_key`, `xai_api_key`); the
+server does not start with a model whose key is missing. An empty
+`MODELS` keeps the single `CLAUDE_MODEL` of earlier versions. Names are
+ASCII, at most 20 characters; the system prompt introduces the model by
+its name.
+
+A conversation has a model: a new one starts with the phone's `model:`
+or the default; a message with another `model:` switches the
+conversation from that message on (the history is plain text, so any
+model can continue it). Without `model:` the conversation's own model
+answers, or the default if it was removed from `MODELS`. Each stored
+reply records its model. The request fingerprint covers `model:` when it
+is sent, so the same `request` id with another model is
+`request_mismatch`. Daily limits (requests, output tokens, searches) are
+shared by all models. Web search is offered only by models whose
+provider has it, and only while `WEB_SEARCH=1`.
 
 ### Long replies in parts (0.3.0)
 
@@ -236,14 +263,16 @@ Statuses: `ok`, `pending`, `busy`, `limit`, `request_mismatch`,
 - The phone creates a `request` id per message and keeps it until a
   definite answer; "Retry" re-sends the **same** id.
 - The server records the id as `pending` and counts it **before** calling
-  Claude; a repeated id is answered from the record (`replayed: 1`) and
+  the model; a repeated id is answered from the record (`replayed: 1`) and
   never triggers a second call.
-- The SDK runs with `maxRetries = 0` and a 60 s timeout. Timeouts and lost
+- Every provider runs without retries (the Claude SDK with
+  `maxRetries = 0`, OpenAI/xAI with one plain HTTP request) and a 60 s
+  timeout. Timeouts and lost
   connections become `uncertain` and are never retried automatically; the
   phone keeps the draft, and sending it again is a new (paid) request by
   the user's choice. A request still `pending` after a restart becomes
   `uncertain`.
-- The Messages API has no idempotency key, so there is no exactly-once
+- None of the APIs used has an idempotency key, so there is no exactly-once
   guarantee.
 - Voice messages follow the same rules with their own records: the phone
   keeps the clip and its `request` id while the screen is open, "Retry"

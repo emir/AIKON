@@ -10,7 +10,9 @@ package main
 //   - uncertain upstream results are recorded and never retried
 //   - web search is offered only while the device's daily search budget lasts
 //   - long replies are stored whole and sent in parts (/v1/more reads the
-//     stored reply, it never calls Claude)
+//     stored reply, it never calls the model)
+//   - each conversation has a model; the phone may name another one with
+//     any message, which then answers this and the following messages
 
 import (
 	"context"
@@ -48,12 +50,14 @@ type chatResult struct {
 	searches     int64
 	more         bool
 	next         int
+	model, label string // the model that answered (ok only)
 }
 
 var statusHTTP = map[string]int{
 	"ok": 200, "pending": 202, "busy": 409, "limit": 429, "conversation_full": 409,
 	"conversation_not_found": 404, "request_mismatch": 409, "rate_limited": 503, "overloaded": 503,
 	"upstream_error": 502, "config_error": 500, "billing": 402, "uncertain": 504, "image_not_found": 404,
+	"model_unavailable": 404,
 }
 
 type chatService struct {
@@ -69,6 +73,14 @@ type chatService struct {
 func (c *chatService) lock(device string) *sync.Mutex {
 	m, _ := c.deviceLocks.LoadOrStore(device, &sync.Mutex{})
 	return m.(*sync.Mutex)
+}
+
+// labelOf: the label of a model id, the id itself if it is no longer offered.
+func (c *chatService) labelOf(id string) string {
+	if e, ok := c.models.get(id); ok {
+		return e.label
+	}
+	return id
 }
 
 func result(status, request string) chatResult {
@@ -123,6 +135,10 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	if o.imageID != "" {
 		sha = sha256Hex(message + "\x00image:" + o.imageID) // same id with another photo is a mismatch
 	}
+	if o.model != "" {
+		// same id with another model is a mismatch (older records have no model part)
+		sha = sha256Hex(sha + "\x00model:" + o.model)
+	}
 
 	// 1. repeated request_id: report the record, never call again
 	var prevConv, prevSha, prevState string
@@ -130,9 +146,10 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	var prevReply, prevErr sql.NullString
 	var prevTrunc, prevRef, prevMock int
 	var prevSearches int64
-	err := db.QueryRowContext(ctx, `SELECT conversation_id, message_sha, state, created_at, reply, error, truncated, refused, mock, searches
+	var prevModel string
+	err := db.QueryRowContext(ctx, `SELECT conversation_id, message_sha, state, created_at, reply, error, truncated, refused, mock, searches, model
 		FROM requests WHERE device_id=? AND request_id=?`, device, requestID).
-		Scan(&prevConv, &prevSha, &prevState, &prevCreated, &prevReply, &prevErr, &prevTrunc, &prevRef, &prevMock, &prevSearches)
+		Scan(&prevConv, &prevSha, &prevState, &prevCreated, &prevReply, &prevErr, &prevTrunc, &prevRef, &prevMock, &prevSearches, &prevModel)
 	if err == nil {
 		defer mu.Unlock()
 		if prevSha != sha {
@@ -154,6 +171,9 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 			r.conversation, r.replayed, r.searches = prevConv, true, prevSearches
 			r.firstPart(prevReply.String, prevTrunc == 1)
 			r.refused, r.mock = prevRef == 1, prevMock == 1
+			if prevModel != "" {
+				r.model, r.label = prevModel, c.labelOf(prevModel)
+			}
 			r.remaining, r.hasRemaining = c.remainingToday(ctx, device), true
 			return r, nil
 		case "uncertain":
@@ -187,7 +207,20 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		return r, nil
 	}
 
-	// 4. the photo: not used yet, or already part of this conversation
+	// 4. the phone's choice of model must be offered
+	var chosen *modelEntry
+	if o.model != "" {
+		e, ok := c.models.get(o.model)
+		if !ok {
+			mu.Unlock()
+			r := result("model_unavailable", requestID)
+			r.conversation = conv
+			return r, nil
+		}
+		chosen = e
+	}
+
+	// 5. the photo: not used yet, or already part of this conversation
 	if o.imageID != "" {
 		data, found, err := c.st.imageFor(ctx, device, o.imageID, conv)
 		if err != nil {
@@ -203,12 +236,21 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		o.image = data
 	}
 
-	// 5. conversation
+	// 6. conversation, and its model: the phone's choice, else the
+	// conversation's own, else (gone from MODELS, or older than 0.7.0) the default
+	entry := chosen
 	if conv != "" {
-		var x int
-		if db.QueryRowContext(ctx, `SELECT 1 FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&x) != nil {
+		var convModel string
+		if db.QueryRowContext(ctx, `SELECT model FROM conversations WHERE device_id=? AND id=?`, device, conv).Scan(&convModel) != nil {
 			mu.Unlock()
 			return result("conversation_not_found", requestID), nil
+		}
+		if entry == nil {
+			if e, ok := c.models.get(convModel); ok {
+				entry = e
+			} else {
+				entry = c.models.def()
+			}
 		}
 		var n int
 		db.QueryRowContext(ctx, `SELECT COUNT(*) FROM messages WHERE device_id=? AND conversation_id=?`, device, conv).Scan(&n)
@@ -219,30 +261,33 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 			return r, nil
 		}
 	} else {
+		if entry == nil {
+			entry = c.models.def()
+		}
 		conv = randomHex(8)
-		if _, err := db.ExecContext(ctx, `INSERT INTO conversations (id, device_id, created_at, updated_at) VALUES (?, ?, ?, ?)`,
-			conv, device, now, now); err != nil {
+		if _, err := db.ExecContext(ctx, `INSERT INTO conversations (id, device_id, created_at, updated_at, model) VALUES (?, ?, ?, ?, ?)`,
+			conv, device, now, now, entry.id); err != nil {
 			mu.Unlock()
 			return chatResult{}, err
 		}
 		c.st.trimConversations(ctx, device)
 	}
 	opts := o
-	opts.search = o.search && c.searchesLeft(ctx, device) > 0
+	opts.search = o.search && entry.search && c.searchesLeft(ctx, device) > 0
 	history, err := c.context(ctx, device, conv, o.imageID != "")
 	if err != nil {
 		mu.Unlock()
 		return chatResult{}, err
 	}
 
-	// 6. record + count BEFORE the paid call
+	// 7. record + count BEFORE the paid call
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		mu.Unlock()
 		return chatResult{}, err
 	}
-	_, e1 := tx.ExecContext(ctx, `INSERT INTO requests (device_id, request_id, conversation_id, message_sha, state, created_at)
-		VALUES (?, ?, ?, ?, 'pending', ?)`, device, requestID, conv, sha, now)
+	_, e1 := tx.ExecContext(ctx, `INSERT INTO requests (device_id, request_id, conversation_id, message_sha, state, created_at, model)
+		VALUES (?, ?, ?, ?, 'pending', ?, ?)`, device, requestID, conv, sha, now, entry.id)
 	_, e2 := tx.ExecContext(ctx, `INSERT INTO usage (device_id, day, requests) VALUES (?, ?, 1)
 		ON CONFLICT(device_id, day) DO UPDATE SET requests = requests + 1`, device, utcDay(now))
 	if e1 != nil || e2 != nil {
@@ -256,11 +301,11 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	mu.Unlock()
 
-	// 7. the call (no lock held; the pending row keeps other requests out)
+	// 8. the call (no lock held; the pending row keeps other requests out)
 	// a phone disconnect must not turn a paid call into "unknown": neither the
 	// call nor recording its result below may be cancelled by the request
 	ctx = context.WithoutCancel(ctx)
-	rep, callErr := c.models.def().m.reply(ctx, history, message, opts)
+	rep, callErr := entry.m.reply(ctx, history, message, opts)
 
 	mu.Lock()
 	defer mu.Unlock()
@@ -282,7 +327,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		return r, nil
 	}
 
-	// 8. store the completed exchange
+	// 9. store the completed exchange; the conversation now continues with this model
 	text, cut := limitChars(sanitizeReply(rep.text), maxReplyChars)
 	truncated := cut || rep.cutOff
 	if rep.refused {
@@ -307,10 +352,10 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		if o.imageID != "" {
 			tx.ExecContext(ctx, `UPDATE images SET conversation_id=? WHERE device_id=? AND id=?`, conv, device, o.imageID)
 		}
-		tx.ExecContext(ctx, `INSERT INTO messages (device_id, conversation_id, seq, role, content, created_at)
-			VALUES (?, ?, ?, 'assistant', ?, ?)`, device, conv, seq+2, text, done)
+		tx.ExecContext(ctx, `INSERT INTO messages (device_id, conversation_id, seq, role, content, created_at, model)
+			VALUES (?, ?, ?, 'assistant', ?, ?, ?)`, device, conv, seq+2, text, done, entry.id)
 	}
-	tx.ExecContext(ctx, `UPDATE conversations SET updated_at=? WHERE device_id=? AND id=?`, done, device, conv)
+	tx.ExecContext(ctx, `UPDATE conversations SET updated_at=?, model=? WHERE device_id=? AND id=?`, done, entry.id, device, conv)
 	tx.ExecContext(ctx, `UPDATE requests SET state='done', reply=?, truncated=?, refused=?, mock=?,
 		input_tokens=?, output_tokens=?, searches=?, finished_at=? WHERE device_id=? AND request_id=?`,
 		text, b2i(truncated), b2i(rep.refused), b2i(rep.mock), rep.inputTokens, rep.outputTokens, rep.searches, done, device, requestID)
@@ -321,6 +366,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	r := result("ok", requestID)
 	r.conversation, r.refused, r.mock, r.searches = conv, rep.refused, rep.mock, rep.searches
+	r.model, r.label = entry.id, entry.label
 	r.firstPart(text, truncated)
 	r.remaining, r.hasRemaining = c.remainingToday(ctx, device), true
 	return r, nil
@@ -352,7 +398,7 @@ func (c *chatService) context(ctx context.Context, device, conv string, withImag
 		return nil, err
 	}
 	rows.Close()
-	// the newest photos go to Claude again (the current message's own photo counts too)
+	// the newest photos go to the model again (the current message's own photo counts too)
 	shown := 0
 	if withImage {
 		shown = 1

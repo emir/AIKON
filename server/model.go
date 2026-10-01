@@ -62,6 +62,7 @@ type turn struct {
 	content string
 	imageID string // a photo sent with this user message ("" if none)
 	image   []byte // its JPEG, when it is sent to Claude again (newest contextImages)
+	model   string // the model that wrote an assistant message (history only)
 }
 
 type reply struct {
@@ -83,6 +84,7 @@ type replyOpts struct {
 	instructions string    // the user's own notes for Claude (Settings on the phone)
 	imageID      string    // a photo with this message (/v1/image), "" if none
 	image        []byte    // its JPEG (set by the chat service)
+	model        string    // the phone's choice of model, "" = the conversation's (chat service only)
 }
 
 // upstreamError: kind "definite" or "uncertain"; code is the status sent to the phone.
@@ -243,14 +245,15 @@ func parseModels(s string) ([]modelSpec, error) {
 		if _, known := defaultLabels[prov]; !ok || !known || id == "" {
 			return nil, fmt.Errorf("MODELS: %q is not provider:model-id[=Label] with provider anthropic, openai or xai", item)
 		}
-		if strings.ContainsAny(id, " \t\r\n") || len(id) > 64 {
+		if !modelIDRE.MatchString(id) {
 			return nil, fmt.Errorf("MODELS: bad model id %q", id)
 		}
 		if label == "" {
 			label = defaultLabels[prov]
 		}
-		if len([]rune(label)) > maxLabel || strings.ContainsAny(label, "\t\r\n") {
-			return nil, fmt.Errorf("MODELS: label %q (at most %d characters, one line)", label, maxLabel)
+		if len(label) > maxLabel || strings.IndexFunc(label, func(r rune) bool { return r < 0x20 || r > 0x7e }) >= 0 {
+			// shown on the phone and sent in an S40 field: plain ASCII
+			return nil, fmt.Errorf("MODELS: label %q (at most %d ASCII characters)", label, maxLabel)
 		}
 		if seen[id] {
 			return nil, fmt.Errorf("MODELS: %q twice", id)
