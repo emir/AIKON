@@ -3,6 +3,7 @@ package main
 import (
 	"context"
 	"database/sql"
+	"net/http"
 	"sync"
 	"testing"
 )
@@ -150,5 +151,53 @@ func TestMeterTranscribeHooks(t *testing.T) {
 	}
 	if _, reserved, settled := fm.counts(); reserved != 2 || settled != 2 {
 		t.Fatalf("no speech: reserved %d settled %d", reserved, settled)
+	}
+}
+
+// fieldMeter adds a field to chat and voice message answers.
+type fieldMeter struct{ fakeMeter }
+
+func (f *fieldMeter) fields(ctx context.Context, device string) []kv { return []kv{{"balance", 42}} }
+
+func TestExtensions(t *testing.T) {
+	saved := [3]int{len(extraRoutes), len(extraAdminRoutes), len(extraHealth)}
+	t.Cleanup(func() {
+		extraRoutes, extraAdminRoutes, extraHealth = extraRoutes[:saved[0]], extraAdminRoutes[:saved[1]], extraHealth[:saved[2]]
+		delete(extraPaths, "/v1/ext")
+	})
+	extraRoutes = append(extraRoutes, func(s *server, mux *http.ServeMux) {
+		mux.HandleFunc("POST /v1/ext", func(w http.ResponseWriter, r *http.Request) {
+			writeS40(w, 200, []kv{{"status", "ok"}}, "ext")
+		})
+	})
+	extraAdminRoutes = append(extraAdminRoutes, func(s *server, mux *http.ServeMux) {
+		mux.HandleFunc("GET /admin/ext", s.adminAuth(func(w http.ResponseWriter, r *http.Request) {
+			writeJSON(w, 200, map[string]any{"ext": true})
+		}))
+	})
+	extraHealth = append(extraHealth, func(s *server) []kv { return []kv{{"ext", 1}} })
+	extraPaths["/v1/ext"] = true
+
+	e := newEnv(t, 10)
+	if r := e.do("POST", "/v1/ext", "", ""); r.code != 200 || r.msg.text != "ext" {
+		t.Fatalf("route: %d %q", r.code, r.raw)
+	}
+	if r := e.do("GET", "/v1/ext", "", ""); r.code != 405 {
+		t.Fatalf("known path, wrong method: %d", r.code)
+	}
+	if r := e.do("GET", "/health", "", ""); r.msg.get("ext") != "1" {
+		t.Fatalf("health: %q", r.raw)
+	}
+	if code, _ := e.adminCall("GET", "/admin/ext", testAdmin, nil); code != 200 {
+		t.Fatalf("admin route: %d", code)
+	}
+	if code, _ := e.adminCall("GET", "/admin/ext", "wrong", nil); code != 401 {
+		t.Fatalf("admin auth: %d", code)
+	}
+
+	e.srv.chat.meter = &fieldMeter{}
+	tok, _ := e.pair("p")
+	if r := e.chat(tok, rid(), "", "x"); r.msg.get("balance") != "42" || r.msg.get("remaining") != "7" {
+		t.Fatalf("meter fields: %q", r.raw)
 	}
 }

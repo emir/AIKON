@@ -135,6 +135,9 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   `chat.go` chat rules; `meter.go` admits, reserves and settles each paid
   call (default: the per-device daily limits; a reservation counts only while
   the call is pending, so failed and uncertain calls are never settled);
+  `extend.go` extension points (extra phone/admin routes, `/health`
+  fields, fields a meter adds to answers) for builds that add files of their
+  own; the default server registers none;
   `store.go` SQLite; `model.go` shared model types, system prompt, mock and the `MODELS` catalog; `anthropic.go` Claude (official SDK); `responses.go` OpenAI and xAI (Responses API, plain HTTP);
   `transcribe.go` voice messages (audio checks, ffmpeg, speech-to-text);
   `sanitize.go` plain-text replies for a 240x320 screen.

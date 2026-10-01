@@ -84,7 +84,11 @@ func (c *chatService) labelOf(id string) string {
 }
 
 func result(status, request string) chatResult {
-	return chatResult{http: statusHTTP[status], status: status, request: request}
+	code := statusHTTP[status]
+	if code == 0 {
+		code = 500 // a status nobody registered
+	}
+	return chatResult{http: code, status: status, request: request}
 }
 
 func (c *chatService) remaining(ctx context.Context, device string) int {

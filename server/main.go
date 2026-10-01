@@ -379,7 +379,7 @@ func knownPath(p string) bool {
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
 		return true
 	}
-	return false
+	return extraPaths[p]
 }
 
 func (s *server) publicMux() http.Handler {
@@ -398,6 +398,9 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /v1/image", s.imageHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
+	for _, add := range extraRoutes {
+		add(s, mux)
+	}
 	mux.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
 		if knownPath(r.URL.Path) {
 			writeS40(w, 405, []kv{{"status", "method_not_allowed"}}, "")
@@ -419,6 +422,9 @@ func tlsFields(r *http.Request) []kv {
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	f := []kv{{"status", "ok"}, {"service", service}, {"version", version}, {"environment", s.cfg.environment},
 		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"transcribe", s.transcriber != nil}, {"images", true}, {"time", time.Now().UTC().Format(time.RFC3339)}}
+	for _, add := range extraHealth {
+		f = append(f, add(s)...)
+	}
 	writeS40(w, 200, append(f, tlsFields(r)...), "AIKon server is running.")
 }
 
@@ -555,6 +561,7 @@ func (s *server) chatHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if res.hasRemaining {
 		f = append(f, kv{"remaining", res.remaining})
+		f = addMeterFields(r.Context(), s.chat.meter, device, f)
 	}
 	writeS40(w, res.http, f, res.text)
 }
@@ -859,6 +866,9 @@ func (s *server) adminMux() http.Handler {
 			writeJSON(w, 200, map[string]any{"revoked": body.DeviceID})
 		}
 	}))
+	for _, add := range extraAdminRoutes {
+		add(s, mux)
+	}
 	return logged(mux)
 }
 

@@ -589,6 +589,7 @@ func (s *server) transcribeHandler(w http.ResponseWriter, r *http.Request) {
 	}
 	if res.has {
 		f = append(f, kv{"remaining", res.remaining})
+		f = addMeterFields(r.Context(), s.transcriber.meter, device, f)
 	}
 	code := transcribeHTTP[res.status]
 	if code == 0 {
