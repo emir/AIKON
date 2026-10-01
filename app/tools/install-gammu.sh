@@ -1,5 +1,5 @@
 #!/bin/sh
-# Install AIKON on a Nokia Series 40 phone with Gammu over USB
+# Install AIKon on a Nokia Series 40 phone with Gammu over USB
 # ("gammu nokiaaddfile Application"). This WRITES two files to the phone
 # (d:/predefjava/predefcollections/AIKON.jad and .jar on S40 3rd Ed).
 #
@@ -9,7 +9,7 @@
 #
 # Env: GAMMU (default: gammu in PATH), GAMMURC (optional config file),
 #      GAMMU_LIB (optional: directory with a locally built libGammu).
-# Never passes -overwrite/-overwriteall. Without --replace an older AIKON
+# Never passes -overwrite/-overwriteall. Without --replace an older AIKon
 # must be removed with the phone's own menu first (that also deletes its
 # settings and pairing). With --replace exactly the two files
 # d:/predefjava/predefcollections/<FILE_BASE>.jad and .jar are deleted
@@ -19,7 +19,7 @@
 # <FILE_BASE>_m_<store>.rms, so replacing the JAD/JAR keeps the settings.
 # --replace also removes the app under its old name (ClaudeS40.jad/.jar,
 # "Claude S40" before 0.11.0) and its ClaudeS40_m_cs40*.rms stores (they
-# hold its access token); its settings do not carry over to AIKON.
+# hold its access token); its settings do not carry over to AIKon.
 # Other ways to install: Bluetooth "send file" to the phone, Nokia PC Suite,
 # or serving the JAD/JAR over HTTP to the phone browser (see docs/SETUP.md).
 set -eu

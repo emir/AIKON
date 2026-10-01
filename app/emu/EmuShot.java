@@ -17,7 +17,7 @@ import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 
 /**
- * Host-only emulator run for AIKON (FreeJ2ME, headless). Not part of
+ * Host-only emulator run for AIKon (FreeJ2ME, headless). Not part of
  * the MIDlet. No network: the app runs in its own "Test modu" (local fake
  * replies, clearly labelled on screen).
  *
@@ -207,21 +207,21 @@ public class EmuShot {
         // list it would return is put in by reflection (harness only)
         Class models = Class.forName("io.github.emir.claudes40.Models", true, midlet.getClass().getClassLoader());
         setStatic(models, "ids", new String[] { "claude-opus-5-5", "claude-sonnet-5-5", "gpt-6.1-sol", "gpt-6-luna",
-            "grok-y" });
+            "gemini-3.8-flash", "grok-y" });
         setStatic(models, "names", new String[] { "Claude Opus 5.5", "Claude Sonnet 5.5", "GPT-6.1 Sol", "GPT-6 Luna",
-            "Grok" });
-        setStatic(models, "providers", new String[] { "Claude", "Claude", "OpenAI", "OpenAI", "Grok" });
+            "Gemini 3.8 Flash", "Grok" });
+        setStatic(models, "providers", new String[] { "Claude", "Claude", "OpenAI", "OpenAI", "Gemini", "Grok" });
         setStatic(models, "defaultId", "claude-opus-5-5");
         setStatic(models, "loaded", Boolean.TRUE);
         Method newChat = midlet.getClass().getDeclaredMethod("startNewChat", Displayable.class);
         newChat.setAccessible(true);
         newChat.invoke(midlet, current());
         settle();
-        save("models_providers");             // step 1: Claude (default), OpenAI, Grok
+        save("models_providers");             // step 1: Claude (default), OpenAI, Gemini, Grok
         select(1);                            // OpenAI
         save("models_openai");                // step 2: GPT-6.1 Sol, GPT-6 Luna
         command(t("Back", "Geri"));           // back to the providers
-        select(2);                            // Grok
+        select(3);                            // Grok
         select(0);                            // its only model
         save("chat_new_grok");
         command(t("Write", "Yaz"));

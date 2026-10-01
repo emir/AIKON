@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Draws the AIKON mark (same geometry as Logo.java: a white "AK" monogram on a
+Draws the AIKon mark (same geometry as Logo.java: a white "AK" monogram on a
 blue rounded square) with Pillow.
 
   make_art.py icon OUT.png          46x48 MIDlet icon (transparent), packaged in the JAR

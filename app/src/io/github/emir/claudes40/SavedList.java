@@ -64,7 +64,7 @@ final class SavedList implements CommandListener, Runnable {
                 return;
             }
             String t = e.time > 0 ? Text.local(e.time, true) : Text.local(System.currentTimeMillis(), true);
-            jobText = "AIKON · " + t + "\n\n" + Cal.shown(e.text) + "\n";
+            jobText = "AIKon · " + t + "\n\n" + Cal.shown(e.text) + "\n";
             jobFile = Text.stamp(e.time > 0 ? e.time : System.currentTimeMillis()) + "-" + Text.slug(ClaudeS40MIDlet.quote(e.text), 24);
             jobBack = back;
         }

@@ -5,7 +5,8 @@ import javax.microedition.lcdui.Font;
 /**
  * Colours and fonts for the custom screens. Two palettes (light "Gündüz",
  * dark "Gece") and three text sizes, chosen in Ayarlar. Warm paper
- * background and a terracotta accent, the colour of the AIKON mark.
+ * background and a blue accent, the colour of the AIKon mark (#0740DE;
+ * lighter on the dark palette).
  */
 final class Theme {
 
@@ -39,30 +40,30 @@ final class Theme {
             border = 0x34343C;
             ink = 0xECE8E1;
             muted = 0x9A958C;
-            accent = 0xE08A6B;
-            accentInk = 0x1A1210;
+            accent = 0x6E95FF;
+            accentInk = 0x0B1430;
             bar = 0x0B0B0D;
             barInk = 0xF4EFE6;
             error = 0xFF8A7A;
             errorBg = 0x3A2323;
             testBar = 0x8A4A00;
-            selection = 0x33272A;
-            spark = 0xE08A6B;
+            selection = 0x1F2740;
+            spark = 0x6E95FF;
         } else {
             bg = 0xFAF6EF;
             surface = 0xFFFFFF;
             border = 0xE4DCCD;
             ink = 0x26252C;
             muted = 0x7C766B;
-            accent = 0xC96442;
+            accent = 0x0740DE;
             accentInk = 0xFFFFFF;
             bar = 0x26252C;
             barInk = 0xFFFFFF;
             error = 0xB3261E;
             errorBg = 0xFBE4E1;
             testBar = 0xB35C00;
-            selection = 0xF6E3D9;
-            spark = 0xD97757;
+            selection = 0xE3EAFD;
+            spark = 0x0740DE;
         }
         int size = s.fontSize == 0 ? Font.SIZE_SMALL : s.fontSize == 2 ? Font.SIZE_LARGE : Font.SIZE_MEDIUM;
         font = Font.getFont(Font.FACE_PROPORTIONAL, Font.STYLE_PLAIN, size);

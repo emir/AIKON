@@ -612,7 +612,7 @@ func TestClaudeRequestShape(t *testing.T) {
 		t.Fatal(roles)
 	}
 	raw, _ := json.Marshal(b)
-	if !strings.Contains(string(raw), "AIKON") || strings.Contains(string(raw), "sk-ant") {
+	if !strings.Contains(string(raw), "AIKon") || strings.Contains(string(raw), "sk-ant") {
 		t.Fatal("system prompt / key in body")
 	}
 }

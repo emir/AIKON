@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Share material for AIKON, generated from the real build outputs.
+Share material for AIKon, generated from the real build outputs.
 
   promo.py SHOTS_DIR OUT_DIR
 
@@ -9,7 +9,7 @@ Reads the FreeJ2ME screenshots (make emu) and writes:
   cover.png          1280x640 README cover / social preview: drawn, no screenshots
   poster.png         1080x1350 post: logo, title, three phone screens
   square.png         1080x1080 variant
-  logo.png           1024x1024 spark on transparent background
+  logo.png           1024x1024 mark on transparent background
   jingle.wav         start-up melody (same notes as Sound.JINGLE)
   chime.wav          reply sound (same notes as Sound.CHIME)
 
@@ -30,7 +30,8 @@ import make_art  # noqa: E402
 BG = (250, 246, 239)
 INK = (38, 37, 44)
 MUTED = (124, 118, 107)
-ACCENT = (201, 100, 66)
+ACCENT = (7, 64, 222)
+WORDMARK = os.path.join(os.path.dirname(os.path.abspath(__file__)), "..", "..", "docs", "images", "wordmark.png")
 FONT_DIR = "/System/Library/Fonts"
 
 
@@ -123,12 +124,12 @@ def drawn_phone(d, x, y, w, S):
     R(ub, 7, ACCENT)
     for i, frac in enumerate((0.9, 0.6)):
         ly = ub[1] + 9 + i * 10
-        R([ub[0] + 7, ly, ub[0] + 7 + (ub[2] - ub[0] - 14) * frac, ly + 4], 2, (255, 236, 226))
+        R([ub[0] + 7, ly, ub[0] + 7 + (ub[2] - ub[0] - 14) * frac, ly + 4], 2, (226, 234, 255))
     cb = [sx + 7, ub[3] + 8, sx + sw * 0.84, ub[3] + 8 + sh * 0.40]
     R([cb[0] - 1, cb[1] - 1, cb[2] + 1, cb[3] + 1], 7, (228, 220, 205))
     R(cb, 7, (255, 255, 255))
-    E([cb[0] + 7, cb[1] + 6, cb[0] + 14, cb[1] + 13], (217, 119, 87))
-    R([cb[0] + 18, cb[1] + 8, cb[0] + 50, cb[1] + 11], 2, (230, 170, 150))
+    E([cb[0] + 7, cb[1] + 6, cb[0] + 14, cb[1] + 13], (7, 64, 222))
+    R([cb[0] + 18, cb[1] + 8, cb[0] + 50, cb[1] + 11], 2, (150, 175, 240))
     rows = [(0, 0.92), (0, 0.8), (0, 0.55), (1, 0.7), (1, 0.62), (1, 0.5)]
     for i, (dot, frac) in enumerate(rows):
         ly = cb[1] + 19 + i * 11 + (4 if dot else 0)
@@ -166,12 +167,18 @@ def cover(out, W=1280, H=640, S=3):
     """README cover: logo, title, what it is, feature chips and a drawn phone. No screenshots."""
     img = Image.new("RGB", (W * S, H * S), BG)
     d = ImageDraw.Draw(img)
-    d.ellipse([(W - 520) * S, (H / 2 - 300) * S, (W - 20) * S, (H / 2 + 300) * S], fill=(246, 227, 217))
+    d.ellipse([(W - 520) * S, (H / 2 - 300) * S, (W - 20) * S, (H / 2 + 300) * S], fill=(227, 234, 253))
     drawn_phone(d, W - 400, 40, 250, S)
     x = 84
-    logo = make_art.render(96 * S, 96 * S, 0.46)
-    img.paste(logo, (x * S, 84 * S), logo)
-    d.text((x * S, 196 * S), "AIKON", font=font(92 * S, True), fill=INK)
+    if os.path.exists(WORDMARK):
+        # the designer's wordmark (mark + "AIKon"), scaled to 560 px wide
+        wm = Image.open(WORDMARK).convert("RGBA")
+        wm = wm.resize((560 * S, int(wm.height * 560 * S / wm.width)), Image.LANCZOS)
+        img.paste(wm, ((x - 10) * S, (300 * S - wm.height) // 1 - 10 * S), wm)
+    else:
+        logo = make_art.render(96 * S, 96 * S, 0.46)
+        img.paste(logo, (x * S, 84 * S), logo)
+        d.text((x * S, 196 * S), "AIKon", font=font(92 * S, True), fill=INK)
     d.text((x * S, 318 * S), "Claude, ChatGPT, Gemini, Grok on a 2007 Nokia.", font=font(34 * S), fill=MUTED)
     d.text((x * S, 362 * S), "Nokia S40 & S60 app + a small Go server.", font=font(34 * S), fill=MUTED)
     chips = ["Pick your model", "Web search", "Photos + voice", "Türkçe + English", "TLS 1.0 bridge"]
@@ -181,7 +188,7 @@ def cover(out, W=1280, H=640, S=3):
         cw = d.textlength(c, font=f) / S + 30
         if cx + cw > W - 540:
             cx, cy = x, cy + 50
-        d.rounded_rectangle([cx * S, cy * S, (cx + cw) * S, (cy + 40) * S], radius=20 * S, fill=(246, 227, 217))
+        d.rounded_rectangle([cx * S, cy * S, (cx + cw) * S, (cy + 40) * S], radius=20 * S, fill=(227, 234, 253))
         d.text(((cx + cw / 2) * S, (cy + 20) * S), c, font=f, fill=ACCENT, anchor="mm")
         cx += cw + 12
     d.text((x * S, (H - 44) * S), "Not made or endorsed by Anthropic, OpenAI, Google, xAI or Nokia.",
@@ -195,7 +202,7 @@ def compose(size, shots, out):
     d = ImageDraw.Draw(img)
     logo = make_art.render(140, 140, 0.46)
     img.paste(logo, (W // 2 - 70, 40), logo)
-    d.text((W // 2, 215), "AIKON", font=font(78, True), fill=INK, anchor="mm")
+    d.text((W // 2, 215), "AIKon", font=font(78, True), fill=INK, anchor="mm")
     d.text((W // 2, 280), "Today's AI on a 2007 Nokia 6300", font=font(34), fill=MUTED, anchor="mm")
     phones = [phone(Image.open(p).convert("RGB")) for p in shots]
     chips_h = 150
@@ -224,7 +231,7 @@ def compose(size, shots, out):
     for row, rw in rows:
         cx = (W - rw + 14) / 2
         for c, cw in row:
-            d.rounded_rectangle([cx, cy, cx + cw, cy + 46], radius=23, fill=(246, 227, 217))
+            d.rounded_rectangle([cx, cy, cx + cw, cy + 46], radius=23, fill=(227, 234, 253))
             d.text((cx + cw / 2, cy + 23), c, font=f, fill=ACCENT, anchor="mm")
             cx += cw + 14
         cy += 58

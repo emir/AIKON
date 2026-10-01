@@ -1,4 +1,4 @@
-// Command claude-s40-server is the whole AIKON (formerly Claude S40) backend in one binary:
+// Command claude-s40-server is the whole AIKon (formerly Claude S40) backend in one binary:
 //
 //	Nokia S40 phone --TLS 1.0+, RSA, own CA--> this server --HTTPS--> Claude API
 //
@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.8.1"
+	version      = "0.8.2"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -418,7 +418,7 @@ func tlsFields(r *http.Request) []kv {
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	f := []kv{{"status", "ok"}, {"service", service}, {"version", version}, {"environment", s.cfg.environment},
 		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"transcribe", s.transcriber != nil}, {"images", true}, {"time", time.Now().UTC().Format(time.RFC3339)}}
-	writeS40(w, 200, append(f, tlsFields(r)...), "AIKON server is running.")
+	writeS40(w, 200, append(f, tlsFields(r)...), "AIKon server is running.")
 }
 
 func (s *server) echo(w http.ResponseWriter, r *http.Request) {

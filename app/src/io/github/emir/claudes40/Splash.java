@@ -114,7 +114,7 @@ final class Splash extends Canvas {
         g.setFont(Theme.bold);
         g.setColor(Theme.mix(Theme.bg, Theme.ink, t));
         int ty = cy + size / 2 + size / 5;
-        g.drawString("AIKON", cx, ty, Graphics.TOP | Graphics.HCENTER);
+        g.drawString("AIKon", cx, ty, Graphics.TOP | Graphics.HCENTER);
         g.setFont(Theme.small);
 
         // loading dots and disclaimer

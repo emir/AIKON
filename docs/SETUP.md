@@ -93,7 +93,7 @@ Pick one:
   `app/tools/install-gammu.sh` (dry run), then
   `app/tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone`.
   It never overwrites unless you add `--replace` (deletes only the old
-  AIKON / Claude S40 JAD and JAR first); otherwise delete the older app in the phone menu first.
+  AIKon / Claude S40 JAD and JAR first); otherwise delete the older app in the phone menu first.
 - **Bluetooth**: send `AIKON.jar` to the phone, open it from the inbox.
 - **Nokia PC Suite** (Windows): Install applications.
 - **Browser (OTA)**: serve `AIKON.jad` (`text/vnd.sun.j2me.app-descriptor`)
@@ -109,7 +109,7 @@ The first network access asks for permission; allow it.
   opened from the Messaging inbox with "Messaging feature not supported".
   The app appears under Menu → Installat.
 - **Permissions:** an unsigned app cannot get "Always allowed" network
-  access on S60 3rd Edition. Go to App. mgr. → AIKON → Options →
+  access on S60 3rd Edition. Go to App. mgr. → AIKon → Options →
   Open (or Settings). Set Network access to "Ask first time" (one question
   per start), and Access point to your access point (e.g. WLAN), so it is not
   asked for every request. Leave the app with the Menu key instead of Exit to
@@ -139,7 +139,7 @@ point, not an old WAP profile.
 
 ## 7. Connection test and pairing
 
-On the phone, in AIKON. A fresh install opens a setup wizard
+On the phone, in AIKon. A fresh install opens a setup wizard
 (language, server address, connection test, pairing: "Setup 1/4" to "4/4")
 that walks through exactly these steps; it can be skipped and reopened from
 Settings → Options → Setup wizard.
@@ -221,7 +221,7 @@ server/deploy/admin.sh $SERVER logs 50           # method/path/status/TLS only, 
 server/deploy/push.sh $SERVER --execute          # update after a code change
 ```
 
-Updating the app: delete AIKON in the phone menu (or use `--replace`) and install the new
+Updating the app: delete AIKon in the phone menu (or use `--replace`) and install the new
 build. Since 0.7.2 the app keeps its setup (server address, access code,
 language, notes for Claude) in `ClaudeS40/claude-s40-setup.dat` on the
 memory card (or in the phone's image folder), which survives deleting the
