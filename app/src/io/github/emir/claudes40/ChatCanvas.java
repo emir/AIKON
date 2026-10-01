@@ -87,6 +87,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         String footer;
         boolean truncated;
         boolean more;
+        /** A note with an explanation behind it: selectable, drawn with an "i". */
+        boolean detail;
         /** Top of the text relative to y. */
         int textTop;
         int y;
@@ -526,7 +528,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     /**
-     * 1/3: selects the previous / next message (bubbles only) and scrolls so
+     * 1/3: selects the previous / next message (bubbles, and notes with an
+     * explanation) and scrolls so
      * it is on screen. Without a selection it starts from the view: 3 takes
      * the first message starting in view, 1 the last one starting above it.
      */
@@ -541,7 +544,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         int pick = -1;
         if (cur >= 0) {
             for (int i = cur + (forward ? 1 : -1); i >= 0 && i < blocks.size() && pick < 0; i += forward ? 1 : -1) {
-                if (isBubble(((Block) blocks.elementAt(i)).kind)) {
+                if (selectable((Block) blocks.elementAt(i))) {
                     pick = i;
                 }
             }
@@ -551,7 +554,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         } else {
             for (int i = 0; i < blocks.size(); i++) {
                 Block b = (Block) blocks.elementAt(i);
-                if (!isBubble(b.kind)) {
+                if (!selectable(b)) {
                     continue;
                 }
                 if (forward ? b.y >= scroll - 1 : b.y < scroll) {
@@ -563,7 +566,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             }
             if (pick < 0) {
                 for (int i = 0; i < blocks.size() && pick < 0; i++) {
-                    if (isBubble(((Block) blocks.elementAt(i)).kind)) {
+                    if (selectable((Block) blocks.elementAt(i))) {
                         pick = i;
                     }
                 }
@@ -593,6 +596,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             }
             updateCommands();
             repaint();
+            return;
+        }
+        if (e.kind == ChatSession.KIND_INFO || e.kind == ChatSession.KIND_ERROR) {
+            midlet.showNote(e.text, e.detail.length() > 0 ? e.detail : e.text, this);
             return;
         }
         midlet.showActions(e);
@@ -681,8 +688,11 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             if (bubble) {
                 Text.layout(Cal.shown(e.text), f, maxBubble - 2 * BUBBLE_PAD, b.lines);
             } else {
+                // notes: one short line (small for info), the explanation on request
+                b.detail = e.detail.length() > 0;
+                Font nf = e.kind == ChatSession.KIND_ERROR ? f : sm;
                 Vector plain = new Vector();
-                Text.wrap(e.text, f, w - 4 * PAD, plain);
+                Text.wrap(e.text, nf, w - 4 * PAD - (b.detail ? iconSize(nf) + 4 : 0), plain);
                 for (int k = 0; k < plain.size(); k++) {
                     Text.Line l = new Text.Line();
                     l.s = (String) plain.elementAt(k);
@@ -690,9 +700,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 }
             }
             int widest = 0;
+            Font lf = bubble || e.kind == ChatSession.KIND_ERROR ? f : sm;
             for (int k = 0; k < b.lines.size(); k++) {
                 Text.Line l = (Text.Line) b.lines.elementAt(k);
-                b.textH += Text.lineH(l, f);
+                b.textH += Text.lineH(l, lf);
                 widest = Math.max(widest, l.x + f.stringWidth(l.s));
             }
             if (bubble) {
@@ -708,17 +719,23 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 b.h = b.textTop + b.textH + (b.footer == null ? 0 : sm.getHeight() + 5) + BUBBLE_PAD;
             } else {
                 b.bw = w - 2 * PAD;
-                b.textTop = BUBBLE_PAD;
                 // the newest note of a request that can be retried says how
                 b.footer = i == es.length - 1 && session.canRetry()
                         ? L.s("Orta tuş · Tekrar dene", "Centre key · Retry") : null;
-                b.h = b.textH + 2 * BUBBLE_PAD + (b.footer == null ? 0 : sm.getHeight() + 5);
+                int pad = e.kind == ChatSession.KIND_ERROR ? BUBBLE_PAD : 2;
+                b.textTop = pad;
+                b.h = b.textH + 2 * pad + (b.footer == null ? 0 : sm.getHeight() + 5);
             }
             b.y = y;
             y += b.h + PAD;
             blocks.addElement(b);
         }
         contentH = y;
+    }
+
+    /** Messages, and notes with an explanation behind them. */
+    private static boolean selectable(Block b) {
+        return isBubble(b.kind) || b.detail;
     }
 
     private static boolean isBubble(int kind) {
@@ -1082,8 +1099,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.fillRect(0, 0, w, h);
         g.setClip(0, top, w, vh);
 
-        if (blocks.size() == 0 && !typing) {
-            paintEmpty(g, w, top, vh);
+        if (!typing && onlyInfo()) {
+            // nothing written yet (at most a few one-line notes): the welcome below them
+            int used = blocks.size() == 0 ? 0 : contentH - scroll;
+            paintEmpty(g, w, top + used, vh - used);
         }
         for (int i = 0; i < blocks.size(); i++) {
             Block b = (Block) blocks.elementAt(i);
@@ -1152,12 +1171,21 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 g.setColor(Theme.errorBg);
                 g.fillRoundRect(PAD, y, w - 2 * PAD, b.h, ARC, ARC);
             }
-            g.setFont(f);
-            g.setColor(err ? Theme.error : Theme.muted);
-            int ty = y + BUBBLE_PAD;
+            Font nf = err ? f : Theme.small;
+            g.setFont(nf);
+            int color = err ? Theme.error : Theme.muted;
+            g.setColor(color);
+            int ty = y + b.textTop;
+            int icon = b.detail ? iconSize(nf) + 4 : 0;
             for (int k = 0; k < b.lines.size(); k++) {
-                g.drawString(((Text.Line) b.lines.elementAt(k)).s, w / 2, ty, Graphics.TOP | Graphics.HCENTER);
-                ty += f.getHeight();
+                String s = ((Text.Line) b.lines.elementAt(k)).s;
+                int lx = (w - nf.stringWidth(s) - icon) / 2;
+                g.drawString(s, lx, ty, Graphics.TOP | Graphics.LEFT);
+                if (b.detail && k == b.lines.size() - 1) {
+                    paintInfoIcon(g, lx + nf.stringWidth(s) + 4, ty, nf, color);
+                    g.setFont(nf);
+                }
+                ty += nf.getHeight();
             }
             if (b.footer != null) {
                 int fy = ty + 2;
@@ -1174,7 +1202,23 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         }
     }
 
-    /** A 2-pixel ring around the selected bubble. */
+    /** Side of the "i" mark of a note with an explanation. */
+    private static int iconSize(Font f) {
+        return Math.max(9, f.getHeight() - 4);
+    }
+
+    /** A small circled "i" after a note: there is more to read (select it, centre key). */
+    private static void paintInfoIcon(Graphics g, int x, int y, Font f, int color) {
+        int s = iconSize(f);
+        int top = y + (f.getHeight() - s) / 2;
+        g.setColor(color);
+        g.drawArc(x, top, s - 1, s - 1, 0, 360);
+        int cx = x + s / 2;
+        g.fillRect(cx - 1, top + s / 4 - 1, 2, 2);
+        g.fillRect(cx - 1, top + s / 4 + 2, 2, s / 2 - 1);
+    }
+
+    /** A 2-pixel ring around the selected bubble (or note). */
     private static void paintSelection(Graphics g, Block b, int w, int y) {
         boolean mine = b.kind == ChatSession.KIND_USER;
         int x = mine ? w - PAD - b.bw : PAD;
@@ -1246,14 +1290,23 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         }
     }
 
+    /** No messages or errors yet, only info notes (or nothing). */
+    private boolean onlyInfo() {
+        for (int i = 0; i < blocks.size(); i++) {
+            if (((Block) blocks.elementAt(i)).kind != ChatSession.KIND_INFO) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     private void paintEmpty(Graphics g, int w, int top, int vh) {
         int cx = w / 2;
         Vector title = new Vector();
         Text.wrap(L.s("Merhaba! Ne sormak istersin?", "Hi! What would you like to ask?"), Theme.bold, w - 4 * PAD, title);
         Vector tips = new Vector();
         String ai = session.ai();
-        Text.wrap(L.s("Yazmak için orta tuş veya 5. Yanıtlayan: " + ai + " (Seçenekler > Model). Tüm tuşlar: Seçenekler > Kısayollar.",
-                "Centre key or 5 to write. Answering: " + ai + " (Options > Model). All keys: Options > Shortcuts."),
+        Text.wrap(L.s("Yanıtlayan: " + ai + "\nYazmak için orta tuş", "Answering: " + ai + "\nCentre key to write"),
                 Theme.small, w - 4 * PAD, tips);
         int textH = title.size() * Theme.bold.getHeight() + 6 + tips.size() * Theme.small.getHeight();
         int size = Math.min(Math.min(w, vh) * 34 / 100, vh - textH - 12 - 2 * PAD);
@@ -1322,6 +1375,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     /** The idle status line suggests the key that helps most right now. */
     private String hint(int vh) {
         if (sel != 0) {
+            ChatSession.Entry e = session.entry(sel);
+            if (e != null && !isBubble(e.kind)) {
+                return L.s("Orta tuş: ayrıntı · 1/3: seç", "Centre key: details · 1/3: select");
+            }
             return L.s("Orta tuş: işlemler · 1/3: seç", "Centre key: actions · 1/3: select");
         }
         if (session.canRetry()) {

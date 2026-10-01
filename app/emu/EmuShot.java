@@ -273,10 +273,10 @@ public class EmuShot {
     static void addRetryError() throws Exception {
         Object session = field(midlet, "session");
         Class entry = Class.forName("io.github.emir.claudes40.ChatSession$Entry", true, session.getClass().getClassLoader());
-        Constructor c = entry.getDeclaredConstructor(new Class[] { int.class, String.class, boolean.class });
+        Constructor c = entry.getDeclaredConstructor(new Class[] { int.class, String.class, String.class });
         c.setAccessible(true);
-        Object e = c.newInstance(new Object[] { new Integer(4), t("[Harness] Could not connect (emulator, no network).",
-                "[Test düzeneği] Bağlantı kurulamadı (emülatör, ağ yok)."), Boolean.FALSE });
+        Object e = c.newInstance(new Object[] { new Integer(4), t("[Harness] Could not connect", "[Test düzeneği] Bağlantı yok"),
+                t("Emulator, no network.", "Emülatör, ağ yok.") });
         synchronized (session) {
             ((Vector) field(session, "entries")).addElement(e);
             setField(session, "pendingId", "emu-retry");

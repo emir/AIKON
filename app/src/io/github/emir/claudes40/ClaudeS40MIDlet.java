@@ -849,6 +849,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         display.setCurrent(a, next);
     }
 
+    /** The explanation behind a one-line note, titled with the note itself. */
+    void showNote(String title, String text, Displayable next) {
+        Alert a = new Alert(title, text, null, AlertType.INFO);
+        a.setTimeout(Alert.FOREVER);
+        display.setCurrent(a, next);
+    }
+
     /** True if chat can be used; otherwise explains what is missing. */
     private boolean chatReady() {
         if (settings.testMode) {
