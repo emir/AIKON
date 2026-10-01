@@ -143,6 +143,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command dataCmd;
     private Form dataForm;
     private Command resetCmd;
+    /** "Bilgi" / "Info" on Settings, Data usage and About (Help). */
+    private Command helpCmd;
     private SavedList savedList;
     private Command resetSetupCmd;
     private Command resetYesCmd;
@@ -207,6 +209,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         resetYesCmd = new Command(L.s("Sıfırla", "Reset"), Command.OK, 1);
         resetNoCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
         resetCmd = new Command(L.s("Sıfırla", "Reset"), Command.SCREEN, 2);
+        helpCmd = Help.command();
         actionList = null;
         savedList = null;
         viewer = null;
@@ -909,6 +912,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             } else {
                 showChat();
             }
+        } else if (c == helpCmd && d != null) {
+            Help.show(display, d.getTitle(), helpFor(d), d);
         } else if (d == settingsForm) {
             if (c == saveCmd) {
                 saveSettings();
@@ -1052,23 +1057,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         notesField = new TextField(L.s("Yapay zekâ için notların", "Your notes for the AI"), settings.instructions,
                 Settings.MAX_INSTRUCTIONS, TextField.ANY);
         settingsForm.append(notesField);
-        settingsForm.append(new StringItem(null, L.s(
-                "Örnek: \"Adım Emir, İstanbul'dayım, kısa ve Türkçe yaz.\" Her mesajla sunucuya gönderilir.",
-                "Example: \"I'm Emir, I live in Istanbul, keep it short.\" Sent to the server with every message.")));
         settingsForm.append(urlField);
         settingsForm.append(tokenField);
+        settingsForm.append(new StringItem(L.s("Bağlantı testi", "Connection test"), settings.connectionVerified()
+                ? L.s("geçti", "passed") : L.s("henüz geçmedi", "not passed yet")));
         settingsForm.append(testChoice);
-        settingsForm.append(new StringItem(null, L.s(
-                "Erişim kodunu yazmak yerine Seçenekler > 'Cihazı eşleştir' kullanılabilir. "
-                        + "Erişim kodu bu telefonda ve (uygulama silinince kurulum gerekmesin diye) hafıza kartındaki "
-                        + "kurulum yedeğinde saklanır, sadece https:// adresine gönderilir. ",
-                "Instead of typing the access code, use Options > 'Pair this phone'. "
-                        + "The code is stored on this phone and (so a reinstall needs no setup) in the setup backup on "
-                        + "the memory card, and sent only to the https:// address. ")
-                + (settings.connectionVerified()
-                        ? L.s("Bu adres için bağlantı testi geçti.", "The connection test passed for this address.")
-                        : L.s("Bu adres için bağlantı testi henüz geçmedi.", "No passed connection test for this address yet."))));
         settingsForm.addCommand(saveCmd);
+        settingsForm.addCommand(helpCmd);
         settingsForm.addCommand(pairCmd);
         settingsForm.addCommand(wizardCmd);
         settingsForm.addCommand(dataCmd);
@@ -1156,12 +1151,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         dataForm.append(new StringItem(L.s("Bugün", "Today"), DataUsage.describe(DataUsage.today())));
         dataForm.append(new StringItem(L.s("Toplam, başlangıç ", "Total since ") + Text.local(t[3], false),
                 DataUsage.describe(t)));
-        dataForm.append(new StringItem(null, L.s(
-                "Yaklaşık değerler: mesajlar tam, HTTP başlıkları tahminen sayılır. Şifreli bağlantının kurulumu "
-                        + "sayılmaz, operatörün saydığı miktar daha fazladır. Test modunda veri kullanılmaz.",
-                "Estimates: messages are counted exactly, HTTP headers roughly. The encrypted connection set-up "
-                        + "is not counted, so your operator counts more. Test mode uses no data.")));
         dataForm.addCommand(formBackCmd);
+        dataForm.addCommand(helpCmd);
         dataForm.addCommand(resetCmd);
         dataForm.setCommandListener(this);
         display.setCurrent(dataForm);
@@ -1195,36 +1186,57 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     // ------------------------------------------------------------ about
 
+    /** The "Info" page behind Settings, Data usage and About. */
+    private String helpFor(Displayable d) {
+        if (d == dataForm) {
+            return L.s("Yaklaşık değerler: mesajlar tam, HTTP başlıkları tahminen sayılır.\n\nŞifreli bağlantının "
+                    + "kurulumu sayılmaz; operatörün saydığı miktar daha fazladır.\n\nTest modunda veri kullanılmaz.",
+                    "Estimates: messages are counted exactly, HTTP headers roughly.\n\nThe encrypted connection "
+                    + "set-up is not counted, so your operator counts more.\n\nTest mode uses no data.");
+        }
+        if (d == about) {
+            return L.s("Yapay zekâ telefonda çalışmaz: mesajlar şifreli bağlantıyla sunucuya, oradan seçtiğin modelin "
+                    + "sağlayıcısına (Anthropic, OpenAI, Google, xAI) gider. Bu sağlayıcıların ya da Nokia'nın resmî "
+                    + "bir uygulaması değildir."
+                    + "\n\nSohbetler sunucuda son mesajdan 30 gün sonra silinir; sabitlenenler sabitleme kaldırılana "
+                    + "kadar kalır. Telefonda yalnızca 'Son sohbeti telefonda sakla' açıksa son sohbet tutulur; "
+                    + "kaydedilen yanıtlar ve takvim kayıtları yalnızca telefonda durur."
+                    + "\n\nWeb araması sunucuda, modelin sağlayıcısının arama aracıyla yapılır; telefonun tarayıcısı "
+                    + "kullanılmaz."
+                    + "\n\nTest edilen cihaz: Nokia 6300 RM-217, V06.60. Diğer cihazlar test edilmedi.",
+                    "The AI does not run on the phone: messages travel over an encrypted link to the server and on to "
+                    + "the chosen model's provider (Anthropic, OpenAI, Google, xAI). Not an official app of these "
+                    + "providers or of Nokia."
+                    + "\n\nThe server deletes chats 30 days after the last message; pinned ones stay until unpinned. "
+                    + "The phone keeps the last chat only if 'Keep last chat on phone' is on; saved replies and "
+                    + "calendar entries stay on the phone only."
+                    + "\n\nWeb search runs on the server with the model provider's search tool, not the phone's "
+                    + "browser."
+                    + "\n\nTested on: Nokia 6300 RM-217, firmware V06.60. Other phones are untested.");
+        }
+        return L.s("Yapay zekâ için notların: kendinden ve nasıl yanıt istediğinden kısaca söz et, örneğin \"Adım Emir, "
+                + "İstanbul'dayım, kısa ve Türkçe yaz.\" Her mesajla sunucuya gönderilir."
+                + "\n\nErişim kodunu yazmak yerine Seçenekler > 'Cihazı eşleştir' kullanılabilir. Kod bu telefonda ve "
+                + "(uygulama silinince kurulum gerekmesin diye) hafıza kartındaki kurulum yedeğinde saklanır, yalnızca "
+                + "https:// adresine gönderilir."
+                + "\n\nBağlantı testi, adres her değiştiğinde yeniden geçmeli; geçmeden mesaj gönderilmez."
+                + "\n\nTest modu sahte yanıt verir, ağ kullanmaz.",
+                "Your notes for the AI: say briefly who you are and how you like answers, e.g. \"I'm Emir, I live "
+                + "in Istanbul, keep it short.\" Sent to the server with every message."
+                + "\n\nInstead of typing the access code, use Options > 'Pair this phone'. The code is stored on this "
+                + "phone and (so a reinstall needs no setup) in the setup backup on the memory card, and sent only to "
+                + "the https:// address."
+                + "\n\nThe connection test must pass again whenever the address changes; nothing is sent before."
+                + "\n\nTest mode gives fake replies and uses no network.");
+    }
+
     private void showAbout() {
         about = new Form(L.s("Hakkında", "About"));
         about.append(new StringItem(attr("MIDlet-Name"),
                 L.s("Sürüm ", "Version ") + attr("MIDlet-Version") + L.s(" (derleme ", " (build ")
                         + attr("ClaudeS40-Build") + ")"));
-        about.append(new StringItem(null, L.s("Nokia Series 40 için resmî olmayan Claude istemcisi.",
-                "An unofficial Claude client for Nokia Series 40.")));
-        about.append(new StringItem(null, L.s(
-                "2007 yapımı bir telefonda, 2026'nın yapay zekâsı. Claude telefonda çalışmaz: mesajlar "
-                        + "şifreli bağlantıyla sunucumuza, oradan Claude API'ye gider.",
-                "A 2007 phone, 2026 AI. Claude does not run on the phone: messages travel over an "
-                        + "encrypted link to our server and on to the Claude API.")));
-        about.append(new StringItem(null, L.s("Anthropic veya Nokia'nın resmî bir uygulaması değildir.",
-                "Not an official Anthropic or Nokia app.")));
-        about.append(new StringItem(null, L.s("Test edilen cihaz: Nokia 6300 RM-217, V06.60. "
-                + "Diğer cihazlarla uyumluluk test edilmedi.",
-                "Tested on: Nokia 6300 RM-217, firmware V06.60. Other phones are untested.")));
-        about.append(new StringItem(null, L.s(
-                "Sohbetler sunucuda son mesajdan 30 gün sonra silinir. Telefonda yalnızca Ayarlar'da "
-                        + "'Son sohbeti telefonda sakla' açıksa son sohbet tutulur.",
-                "The server deletes chats 30 days after the last message. The phone keeps the last chat only "
-                        + "if 'Keep last chat on phone' is on in Settings.")));
-        about.append(new StringItem(null, L.s(
-                "Web araması Anthropic'in arama aracıyla sunucuda yapılır; telefonun tarayıcısı kullanılmaz.",
-                "Web search runs on the server with Anthropic's search tool, not the phone's browser.")));
-        about.append(new StringItem(null, L.s(
-                "Sabitlenen sohbetler sunucuda, sabitleme kaldırılana kadar kalır. Telefona kaydedilen yanıtlar ve "
-                        + "takvim kayıtları yalnızca telefonda durur.",
-                "Pinned chats stay on the server until unpinned. Replies saved on the phone and calendar entries "
-                        + "stay on the phone only.")));
+        about.append(new StringItem(null, L.s("Nokia Series 40 için resmî olmayan yapay zekâ istemcisi.",
+                "An unofficial AI chat client for Nokia Series 40.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
         about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));
@@ -1232,6 +1244,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 : L.s("yok", "no")) + " (" + prop("audio.encodings") + ")"));
         about.append(new StringItem(L.s("Kamera", "Camera"), (hasCamera() ? L.s("var", "yes") : L.s("yok", "no"))
                 + " (" + prop("video.snapshot.encodings") + ")"));
+        about.addCommand(helpCmd);
         about.addCommand(jingleCmd);
         about.addCommand(splashCmd);
         about.addCommand(formBackCmd);

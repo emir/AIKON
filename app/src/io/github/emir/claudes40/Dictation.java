@@ -45,6 +45,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     private final Command resendCmd = new Command(L.s("Yeniden gönder", "Send again"), Command.SCREEN, 2);
     private final Command againCmd = new Command(L.s("Yeniden kaydet", "Record again"), Command.SCREEN, 3);
     private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command helpCmd = Help.command();
 
     private Rec rec;
     private Timer timer;
@@ -64,11 +65,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         gauge = new Gauge("", false, MAX_SECONDS, 0);
         form.append(status);
         form.append(gauge);
-        form.append(new StringItem(null, L.s(
-                "Ses sunucuya gider ve yazıya dökülür. Metni gönderilmeden önce görür, düzeltebilirsiniz. "
-                        + "Kayıt saklanmaz.",
-                "The audio goes to the server and is turned into text. You see and can fix the text before "
-                        + "it is sent. The recording is not kept.")));
+        form.addCommand(helpCmd);
         form.setCommandListener(this);
     }
 
@@ -355,7 +352,14 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
 
     public void commandAction(Command c, Displayable d) {
         midlet.userActive();
-        if (c == doneCmd) {
+        if (c == helpCmd) {
+            Help.show(midlet.display(), L.s("Sesle yaz", "Dictate"), L.s(
+                    "En fazla 30 saniye konuş. Ses sunucuya gider ve yazıya dökülür; metin yazma kutusuna gelir, "
+                    + "göndermeden önce düzeltebilirsin.\n\nKayıt sunucuda saklanmaz.",
+                    "Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text "
+                    + "opens in the editor so you can fix it before sending.\n\nThe recording is not kept on the "
+                    + "server."), form);
+        } else if (c == doneCmd) {
             finish();
         } else if (c == retryCmd) {
             send(true);

@@ -37,6 +37,7 @@ final class Pairing implements CommandListener, Runnable {
     private final Command cancelCmd = new Command(L.s("İptal", "Cancel"), Command.BACK, 1);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
+    private final Command helpCmd = Help.command();
     private volatile boolean cancelled;
 
     Pairing(ClaudeS40MIDlet midlet, Setup setup) {
@@ -46,10 +47,9 @@ final class Pairing implements CommandListener, Runnable {
         codeItem.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE));
         form.append(codeItem);
         form.append(statusItem);
-        form.append(new StringItem(null,
-                L.s("Sunucunun sahibi bu kodu onaylar:\nadmin.sh SUNUCU pair <kod>\nOnaydan sonra telefon erişim kodunu kendisi alır.",
-                        "The server's owner approves this code:\nadmin.sh SERVER pair <code>\nAfter approval the phone fetches its access code by itself.")));
+        form.append(new StringItem(null, L.s("Bu kodu sunucunun sahibine ilet.", "Give this code to the server's owner.")));
         form.addCommand(cancelCmd);
+        form.addCommand(helpCmd);
         form.setCommandListener(this);
     }
 
@@ -60,7 +60,14 @@ final class Pairing implements CommandListener, Runnable {
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == cancelCmd || c == backCmd) {
+        if (c == helpCmd) {
+            Help.show(midlet.display(), L.s("Eşleştirme", "Pairing"), L.s(
+                    "Sunucunun sahibi kodu sunucuda onaylar:\nadmin.sh SUNUCU pair <kod>\n\nOnaydan sonra telefon "
+                    + "erişim kodunu kendisi alır; bu ekran açık kalsın. Kod 10 dakika geçerlidir.",
+                    "The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter "
+                    + "approval the phone fetches its access code by itself; keep this screen open. The code is valid "
+                    + "for 10 minutes."), form);
+        } else if (c == cancelCmd || c == backCmd) {
             cancelled = true;
             if (setup != null) {
                 setup.show();

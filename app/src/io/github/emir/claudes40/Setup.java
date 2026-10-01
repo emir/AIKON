@@ -17,8 +17,8 @@ import javax.microedition.lcdui.TextField;
  * Shown after the splash while Settings.setupDone is false (a fresh install;
  * reinstalling deletes the settings) and from Settings > "Kurulum
  * sihirbazı". Every step can be left with "Kurulumu atla"; finishing or
- * skipping sets setupDone. The phone's own Form/TextField/ChoiceGroup wrap
- * long texts themselves. Nothing here is sent anywhere except by the
+ * skipping sets setupDone. Each step shows one short line; the longer
+ * explanation is behind "Bilgi" / "Info" (Help). Nothing here is sent anywhere except by the
  * existing connection test and pairing.
  */
 final class Setup implements CommandListener {
@@ -36,6 +36,7 @@ final class Setup implements CommandListener {
     private Command startCmd;
     private Command finishCmd;
     private Command againCmd;
+    private Command helpCmd;
 
     Setup(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
@@ -60,6 +61,7 @@ final class Setup implements CommandListener {
         startCmd = new Command(L.s("Başlat", "Start"), Command.OK, 1);
         finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
         againCmd = new Command(L.s("Yeniden eşleştir", "Pair again"), Command.SCREEN, 2);
+        helpCmd = Help.command();
         Settings s = midlet.settings;
         if (step == 2) {
             new ConnTest(midlet, this).show(midlet.display());
@@ -67,22 +69,14 @@ final class Setup implements CommandListener {
         }
         form = new Form(title(step));
         if (step == 0) {
-            form.append(new StringItem(null, L.s(
-                    "Claude S40'a hoş geldin. Telefonu dört kısa adımda sunucuya bağlayalım.",
-                    "Welcome to Claude S40. Four short steps connect this phone to your server.")));
+            form.append(new StringItem(null, L.s("Hoş geldin! Telefonu 4 adımda sunucuya bağlayalım.",
+                    "Welcome! Four steps connect this phone to your server.")));
             langChoice = new ChoiceGroup(L.s("Dil", "Language"), ChoiceGroup.EXCLUSIVE,
                     new String[] { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" }, null);
             langChoice.setSelectedIndex(Math.max(0, Math.min(2, s.lang)), true);
             form.append(langChoice);
-            form.append(new StringItem(null, L.s(
-                    "Sadece denemek için: kurulumu atla, sonra Ayarlar > Test modu (sahte yanıtlar, ağ yok).",
-                    "Just trying it out? Skip setup, then Settings > Test mode (fake replies, no network).")));
             form.addCommand(nextCmd);
         } else if (step == 1) {
-            form.append(new StringItem(null, L.s(
-                    "Sunucu adresini sunucunun sahibi verir. https:// ile başlamalı; şifresiz bağlantı kullanılmaz.",
-                    "The server's owner gives you its address. It must start with https://; "
-                            + "unencrypted connections are never used.")));
             urlField = new TextField(L.s("Sunucu adresi", "Server address"), s.url.length() > 0 ? s.url : "https://",
                     200, TextField.URL);
             form.append(urlField);
@@ -95,11 +89,8 @@ final class Setup implements CommandListener {
                 form.addCommand(finishCmd);
                 form.addCommand(againCmd);
             } else {
-                form.append(new StringItem(null, L.s(
-                        "Son adım: eşleştirme. Başlat'a basınca 6 haneli bir kod çıkar. Sunucunun sahibi "
-                                + "kodu onaylayınca telefon erişim kodunu kendisi alır; uzun kod yazmak gerekmez.",
-                        "Last step: pairing. Press Start and a 6-digit code appears. Once the server's owner "
-                                + "approves it, the phone fetches its access code by itself; nothing long to type.")));
+                form.append(new StringItem(null, L.s("Son adım: Başlat'a bas, çıkan kodu sunucu sahibi onaylasın.",
+                        "Last step: press Start; the server's owner approves the code shown.")));
                 form.addCommand(startCmd);
             }
             form.addCommand(backCmd);
@@ -107,12 +98,15 @@ final class Setup implements CommandListener {
         if (step < STEPS - 1 || s.token.length() < 16) {
             form.addCommand(skipCmd);
         }
+        form.addCommand(helpCmd);
         form.setCommandListener(this);
         midlet.display().setCurrent(form);
     }
 
     public void commandAction(Command c, Displayable d) {
-        if (c == skipCmd) {
+        if (c == helpCmd) {
+            Help.show(midlet.display(), title(step), helpText(), form);
+        } else if (c == skipCmd) {
             skip();
         } else if (c == backCmd) {
             back();
@@ -127,6 +121,30 @@ final class Setup implements CommandListener {
                 saveUrl();
             }
         }
+    }
+
+    /** The longer explanation of the current step. */
+    private String helpText() {
+        if (step == 0) {
+            return L.s("Kurulum dört adım: dil, sunucu adresi, bağlantı testi, eşleştirme. Her adımda "
+                    + "'Kurulumu atla' ile çıkabilir, sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile dönebilirsin."
+                    + "\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu (sahte yanıtlar, ağ yok).",
+                    "Setup has four steps: language, server address, connection test, pairing. Every step can be "
+                    + "left with 'Skip setup'; come back later from Settings > Options > Setup wizard."
+                    + "\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).");
+        }
+        if (step == 1) {
+            return L.s("Sunucu adresini sunucunun sahibi verir.\n\nAdres https:// ile başlamalı; şifresiz bağlantı "
+                    + "hiç kullanılmaz. Sonraki adımda güvenli bağlantı test edilir.",
+                    "The server's owner gives you its address.\n\nIt must start with https://; unencrypted "
+                    + "connections are never used. The next step tests the secure connection.");
+        }
+        return L.s("Başlat'a basınca 6 haneli bir kod çıkar. Sunucunun sahibi kodu onaylayınca telefon erişim "
+                + "kodunu kendisi alır; uzun bir kod yazmak gerekmez.\n\nErişim kodu bu telefonda ve hafıza "
+                + "kartındaki kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.",
+                "Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its "
+                + "access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the "
+                + "setup backup on the memory card, and sent only to the https:// address.");
     }
 
     private void chooseLanguage() {
@@ -185,8 +203,7 @@ final class Setup implements CommandListener {
         s.setupDone = true;
         String err = s.save();
         midlet.setupFinished(err != null ? err : s.ready()
-                ? L.s("Kurulum tamam. Yazmak için orta tuşa bas; tüm tuşlar Seçenekler > Kısayollar'da.",
-                        "All set. Press the centre key to write; all keys are in Options > Shortcuts.")
+                ? L.s("Kurulum tamam. Yazmak için orta tuş.", "All set. Centre key to write.")
                 : L.s("Kurulum kaydedildi. Eksik adımları Ayarlar'dan tamamlayabilirsin.",
                         "Setup saved. Finish the missing steps from Settings."));
     }
@@ -196,7 +213,7 @@ final class Setup implements CommandListener {
         s.setupDone = true;
         String err = s.save();
         midlet.setupSkipped(err != null ? err : L.s(
-                "Kurulum atlandı. Sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile açabilirsin.",
-                "Setup skipped. Open it later from Settings > Options > Setup wizard."));
+                "Kurulum atlandı. Ayarlar > Seçenekler > Kurulum sihirbazı.",
+                "Setup skipped. Settings > Options > Setup wizard."));
     }
 }

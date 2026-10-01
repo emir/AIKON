@@ -54,6 +54,12 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   `TODO: YYYY-MM-DD | title` (see "Calendar entries") is shown in a
   readable form (`Cal`). Single-line texts are
   cut with "..." (`Text.fit`) so nothing runs off small screens.
+- Explanations on request (0.10.2): chat notes (info and errors) are one
+  short line; when there is more to say a small circled "i" follows, 1/3
+  selects the note and the centre key opens the explanation. Setup steps,
+  Pairing, Settings, Data usage, About, Photo and Dictation show one short
+  line at most; the longer text is behind "Bilgi" / "Info" (`Help`,
+  `Command.HELP`).
 - Networking on worker threads only, one request at a time, HTTPS only
   (`https://` enforced, no fallback), response body capped at 8 KiB. Every
   request is counted in RMS `cs40data` (`DataUsage`: requests and bytes today

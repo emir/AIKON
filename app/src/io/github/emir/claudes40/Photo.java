@@ -28,6 +28,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
     private final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.OK, 1);
     private final Command otherCmd = new Command(L.s("Başka fotoğraf", "Another photo"), Command.SCREEN, 2);
     private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command helpCmd = Help.command();
     private Command[] shownCmds = new Command[0];
 
     private byte[] data;
@@ -41,11 +42,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         form = new Form(L.s("Fotoğraf ekle", "Add a photo"));
         status = new StringItem(null, "");
         form.append(status);
-        form.append(new StringItem(null, L.s(
-                "Fotoğraf sunucuya gider ve bu sohbetin modeline gösterilir. Sohbetle birlikte sunucuda kalır "
-                        + "(30 gün ya da sohbeti silene kadar).",
-                "The photo goes to the server and is shown to this chat's model. It stays on the server with "
-                        + "the chat (30 days, or until you delete the chat).")));
+        form.addCommand(helpCmd);
         form.setCommandListener(this);
     }
 
@@ -237,7 +234,17 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
             }
             return;
         }
-        if (c == retryCmd) {
+        if (c == helpCmd) {
+            Help.show(midlet.display(), L.s("Fotoğraf", "Photo"), L.s(
+                    "Fotoğraf sunucuya gider ve bu sohbetin modeline gösterilir; sonraki mesajlarda da görünür."
+                    + "\n\nSohbetle birlikte sunucuda kalır (30 gün ya da sohbeti silene kadar). Kullanılmayan "
+                    + "fotoğraf bir gün sonra silinir.\n\nFotoğraf tek başına gönderilmez: mesajını yazıp "
+                    + "Gönder'e basınca gider.",
+                    "The photo goes to the server and is shown to this chat's model, also with later messages."
+                    + "\n\nIt stays on the server with the chat (30 days, or until you delete the chat). An unused "
+                    + "photo is deleted after a day.\n\nThe photo is never sent by itself: it goes with your "
+                    + "message when you press Send."), form);
+        } else if (c == retryCmd) {
             upload();
         } else if (c == otherCmd) {
             synchronized (this) {
