@@ -307,7 +307,7 @@ func (s *store) conversations(ctx context.Context, device string) ([]convInfo, e
 		  (SELECT COUNT(*) FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id),
 		  COALESCE((SELECT content FROM messages m WHERE m.device_id=c.device_id AND m.conversation_id=c.id
 		    AND m.role='user' ORDER BY seq LIMIT 1), '')
-		FROM conversations c WHERE c.device_id=? ORDER BY c.pinned DESC, c.updated_at DESC LIMIT ?`,
+		FROM conversations c WHERE c.device_id=? ORDER BY c.pinned DESC, c.updated_at DESC, c.rowid DESC LIMIT ?`,
 		device, listConversations)
 	if err != nil {
 		return nil, err
@@ -609,7 +609,7 @@ func (s *store) deleteConversation(ctx context.Context, device, conv string) err
 // per device (pinned ones are not counted and never removed).
 func (s *store) trimConversations(ctx context.Context, device string) error {
 	rows, err := s.db.QueryContext(ctx,
-		`SELECT id FROM conversations WHERE device_id=? AND pinned=0 ORDER BY updated_at DESC LIMIT -1 OFFSET ?`,
+		`SELECT id FROM conversations WHERE device_id=? AND pinned=0 ORDER BY updated_at DESC, rowid DESC LIMIT -1 OFFSET ?`,
 		device, maxConversation)
 	if err != nil {
 		return err

@@ -54,14 +54,18 @@ type config struct {
 	environment                        string
 	apiKeyFile, adminTokenFile         string
 	model, effort                      string
-	fallbacks, mock                    bool
-	reqLimit                           int
-	tokLimit                           int64
-	search                             bool
-	searchLimit                        int
-	searchMaxUses                      int
-	searchCountry, searchCity          string
-	searchTimezone                     string
+	// MODELS: provider:model-id[=Label],... (first = default); empty means
+	// only Claude (CLAUDE_MODEL), as before
+	models                              string
+	openAIEffort, xaiEffort, xaiKeyFile string
+	fallbacks, mock                     bool
+	reqLimit                            int
+	tokLimit                            int64
+	search                              bool
+	searchLimit                         int
+	searchMaxUses                       int
+	searchCountry, searchCity           string
+	searchTimezone                      string
 	// voice messages: "off", "mock" or "openai"
 	transcribe, openAIKeyFile, sttModel string
 	transcribeLimit                     int
@@ -97,6 +101,10 @@ func loadConfig() config {
 	c.model = env("CLAUDE_MODEL", "claude-opus-5")
 	c.effort = env("CLAUDE_EFFORT", "low")
 	c.fallbacks = env("CLAUDE_FALLBACKS", "default") == "default"
+	c.models = env("MODELS", "anthropic:"+c.model)
+	c.openAIEffort = env("OPENAI_EFFORT", "low")
+	c.xaiEffort = env("XAI_EFFORT", "")
+	c.xaiKeyFile = env("XAI_API_KEY_FILE", "/run/secrets/xai_api_key")
 	c.mock = env("MOCK_ANTHROPIC", "0") == "1"
 	c.reqLimit = envInt("DAILY_REQUEST_LIMIT", 100)
 	c.tokLimit = int64(envInt("DAILY_OUTPUT_TOKEN_LIMIT", 100000))
@@ -141,6 +149,55 @@ func setupTranscribe(c config, st *store) (*transcribeService, audioConverter) {
 	return &transcribeService{st: st, stt: stt, limit: c.transcribeLimit}, conv
 }
 
+// buildCatalog: the models from MODELS with their keys; with MOCK_ANTHROPIC=1
+// every model is a mock (no key needed, no network).
+func buildCatalog(c config, secret func(string) string) (*catalog, error) {
+	specs, err := parseModels(c.models)
+	if err != nil {
+		return nil, err
+	}
+	keyFiles := map[string]string{"anthropic": c.apiKeyFile, "openai": c.openAIKeyFile, "xai": c.xaiKeyFile}
+	search := searchConfig{maxUses: int64(max(1, c.searchMaxUses)), country: c.searchCountry,
+		city: c.searchCity, timezone: c.searchTimezone}
+	cat := &catalog{}
+	for _, sp := range specs {
+		e := modelEntry{id: sp.id, label: sp.label, provider: sp.provider, search: true}
+		if c.mock {
+			e.m = mockModel{label: sp.label}
+			cat.list = append(cat.list, e)
+			continue
+		}
+		key := secret(keyFiles[sp.provider])
+		if key == "" {
+			return nil, fmt.Errorf("model %s: no %s API key in %s (or set MOCK_ANTHROPIC=1)", sp.id, sp.provider, keyFiles[sp.provider])
+		}
+		switch sp.provider {
+		case "anthropic":
+			cm := newClaudeModel(key, sp.id, c.effort, c.fallbacks)
+			cm.search = search
+			e.m = cm
+		case "openai", "xai":
+			p, effort := openAIProvider, c.openAIEffort
+			if sp.provider == "xai" {
+				p, effort = xAIProvider, c.xaiEffort
+			}
+			rm := newResponsesModel(p, key, sp.id, sp.label, effort)
+			rm.search = search
+			e.m = rm
+		}
+		cat.list = append(cat.list, e)
+	}
+	return cat, nil
+}
+
+func modelIDs(c *catalog) string {
+	ids := make([]string, len(c.list))
+	for i, e := range c.list {
+		ids[i] = e.provider + ":" + e.id
+	}
+	return strings.Join(ids, ",")
+}
+
 func readSecret(path string) string {
 	b, err := os.ReadFile(path)
 	if err != nil {
@@ -156,22 +213,15 @@ func main() {
 	if err != nil {
 		log.Fatalf("db: %v", err)
 	}
-	var m model = mockModel{}
-	if !c.mock {
-		key := readSecret(c.apiKeyFile)
-		if key == "" {
-			log.Fatalf("no API key in %s (or set MOCK_ANTHROPIC=1)", c.apiKeyFile)
-		}
-		cm := newClaudeModel(key, c.model, c.effort, c.fallbacks)
-		cm.search = searchConfig{maxUses: int64(max(1, c.searchMaxUses)), country: c.searchCountry,
-			city: c.searchCity, timezone: c.searchTimezone}
-		m = cm
+	models, err := buildCatalog(c, readSecret)
+	if err != nil {
+		log.Fatal(err)
 	}
 	adminToken := readSecret(c.adminTokenFile)
 	if len(adminToken) < 32 {
 		log.Printf("warning: no admin token (>= 32 chars) in %s; admin API disabled", c.adminTokenFile)
 	}
-	srv := &server{cfg: c, st: st, chat: &chatService{st: st, model: m, reqLimit: c.reqLimit, tokLimit: c.tokLimit,
+	srv := &server{cfg: c, st: st, chat: &chatService{st: st, models: models, reqLimit: c.reqLimit, tokLimit: c.tokLimit,
 		search: c.search, searchLimit: c.searchLimit}, adminToken: adminToken}
 	srv.transcriber, srv.converter = setupTranscribe(c, st)
 
@@ -198,7 +248,7 @@ func main() {
 	adm := &http.Server{Addr: c.adminListen, Handler: srv.adminMux(), ReadHeaderTimeout: 10 * time.Second}
 	go func() { log.Fatal(adm.ListenAndServe()) }()
 	logJSON(map[string]any{"evt": "start", "version": version, "listen": c.listen, "admin": c.adminListen,
-		"model": c.model, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
+		"models": modelIDs(models), "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
 		"transcribe": c.transcribe, "stt_model": c.sttModel, "transcribe_limit": c.transcribeLimit,
 		"ffmpeg": srv.converter != nil, "image_limit": c.imageLimit})
 	log.Fatal(pub.ListenAndServeTLS("", ""))

@@ -58,7 +58,7 @@ var statusHTTP = map[string]int{
 
 type chatService struct {
 	st          *store
-	model       model
+	models      *catalog
 	reqLimit    int
 	tokLimit    int64
 	search      bool     // web search available at all (server setting)
@@ -260,7 +260,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	// a phone disconnect must not turn a paid call into "unknown": neither the
 	// call nor recording its result below may be cancelled by the request
 	ctx = context.WithoutCancel(ctx)
-	rep, callErr := c.model.reply(ctx, history, message, opts)
+	rep, callErr := c.models.def().m.reply(ctx, history, message, opts)
 
 	mu.Lock()
 	defer mu.Unlock()

@@ -36,7 +36,7 @@ func newEnv(t *testing.T, reqLimit int) *tenv {
 	}
 	t.Cleanup(func() { st.close() })
 	s := &server{cfg: config{environment: "test", mock: true}, st: st,
-		chat: &chatService{st: st, model: mockModel{}, reqLimit: reqLimit, tokLimit: 100000}, adminToken: testAdmin}
+		chat: &chatService{st: st, models: singleModel("claude-opus-5", "Claude", mockModel{}), reqLimit: reqLimit, tokLimit: 100000}, adminToken: testAdmin}
 	return &tenv{t: t, srv: s, pub: s.publicMux(), admin: s.adminMux()}
 }
 
@@ -497,7 +497,7 @@ func TestDailyLimit(t *testing.T) {
 func TestRetentionAndRestart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "r.db")
 	st, _ := openStore(path)
-	s := &server{cfg: config{mock: true}, st: st, chat: &chatService{st: st, model: mockModel{}, reqLimit: 30, tokLimit: 1e5}, adminToken: testAdmin}
+	s := &server{cfg: config{mock: true}, st: st, chat: &chatService{st: st, models: singleModel("claude-opus-5", "Claude", mockModel{}), reqLimit: 30, tokLimit: 1e5}, adminToken: testAdmin}
 	e := &tenv{t: t, srv: s, pub: s.publicMux(), admin: s.adminMux()}
 	tok, dev := e.pair("p")
 	conv := e.chat(tok, rid(), "", "eski").msg.get("conversation")
@@ -929,7 +929,7 @@ func (m *recModel) reply(ctx context.Context, h []turn, msg string, o replyOpts)
 func TestChatOptions(t *testing.T) {
 	e := newEnv(t, 100)
 	rec := &recModel{}
-	e.srv.chat.model = rec
+	e.srv.chat.models = singleModel("claude-opus-5", "Claude", rec)
 	tok, _ := e.pair("p")
 	notes := "Adım Emir.\u0001 İstanbul'da yaşıyorum, kısa yaz. " + strings.Repeat("uzun ", 100)
 	r := e.do("POST", "/v1/chat", tok, formatS40([]kv{{"request", rid()}, {"instructions", notes}, {"calendar", "1"},
@@ -958,14 +958,14 @@ func TestChatOptions(t *testing.T) {
 
 func TestSystemPromptParts(t *testing.T) {
 	now := time.Date(2026, 9, 26, 18, 0, 0, 0, time.UTC)
-	plain := systemPrompt(replyOpts{}, now)
+	plain := systemPrompt("Claude", replyOpts{}, now)
 	if strings.Contains(plain, "EVENT:") || strings.Contains(plain, "user_notes") || strings.Contains(plain, "search the web") {
 		t.Fatal(plain)
 	}
 	lt := time.Date(2026, 9, 26, 21, 5, 0, 0, time.UTC)
-	p := systemPrompt(replyOpts{calendar: true, localTime: lt, instructions: "Kısa yaz."}, now)
+	p := systemPrompt("Grok", replyOpts{calendar: true, localTime: lt, instructions: "Kısa yaz."}, now)
 	for _, want := range []string{"EVENT: YYYY-MM-DD HH:MM | short title", "TODO: YYYY-MM-DD | short title",
-		"Saturday 2026-09-26 21:05", "<user_notes>\nKısa yaz.\n</user_notes>"} {
+		"Saturday 2026-09-26 21:05", "You are Grok, talking", "<user_notes>\nKısa yaz.\n</user_notes>"} {
 		if !strings.Contains(p, want) {
 			t.Fatalf("missing %q in %s", want, p)
 		}
@@ -985,10 +985,10 @@ func TestReplyStoredAfterDisconnect(t *testing.T) {
 	e := newEnv(t, 100)
 	tok, dev := e.pair("p")
 	ctx, cancel := context.WithCancel(context.Background())
-	e.srv.chat.model = disconnectModel{cancel}
+	e.srv.chat.models = singleModel("claude-opus-5", "Claude", disconnectModel{cancel})
 	req := rid()
 	e.srv.chat.chat(ctx, dev, req, "", "Merhaba", replyOpts{})
-	e.srv.chat.model = mockModel{}
+	e.srv.chat.models = singleModel("claude-opus-5", "Claude", mockModel{})
 	r := e.chat(tok, req, "", "Merhaba")
 	if r.msg.get("status") != "ok" || r.msg.get("replayed") != "1" || !strings.HasPrefix(r.msg.text, "[Test mode]") {
 		t.Fatalf("billed reply lost after disconnect: %q", r.raw)

@@ -210,7 +210,7 @@ func TestClaudeImageRequest(t *testing.T) {
 	f := &fakeAPI{status: 200, body: okBody("Bir kedi.", "end_turn")}
 	e := newEnv(t, 20)
 	e.srv.cfg.imageLimit = 10
-	e.srv.chat.model = fakeModel(t, f, false, "")
+	e.srv.chat.models = singleModel("claude-opus-5", "Claude", fakeModel(t, f, false, ""))
 	tok, _ := e.pair("phone")
 	conv := ""
 	for i := 1; i <= 4; i++ {

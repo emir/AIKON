@@ -6,7 +6,8 @@
 #
 # Env (S40_ prefix, so unrelated CLAUDE_* shell variables are never picked
 # up): PKI_DIR (default ~/.config/claude-s40/pki), S40_MOCK (default 1),
-# S40_MODEL, S40_EFFORT, S40_FALLBACKS, S40_REQ_LIMIT, S40_TOK_LIMIT,
+# S40_MODEL, S40_EFFORT, S40_FALLBACKS, S40_MODELS (provider:model-id[=Label],...;
+# empty = only S40_MODEL), S40_OPENAI_EFFORT, S40_XAI_EFFORT, S40_REQ_LIMIT, S40_TOK_LIMIT,
 # S40_ENVIRONMENT, S40_SEARCH (1/0), S40_SEARCH_MAX_USES (per message),
 # S40_SEARCH_LIMIT (per device per day), S40_SEARCH_COUNTRY/_CITY/_TIMEZONE
 # (optional approximate location for local search results),
@@ -16,8 +17,8 @@
 # Copies only: image, compose.yaml, .env (no secrets), server-chain.pem, server.key.
 # On the server: secrets/admin_token is generated there if missing (never
 # leaves the server); secrets/anthropic_api_key must be put there with
-# deploy/set-key.sh (and secrets/openai_api_key with "set-key.sh TARGET
-# openai" for TRANSCRIBE=openai). The CA key never leaves the Mac.
+# deploy/set-key.sh (and secrets/openai_api_key / secrets/xai_api_key with
+# "set-key.sh TARGET openai|xai" for TRANSCRIBE=openai and openai:/xai: models). The CA key never leaves the Mac.
 set -eu
 HERE=$(cd "$(dirname "$0")/.." && pwd)
 TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
@@ -27,6 +28,9 @@ REMOTE=claude-s40-server
 IMAGE=claude-s40-server:0.6.2
 MOCK=${S40_MOCK:-1}
 STT=${S40_TRANSCRIBE:-off}
+MODELS=${S40_MODELS:-}
+# providers that need a key on the server (with MOCK=0)
+PROVIDERS=$(printf '%s' "${MODELS:-anthropic:}" | tr ',' '\n' | sed -nE 's/^ *(anthropic|openai|xai):.*/\1/p' | sort -u | tr '\n' ' ')
 case "$STT" in off|mock|openai) ;; *) echo "S40_TRANSCRIBE must be off, mock or openai" >&2; exit 1 ;; esac
 
 for f in server-chain.pem server.key; do
@@ -43,6 +47,9 @@ ENVIRONMENT=${S40_ENVIRONMENT:-production}
 CLAUDE_MODEL=${S40_MODEL:-claude-opus-5}
 CLAUDE_EFFORT=${S40_EFFORT:-low}
 CLAUDE_FALLBACKS=${S40_FALLBACKS:-default}
+MODELS=$MODELS
+OPENAI_EFFORT=${S40_OPENAI_EFFORT:-low}
+XAI_EFFORT=${S40_XAI_EFFORT:-}
 MOCK_ANTHROPIC=$MOCK
 DAILY_REQUEST_LIMIT=${S40_REQ_LIMIT:-100}
 DAILY_OUTPUT_TOKEN_LIMIT=${S40_TOK_LIMIT:-100000}
@@ -65,7 +72,7 @@ echo "settings:"; sed 's/^/  /' "$STAGE/.env"
 echo "cert    : $(${OPENSSL:-openssl} x509 -in "$PKI/server.pem" -noout -subject -enddate 2>/dev/null | tr '\n' ' ')"
 echo "ports   : 443 -> 8443 (phone TLS), 127.0.0.1:9090 (admin, server-local only)"
 echo "data    : Docker volume claude-s40-server_s40data (SQLite)"
-[ "$MOCK" = 0 ] && echo "LIVE    : MOCK_ANTHROPIC=0 -> real, paid Claude calls; needs secrets/anthropic_api_key"
+[ "$MOCK" = 0 ] && echo "LIVE    : MOCK_ANTHROPIC=0 -> real, paid model calls; keys needed for: $PROVIDERS"
 [ "$MOCK" = 0 ] && [ "${S40_SEARCH:-1}" = 1 ] && echo "SEARCH  : web search on -> billed per search, results count as input tokens"
 [ "$STT" = openai ] && echo "VOICE   : TRANSCRIBE=openai -> paid speech-to-text calls; needs secrets/openai_api_key"
 if [ "$EXEC" != yes ]; then
@@ -81,14 +88,18 @@ echo "== copy"
 ssh "$TARGET" "mkdir -p ~/$REMOTE/secrets"
 scp -q -r "$STAGE"/. "$TARGET:$REMOTE/"
 echo "== start"
-ssh "$TARGET" "MOCK=$MOCK STT=$STT sh -s" <<'REMOTE_SH'
+ssh "$TARGET" "MOCK=$MOCK STT=$STT PROVIDERS='$PROVIDERS' sh -s" <<'REMOTE_SH'
 set -eu
 S=""; [ "$(id -u)" = 0 ] || S=sudo
 cd ~/claude-s40-server
 [ -s secrets/admin_token ] || $S sh -c 'umask 077; openssl rand -hex 32 > secrets/admin_token'
-if [ "$MOCK" = 0 ] && ! $S test -s secrets/anthropic_api_key; then
-	echo "refusing: MOCK_ANTHROPIC=0 but secrets/anthropic_api_key is missing (use deploy/set-key.sh)" >&2
-	exit 1
+if [ "$MOCK" = 0 ]; then
+	for p in $PROVIDERS; do
+		if ! $S test -s "secrets/${p}_api_key"; then
+			echo "refusing: MOCK_ANTHROPIC=0 but secrets/${p}_api_key is missing (use deploy/set-key.sh TARGET $p)" >&2
+			exit 1
+		fi
+	done
 fi
 if [ "$STT" = openai ] && ! $S test -s secrets/openai_api_key; then
 	echo "refusing: TRANSCRIBE=openai but secrets/openai_api_key is missing (use deploy/set-key.sh TARGET openai)" >&2

@@ -109,7 +109,7 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 ### Server
 
 - `main.go` wiring, TLS policy, handlers; `protocol.go` S40/1 format;
-  `chat.go` chat rules; `store.go` SQLite; `claude.go` SDK call + mock;
+  `chat.go` chat rules; `store.go` SQLite; `model.go` shared model types, system prompt, mock and the `MODELS` catalog; `anthropic.go` Claude (official SDK); `responses.go` OpenAI and xAI (Responses API, plain HTTP);
   `transcribe.go` voice messages (audio checks, ffmpeg, speech-to-text);
   `sanitize.go` plain-text replies for a 240x320 screen.
 - Admin API on a separate listener, bound to 127.0.0.1 on the host,

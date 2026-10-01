@@ -1,7 +1,8 @@
 # Claude S40 server. On the VPS, in this directory:
 #   certs/server-chain.pem, certs/server.key   phone-facing TLS (our own CA)
-#   secrets/anthropic_api_key                  Claude API key (only when MOCK_ANTHROPIC=0)
-#   secrets/openai_api_key                     speech-to-text key (only when TRANSCRIBE=openai)
+#   secrets/anthropic_api_key                  Claude API key (MOCK_ANTHROPIC=0 with a Claude model)
+#   secrets/openai_api_key                     OpenAI key (TRANSCRIBE=openai, or an openai: model)
+#   secrets/xai_api_key                        xAI key (an xai: model)
 #   secrets/admin_token                        generated on the server by deploy/push.sh
 #   .env                                       settings below (no secrets)
 #
@@ -17,6 +18,11 @@ services:
       CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5}
       CLAUDE_EFFORT: ${CLAUDE_EFFORT:-low}
       CLAUDE_FALLBACKS: ${CLAUDE_FALLBACKS:-default}
+      # models offered to the phone: provider:model-id[=Label],... (first =
+      # default); empty = only CLAUDE_MODEL. MOCK_ANTHROPIC=1 mocks them all.
+      MODELS: ${MODELS:-}
+      OPENAI_EFFORT: ${OPENAI_EFFORT:-low}
+      XAI_EFFORT: ${XAI_EFFORT:-}
       MOCK_ANTHROPIC: ${MOCK_ANTHROPIC:-1}
       DAILY_REQUEST_LIMIT: ${DAILY_REQUEST_LIMIT:-100}
       DAILY_OUTPUT_TOKEN_LIMIT: ${DAILY_OUTPUT_TOKEN_LIMIT:-100000}
