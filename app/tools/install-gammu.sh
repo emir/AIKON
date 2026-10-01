@@ -15,8 +15,11 @@
 # d:/predefjava/predefcollections/<FILE_BASE>.jad and .jar are deleted
 # (gammu deletefiles, nothing else) before the new ones are added; the
 # app's settings (RMS) are not touched, so the pairing usually stays.
+# The phone keeps each app's record stores next to it as
+# <FILE_BASE>_m_<store>.rms, so replacing the JAD/JAR keeps the settings.
 # --replace also removes the app under its old name (ClaudeS40.jad/.jar,
-# "Claude S40" before 0.11.0); that one's settings do not carry over.
+# "Claude S40" before 0.11.0) and its ClaudeS40_m_cs40*.rms stores (they
+# hold its access token); its settings do not carry over to AIKON.
 # Other ways to install: Bluetooth "send file" to the phone, Nokia PC Suite,
 # or serving the JAD/JAR over HTTP to the phone browser (see docs/SETUP.md).
 set -eu
@@ -63,7 +66,9 @@ echo "-- read-only pre-check ($TARGET_DIR)"
 $GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/before.txt" || { echo "refusing: could not list $TARGET_DIR" >&2; exit 1; }
 old=$(grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/before.txt" | cut -d';' -f1 || true)
 LEGACY=ClaudeS40
-legacy=$(grep -i "^$TARGET_DIR/$LEGACY\.ja[rd];" "$LOG/before.txt" | cut -d';' -f1 || true)
+# the old app's files, and its record stores (<base>_m_<store>.rms in the
+# same folder: settings incl. the access token, the kept chat, data usage)
+legacy=$(grep -iE "^$TARGET_DIR/$LEGACY(\.ja[rd]|_m_cs40[a-z]+\.rms);" "$LOG/before.txt" | cut -d';' -f1 || true)
 if [ -n "$legacy" ] && [ "$replace" != yes ]; then
 	echo "note: the old \"Claude S40\" app is still on the phone; remove it with the phone menu, or use --replace"
 fi
@@ -80,13 +85,14 @@ if [ -n "$old" ]; then
 		case "$f" in
 		"$TARGET_DIR/$NAME.jar" | "$TARGET_DIR/$NAME.jad" | "$TARGET_DIR/$NAME.JAR" | "$TARGET_DIR/$NAME.JAD") ;;
 		"$TARGET_DIR/$LEGACY.jar" | "$TARGET_DIR/$LEGACY.jad" | "$TARGET_DIR/$LEGACY.JAR" | "$TARGET_DIR/$LEGACY.JAD") ;;
+		"$TARGET_DIR/${LEGACY}_m_cs40"*".rms") ;;
 		*) echo "refusing: unexpected file id $f" >&2; exit 1 ;;
 		esac
 		echo "   $f"
 		$GAMMU $CFG deletefiles "$f"
 	done
 	$GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/deleted.txt"
-	if grep -iE "^$TARGET_DIR/($NAME|$LEGACY)\.ja[rd];" "$LOG/deleted.txt"; then
+	if grep -iE "^$TARGET_DIR/($NAME\.ja[rd]|$LEGACY(\.ja[rd]|_m_cs40[a-z]+\.rms));" "$LOG/deleted.txt"; then
 		echo "stopping: the old files are still there; nothing new was added" >&2
 		exit 1
 	fi
@@ -98,6 +104,10 @@ $GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/after.txt"
 ok=yes
 for ext in jar jad; do
 	want=$(wc -c < "$BASE.$ext" | tr -d ' ')
+	if [ "$ext" = jad ]; then
+		# the phone keeps the JAD with CRLF line ends: one more byte per line
+		want=$((want + $(wc -l < "$BASE.jad" | tr -d ' ')))
+	fi
 	# a line is: path;File;"name";"date";size;attributes
 	got=$(grep -i "^$TARGET_DIR/$NAME\.$ext;" "$LOG/after.txt" | awk -F';' '{print $5}')
 	if [ "$got" = "$want" ]; then
