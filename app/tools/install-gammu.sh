@@ -39,15 +39,30 @@ echo "command    : $GAMMU $CFG nokiaaddfile Application $BASE"
 
 LOG=$(mktemp -d)/claude-s40-install
 mkdir -p "$LOG"
-echo "-- read-only pre-check"
-$GAMMU $CFG getfilesystem -flatall > "$LOG/before.txt"
+# Checks list only the target folder: a whole-phone listing (getfilesystem
+# -flatall) walks every memory card folder over the slow phone protocol and
+# never ends on a damaged card.
+echo "-- read-only pre-check ($TARGET_DIR)"
+$GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/before.txt" || { echo "refusing: could not list $TARGET_DIR" >&2; exit 1; }
 if grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/before.txt"; then
 	echo "refusing: $NAME already on the phone; delete it with the phone menu first" >&2
 	exit 1
 fi
 echo "-- installing (writes to the phone)"
 $GAMMU $CFG nokiaaddfile Application "$BASE"
-echo "-- read-only post-check"
-$GAMMU $CFG getfilesystem -flatall > "$LOG/after.txt"
-diff "$LOG/before.txt" "$LOG/after.txt" || true
+echo "-- read-only post-check ($TARGET_DIR)"
+$GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/after.txt"
+ok=yes
+for ext in jar jad; do
+	want=$(wc -c < "$BASE.$ext" | tr -d ' ')
+	# a line is: path;File;"name";"date";size;attributes
+	got=$(grep -i "^$TARGET_DIR/$NAME\.$ext;" "$LOG/after.txt" | awk -F';' '{print $5}')
+	if [ "$got" = "$want" ]; then
+		echo "on the phone: $NAME.$ext ($got bytes)"
+	else
+		echo "CHECK: $NAME.$ext on the phone has '${got:-nothing}' bytes, built file has $want" >&2
+		ok=no
+	fi
+done
 echo "listings: $LOG"
+[ "$ok" = yes ]
