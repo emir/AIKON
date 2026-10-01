@@ -13,10 +13,13 @@
 # must be removed with the phone's own menu first (that also deletes its
 # settings and pairing). With --replace exactly the two files
 # d:/predefjava/predefcollections/<FILE_BASE>.jad and .jar are deleted
-# (gammu deletefiles, nothing else) before the new ones are added; the
-# app's settings (RMS) are not touched, so the pairing usually stays.
+# (gammu deletefiles, nothing else) before the new ones are added. If a
+# transfer breaks off, a half-written JAR can refuse deletion until the
+# phone is switched off and on again.
 # The phone keeps each app's record stores next to it as
-# <FILE_BASE>_m_<store>.rms, so replacing the JAD/JAR keeps the settings.
+# <FILE_BASE>_m_<store>.rms. Whether they survive a --replace is not
+# settled: after the first --replace (2026-10-02, cut off at 99 % of the
+# JAR) AIKON's stores were gone too.
 # --replace also removes the app under its old name (ClaudeS40.jad/.jar,
 # "Claude S40" before 0.11.0) and its ClaudeS40_m_cs40*.rms stores (they
 # hold its access token); its settings do not carry over to AIKon.
