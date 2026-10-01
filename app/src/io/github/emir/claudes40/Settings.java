@@ -17,7 +17,7 @@ import javax.microedition.rms.RecordStoreException;
  * vibration, language), web search on/off and whether the last chat is kept
  * on the phone (ChatStore; off by default), and whether the setup wizard was
  * finished or skipped, the backlight option (and the unused reading one),
- * full screen (format 7) and the user's notes for
+ * full screen (format 7), whether the server sells credits (format 8) and the user's notes for
  * Claude (sent with every message). No chat content is stored here. The
  * setup part is also kept outside the app (Backup), so reinstalling does
  * not need the setup wizard again.
@@ -29,7 +29,7 @@ import javax.microedition.rms.RecordStoreException;
 final class Settings {
 
     private static final String STORE = "cs40cfg";
-    private static final int FORMAT = 7;
+    private static final int FORMAT = 8;
     /** Longest note for Claude (the server keeps at most 300 characters). */
     static final int MAX_INSTRUCTIONS = 300;
 
@@ -63,6 +63,8 @@ final class Settings {
     boolean fullScreen = true;
     /** The user's notes for Claude ("my name is..., answer briefly"); "" if none. */
     String instructions = "";
+    /** The server sells credits (/health "credits: 1", format 8): pairing with a code, a balance. */
+    boolean credits;
     /** load() found saved settings; false right after installing (Backup may restore them). */
     boolean stored;
 
@@ -114,6 +116,9 @@ final class Settings {
             if (format >= 7 && format <= FORMAT) {
                 fullScreen = in.readBoolean();
             }
+            if (format >= 8 && format <= FORMAT) {
+                credits = in.readBoolean();
+            }
         } catch (RecordStoreException e) {
             // first start: nothing stored yet
         } catch (IOException e) {
@@ -152,6 +157,7 @@ final class Settings {
             out.writeBoolean(lightReply);
             out.writeUTF(instructions);
             out.writeBoolean(fullScreen);
+            out.writeBoolean(credits);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);

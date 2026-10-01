@@ -128,6 +128,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command saveCmd;
     private Command formBackCmd;
     private Command pairCmd;
+    private Command creditsCmd;
     private Command jingleCmd;
     private Command splashCmd;
     private Command promptsBackCmd;
@@ -201,6 +202,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
         formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
+        creditsCmd = new Command(L.s("Kredi", "Credits"), Command.SCREEN, 2);
         wizardCmd = new Command(L.s("Kurulum sihirbazı", "Setup wizard"), Command.SCREEN, 3);
         jingleCmd = new Command(L.s("Melodiyi çal", "Play the jingle"), Command.SCREEN, 2);
         splashCmd = new Command(L.s("Açılışı izle", "Replay the intro"), Command.SCREEN, 3);
@@ -348,6 +350,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         if (settings.token.length() < 16) {
             return L.s("Kurulum: cihazı eşleştir", "Setup: pair this phone");
+        }
+        String bal = session.balance();
+        if (bal.length() > 0) {
+            return L.s("Hazır · " + bal + " kredi", "Ready · " + bal + " credits");
         }
         String left = session.remainingToday();
         return left.length() > 0 ? L.s("Hazır · bugün " + left + " hak kaldı", "Ready · " + left + " left today")
@@ -944,6 +950,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 saveSettings();
             } else if (c == pairCmd) {
                 startPairing();
+            } else if (c == creditsCmd) {
+                new Credits(this, null, settingsForm).showBalance();
             } else if (c == wizardCmd) {
                 new Setup(this).start();
             } else if (c == dataCmd) {
@@ -1091,6 +1099,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settingsForm.append(testChoice);
         settingsForm.addCommand(saveCmd);
         settingsForm.addCommand(helpCmd);
+        if (settings.credits && settings.token.length() >= 16) {
+            settingsForm.addCommand(creditsCmd);
+        }
         settingsForm.addCommand(pairCmd);
         settingsForm.addCommand(wizardCmd);
         settingsForm.addCommand(dataCmd);
@@ -1194,7 +1205,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             info(L.s("Önce 'Bağlantı testi'ni çalıştırın. Eşleştirme yalnızca doğrulanmış bağlantıyla yapılır.",
                     "Run the 'Connection test' first. Pairing only runs over a verified connection."), home);
         } else {
-            new Pairing(this, null).start(display);
+            Credits.pair(this, null, display, settingsForm != null ? (Displayable) settingsForm : home);
         }
     }
 

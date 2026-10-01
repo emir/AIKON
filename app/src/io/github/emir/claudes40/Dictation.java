@@ -266,6 +266,12 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
             } else if ("billing".equals(st) || "config_error".equals(st)) {
                 fail(L.s("Sunucudaki yazıya dökme ayarında sorun var (" + st + ").",
                         "The server's speech-to-text setup has a problem (" + st + ")."), false, false);
+            } else if ("credit".equals(st)) {
+                fail(L.s("Kredi yetersiz. Ayarlar > Seçenekler > 'Kredi' ile yeni kod gir.",
+                        "Not enough credits. Add a code in Settings > Options > 'Credits'."), false, false);
+            } else if ("account_disabled".equals(st)) {
+                fail(L.s("Hesap kapatılmış. Sunucunun destek adresine yaz.",
+                        "The account is closed. Write to the server's support address."), false, false);
             } else if ("unauthorized".equals(st)) {
                 fail(L.s("Eşleştirme geçersiz. Ayarlar > Seçenekler > 'Cihazı eşleştir'.",
                         "The pairing is not valid. Settings > Options > 'Pair this phone'."), false, false);

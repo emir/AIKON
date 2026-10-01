@@ -89,6 +89,13 @@ ls app/dist            # AIKON.jad, AIKON.jar, SHA256SUMS
 (Without `app.local.properties` the address can be typed in the app's
 Settings instead.)
 
+Not building it yourself: every release on GitHub (tag `vX.Y.Z`) has
+`AIKON.jad`, `AIKON.jar` and `SHA256SUMS` built by GitHub Actions from that
+tag, without a server address (type it in the setup wizard). The build is
+reproducible, so `make -C app` at the same tag gives the same checksums.
+The phone cannot download from GitHub itself (TLS 1.0 only): download on a
+computer, then use one of the ways below.
+
 ## 5. Install the app on the phone
 
 Pick one:

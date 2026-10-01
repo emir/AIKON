@@ -165,6 +165,9 @@ final class ConnTest implements CommandListener, Runnable {
                 + (hm.flag("mock") ? L.s(", TEST MODU (sahte yanıtlar)", ", TEST MODE (fake replies)") : ""));
         detail(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));
         detail(L.s("Sunucunun gördüğü TLS", "TLS seen by the server"), hm.field("tls-version") + ", " + hm.field("tls-cipher"));
+        if (hm.flag("credits")) {
+            detail(L.s("Kredi", "Credits"), L.s("bu sunucu kredi kodlarıyla çalışır", "this server works with credit codes"));
+        }
 
         // 2. echo
         Net.Result e = Net.request(base + "/echo", "POST", null, PROBE, midlet.userAgent(), null);
@@ -188,6 +191,7 @@ final class ConnTest implements CommandListener, Runnable {
         }
 
         s.verifiedUrl = base;
+        s.credits = hm.flag("credits");
         String err = s.save();
         detail(L.s("Not", "Note"), L.s("Bağlantının kurulması tek başına güncel güvenlik düzeyinin kanıtı değildir; "
                 + "yukarıdaki TLS sürümüne ve şifreye bakın.",

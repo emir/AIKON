@@ -133,6 +133,8 @@ final class ChatSession implements Runnable, Net.Listener {
     private String draft = "";
     private int version;
     private String remaining = "";
+    /** Credits left (server extension "balance"), "" if unknown. */
+    private String balance = "";
     /** When `remaining` arrived; the server counts per UTC day. */
     private long remainingAt;
     /** When the running request started (for the elapsed time on screen). */
@@ -190,6 +192,15 @@ final class ChatSession implements Runnable, Net.Listener {
 
     synchronized String remaining() {
         return remaining;
+    }
+
+    /** The account's balance in credits ("" = unknown or no credits on this server). */
+    synchronized String balance() {
+        return balance;
+    }
+
+    synchronized void setBalance(String b) {
+        balance = b == null ? "" : b;
     }
 
     /** Requests left today, or "" if not known for the current UTC day. */
@@ -702,6 +713,13 @@ final class ChatSession implements Runnable, Net.Listener {
             remaining = m.field("remaining");
             remainingAt = System.currentTimeMillis();
         }
+        if (m.field("balance").length() > 0) {
+            balance = m.field("balance");
+            if (!midlet.settings.credits) {
+                midlet.settings.credits = true; // e.g. a setup restored from the backup
+                midlet.settings.save();
+            }
+        }
         if ("ok".equals(st)) {
             conversation = m.field("conversation");
             if (m.field("model").length() > 0) {
@@ -774,6 +792,16 @@ final class ChatSession implements Runnable, Net.Listener {
             status = L.s("Yetki yok", "Not authorised");
             msg = L.s("Erişim kodu geçersiz veya iptal edilmiş. Ayarlar > Cihazı eşleştir.",
                     "Access code invalid or revoked. Settings > Pair this phone.");
+        } else if ("credit".equals(st)) {
+            status = L.s("Kredi yetersiz", "Not enough credits");
+            msg = L.s("Bu mesaj için kredi yetmiyor" + (balance.length() > 0 ? " (bakiye: " + balance + ")" : "")
+                    + ". Ayarlar > Seçenekler > 'Kredi' ile yeni kod gir; mesajın taslakta duruyor.",
+                    "Not enough credits for this message" + (balance.length() > 0 ? " (balance: " + balance + ")" : "")
+                    + ". Add a code in Settings > Options > 'Credits'; your message is kept as a draft.");
+        } else if ("account_disabled".equals(st)) {
+            status = L.s("Hesap kapalı", "Account closed");
+            msg = L.s("Bu hesap kapatılmış. Sunucunun destek adresine yaz.",
+                    "This account is closed. Write to the server's support address.");
         } else if ("billing".equals(st)) {
             status = L.s("Kredi yok", "No credits");
             msg = L.s("Sunucunun " + ai() + " API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.",

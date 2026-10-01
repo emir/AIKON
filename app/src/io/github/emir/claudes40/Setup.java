@@ -92,8 +92,10 @@ final class Setup implements CommandListener {
                 form.addCommand(finishCmd);
                 form.addCommand(againCmd);
             } else {
-                form.append(new StringItem(null, L.s("Son adım: Başlat'a bas, çıkan kodu sunucu sahibi onaylasın.",
-                        "Last step: press Start; the server's owner approves the code shown.")));
+                form.append(new StringItem(null, s.credits
+                        ? L.s("Son adım: Başlat'a bas, kredi kodunu gir.", "Last step: press Start and type your credit code.")
+                        : L.s("Son adım: Başlat'a bas, çıkan kodu sunucu sahibi onaylasın.",
+                                "Last step: press Start; the server's owner approves the code shown.")));
                 form.addCommand(startCmd);
             }
             form.addCommand(backCmd);
@@ -118,7 +120,7 @@ final class Setup implements CommandListener {
         } else if (c == finishCmd) {
             finish();
         } else if (c == startCmd || c == againCmd) {
-            new Pairing(midlet, this).start(midlet.display());
+            Credits.pair(midlet, this, midlet.display(), form);
         } else if (c == nextCmd) {
             if (step == 1) {
                 saveUrl();
@@ -143,6 +145,14 @@ final class Setup implements CommandListener {
                     + "hiç kullanılmaz. Sonraki adımda güvenli bağlantı test edilir.",
                     "The server's owner gives you its address.\n\nIt must start with https://; unencrypted "
                     + "connections are never used. The next step tests the secure connection.");
+        }
+        if (midlet.settings.credits) {
+            return L.s("Bu sunucu kredi kodlarıyla çalışır: Başlat'a bas ve satın aldığın 16 haneli kodu gir. Telefon "
+                    + "kodla eşleşir; sunucu sahibinin onayı gerekmez.\n\nErişim kodu bu telefonda ve hafıza kartındaki "
+                    + "kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.",
+                    "This server works with credit codes: press Start and type the 16-digit code you bought. The phone "
+                    + "is paired with the code; no approval by the server's owner.\n\nThe access code is kept on this "
+                    + "phone and in the setup backup on the memory card, and sent only to the https:// address.");
         }
         return L.s("Başlat'a basınca 6 haneli bir kod çıkar. Sunucunun sahibi kodu onaylayınca telefon erişim "
                 + "kodunu kendisi alır; uzun bir kod yazmak gerekmez.\n\nErişim kodu bu telefonda ve hafıza "
@@ -178,6 +188,7 @@ final class Setup implements CommandListener {
         if (!url.equals(s.url)) {
             s.url = url;
             s.verifiedUrl = ""; // new address: connection test again
+            s.credits = false;  // known again after the test
         }
         String err = s.save();
         if (err != null) {

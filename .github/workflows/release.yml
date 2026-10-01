@@ -1,0 +1,35 @@
+name: release
+# A tag vX.Y.Z (equal to VERSION in app/app.properties) builds the phone app
+# on GitHub and attaches AIKON.jad, AIKON.jar and SHA256SUMS to a release.
+# The build has no app.local.properties: no server address is built in.
+on:
+  push:
+    tags: ["v*"]
+permissions:
+  contents: write
+jobs:
+  app:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-java@v6
+        with:
+          distribution: temurin
+          java-version: "21"
+      - uses: actions/setup-python@v7
+        with:
+          python-version: "3.12"
+      - run: pip install pillow
+      - name: tag matches app/app.properties
+        run: |
+          v=$(sed -n 's/^VERSION=//p' app/app.properties)
+          [ "v$v" = "$GITHUB_REF_NAME" ] || { echo "tag $GITHUB_REF_NAME, VERSION $v" >&2; exit 1; }
+      - run: make -C app
+      - name: no server address built in
+        run: "! grep -q '^ClaudeS40-Gateway:' app/dist/AIKON.jad"
+      - name: release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" app/dist/AIKON.jad app/dist/AIKON.jar app/dist/SHA256SUMS \
+            --title "AIKon $GITHUB_REF_NAME" --notes "Phone app $GITHUB_REF_NAME (build $(sed -n 's/^BUILD=//p' app/app.properties)). Copy AIKON.jad and AIKON.jar to the phone (Bluetooth, USB or memory card) or serve them from your server; see docs/SETUP.md. The build is reproducible: make -C app gives the same SHA256SUMS."

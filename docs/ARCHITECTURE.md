@@ -205,6 +205,28 @@ long reply are left, `searched` = number of web searches, and since server
 `request_mismatch`, `rate_limited`, `overloaded`,
 `billing`, `upstream_error`, `config_error`, `uncertain`, plus input errors.
 
+### Credits (optional server extension; phone 0.12.0)
+
+A server may sell prepaid credits instead of approving each phone. The
+open-source server has no such extension; it only offers the hooks
+(`meter.go`, `extend.go`). The phone supports it when `/health` says
+`credits: 1` (stored with the connection test, Settings format 8):
+
+| Route | Auth | Purpose |
+|---|---|---|
+| `POST /v1/pair/voucher` | – | `voucher: <16 digits>` → `ok` + `device`, `token`, `balance` (a new account, no owner approval) |
+| `POST /v1/redeem` | Bearer token | `voucher: <16 digits>` → `ok` + `balance` |
+| `POST /v1/balance` | Bearer token | → `ok` + `credits` (0/1), `balance`; text: newest charges, one per line `ts-ms TAB kind TAB credits TAB model` (kinds `chat`, `transcribe`, `voucher`, `adjust`) |
+
+A voucher is 16 digits, the last a Luhn check digit (the phone refuses a
+mistyped code before sending it). Chat and voice answers carry `balance`
+(credits, at most one decimal); the phone shows it on the home screen and
+under Settings > Options > Credits. Statuses: `credit` (402: not enough
+for this message, the draft is kept), `account_disabled` (403),
+`bad_voucher`, `used`, `slow_down` (too many wrong codes). The paid-call
+rules above stay: a failed or uncertain call is never charged, a replay is
+never charged twice.
+
 ### Models (server 0.7.0)
 
 `MODELS=provider:model-id[=Name],...` lists the models the server offers,
