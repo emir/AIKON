@@ -1,4 +1,4 @@
-# Claude S40 server. On the VPS, in this directory:
+# AIKON server. On the VPS, in this directory:
 #   certs/server-chain.pem, certs/server.key   phone-facing TLS (our own CA)
 #   secrets/anthropic_api_key                  Claude API key (MOCK_ANTHROPIC=0 with a Claude model)
 #   secrets/openai_api_key                     OpenAI key (TRANSCRIBE=openai, or an openai: model)
@@ -12,7 +12,7 @@
 services:
   server:
     build: .
-    image: claude-s40-server:0.7.2
+    image: claude-s40-server:0.8.0
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}

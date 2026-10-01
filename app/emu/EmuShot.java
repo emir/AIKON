@@ -17,7 +17,7 @@ import org.recompile.mobile.Mobile;
 import org.recompile.mobile.MobilePlatform;
 
 /**
- * Host-only emulator run for Claude S40 (FreeJ2ME, headless). Not part of
+ * Host-only emulator run for AIKON (FreeJ2ME, headless). Not part of
  * the MIDlet. No network: the app runs in its own "Test modu" (local fake
  * replies, clearly labelled on screen).
  *

@@ -1,4 +1,4 @@
-# Claude S40 – server
+# AIKON – server
 
 One Go binary / Docker image: the phone-facing TLS endpoint, the chat
 backend (official [anthropic-sdk-go](https://github.com/anthropics/anthropic-sdk-go)),

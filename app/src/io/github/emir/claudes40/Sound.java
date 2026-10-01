@@ -26,7 +26,7 @@ final class Sound implements Runnable {
     private static final byte G4 = 67;
     private static final byte C4 = ToneControl.C4;
 
-    /** "Claude S40" start-up jingle: rising arpeggio with a bright finish. */
+    /** "AIKON" start-up jingle: rising arpeggio with a bright finish. */
     static final byte[] JINGLE = seq(30, new byte[] {
         G4, 4, C5, 4, E5, 4, G5, 8, ToneControl.SILENCE, 2, E5, 4, G5, 4, C6, 12,
         ToneControl.SILENCE, 2, D6, 4, E6, 20 });

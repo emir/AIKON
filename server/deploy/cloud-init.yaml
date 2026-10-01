@@ -1,5 +1,5 @@
 #cloud-config
-# Claude S40 relay droplet (Ubuntu 24.04): Docker Engine + compose plugin
+# AIKON (formerly Claude S40) server droplet (Ubuntu 24.04): Docker Engine + compose plugin
 # from Docker's official apt repository, unattended security upgrades.
 # Nothing else. The relay itself is started later by deploy/push.sh.
 package_update: true

@@ -1,6 +1,6 @@
-# Claude S40 – phone app
+# AIKON – phone app
 
-Java ME MIDlet for Nokia Series 40 (CLDC 1.1 / MIDP 2.0, class file 46.0).
+Java ME MIDlet for Nokia Series 40 and Symbian S60 (CLDC 1.1 / MIDP 2.0, class file 46.0).
 English and Turkish UI (follows the phone language; Settings > Language).
 
 Features: animated splash with an original start-up jingle (MIDP tone
@@ -26,7 +26,7 @@ cp app.local.properties.example app.local.properties   # set GATEWAY_URL=https:/
 make            # downloads pinned tools to .deps/j2me (SHA-256 checked), builds, runs 47 checks twice
 ```
 
-Output: `dist/ClaudeS40.jad`, `dist/ClaudeS40.jar` (~100 KB), `dist/SHA256SUMS`.
+Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~100 KB), `dist/SHA256SUMS`.
 Version and build number live only in `app.properties`.
 
 Pipeline: ECJ compiles against the CLDC 1.1 + MIDP 2.0 API stubs, plus the

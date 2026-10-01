@@ -1,6 +1,8 @@
-# Claude S40 – development notes (public)
+# AIKON (formerly Claude S40) – development notes (public)
 
-Unofficial Claude client for Nokia Series 40 (Java ME) + its Go server.
+Unofficial AI chat client (Claude, OpenAI, Gemini, Grok) for Nokia Series 40
+and Symbian S60 phones (Java ME) + its Go server. Named Claude S40 until 0.11.0; repository, Java
+package, RMS stores and server/service names keep the old name.
 Maintainer: Emir Karşıyakalı (github.com/emir). This repository is the only
 place the project is developed. Private operational details (server address,
 devices, phone) are in `CLAUDE.local.md` (gitignored), never in tracked files.

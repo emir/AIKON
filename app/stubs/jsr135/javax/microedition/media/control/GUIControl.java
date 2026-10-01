@@ -1,6 +1,6 @@
 /*
  * Compile-only stub of the JSR 135 (MMAPI 1.1) GUIControl: only the members
- * Claude S40 uses. The phone provides the real interface; never packaged.
+ * AIKON uses. The phone provides the real interface; never packaged.
  */
 package javax.microedition.media.control;
 

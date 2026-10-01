@@ -4,7 +4,7 @@ Verify a MIDlet JAR/JAD pair against app.properties and the target platform.
 
   check.py app.properties DIST_DIR CLDC_JAR MIDP_JAR [OPTIONAL_API_JAR_OR_DIR...]
 
-Claude S40 specifics: exact
+AIKON specifics: exact
 name/file checks, only MIDlet-Permissions-Opt = Connector.https, no plain http:// URL in the classes, and a secret scan of every packaged
 byte. The optional JSR 75 APIs (FileConnection, PIM) may only be used by
 the classes Files and Pim, JSR 135 recording (RecordControl) only by Rec,
@@ -37,8 +37,8 @@ ALLOWED_ATTRS = {"Manifest-Version", "MIDlet-Name", "MIDlet-Vendor",
                  "MIDlet-Permissions-Opt", "ClaudeS40-Build", "ClaudeS40-Gateway",
                  "MIDlet-Jar-URL", "MIDlet-Jar-Size",
                  "Nokia-MIDlet-S60-Selection-Key-Compatibility"}
-EXPECTED_NAME = "Claude S40"
-EXPECTED_FILE_BASE = "ClaudeS40"
+EXPECTED_NAME = "AIKON"
+EXPECTED_FILE_BASE = "AIKON"
 ONLY_PERMISSION = "javax.microedition.io.Connector.https"
 # optional APIs and the only classes allowed to reference them:
 # JSR 75 (files, PIM) in Files/Pim, JSR 135 recording in Rec, camera in Cam
@@ -254,7 +254,7 @@ def main():
 
     jar_path = os.path.join(dist, p["FILE_BASE"] + ".jar")
     jad_path = os.path.join(dist, p["FILE_BASE"] + ".jad")
-    check("file names are ClaudeS40.jar / ClaudeS40.jad", p["FILE_BASE"] == EXPECTED_FILE_BASE)
+    check("file names are AIKON.jar / AIKON.jad", p["FILE_BASE"] == EXPECTED_FILE_BASE)
     z = zipfile.ZipFile(jar_path)
 
     check("JAR/ZIP integrity (testzip)", z.testzip() is None)
@@ -272,13 +272,13 @@ def main():
                     ("MicroEdition-Profile", "PROFILE")):
         check(f"{key} manifest = JAD = app.properties",
               mf.get(key) == jad.get(key) == p[pk], f"{mf.get(key)} / {jad.get(key)} / {p[pk]}")
-    check("MIDlet-Name is exactly 'Claude S40'", mf.get("MIDlet-Name") == EXPECTED_NAME, mf.get("MIDlet-Name"))
+    check("MIDlet-Name is exactly 'AIKON'", mf.get("MIDlet-Name") == EXPECTED_NAME, mf.get("MIDlet-Name"))
     icon = p.get("ICON", "")
     check("MIDlet-1 icon field matches app.properties ICON",
           mf.get("MIDlet-1", ",,").split(",")[1].strip() == icon, mf.get("MIDlet-1"))
     if icon:
         check("MIDlet icon present in JAR", icon.lstrip("/") in z.namelist(), icon)
-    check("MIDlet-1 display name is 'Claude S40'",
+    check("MIDlet-1 display name is 'AIKON'",
           mf.get("MIDlet-1", "").split(",")[0] == EXPECTED_NAME, mf.get("MIDlet-1"))
     check("MicroEdition-Configuration is CLDC-1.1", mf.get("MicroEdition-Configuration") == "CLDC-1.1")
     check("MicroEdition-Profile is MIDP-2.0", mf.get("MicroEdition-Profile") == "MIDP-2.0")

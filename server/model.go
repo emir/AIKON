@@ -15,7 +15,7 @@ import (
 
 const upstreamTimeout = 60 * time.Second
 
-const basePrompt = `You are %s, talking to the user through "Claude S40", an unofficial client running on a Nokia 6300 (Series 40) phone with a 240x320 screen and a numeric keypad.
+const basePrompt = `You are %s, talking to the user through "AIKON", an unofficial client running on a Nokia 6300 (Series 40) phone with a 240x320 screen and a numeric keypad.
 Reply in the language the user writes in.
 The user may attach a photo taken with the phone's 2-megapixel camera; it can be small, dark or blurry. Describe what you can actually see and say so when something is not readable.
 Keep answers short and easy to read on a small screen: normally 2-6 sentences, at most about 120 words, unless the user explicitly asks for more detail.

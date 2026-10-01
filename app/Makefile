@@ -1,7 +1,7 @@
-# Claude S40 phone app: CLDC 1.1 / MIDP 2.0 MIDlet.
+# AIKON phone app: CLDC 1.1 / MIDP 2.0 MIDlet.
 #
 #   make           build + package checks + reproducible rebuild
-#   make build     -> dist/ClaudeS40.jar, dist/ClaudeS40.jad, dist/SHA256SUMS
+#   make build     -> dist/AIKON.jar, dist/AIKON.jad, dist/SHA256SUMS
 #   make check     checks only (after build)
 #   make emu       optional FreeJ2ME screenshots (FREEJ2ME=path/to/classes;
 #                  EMU_W/EMU_H screen size, EMU_LANG=en|tr)

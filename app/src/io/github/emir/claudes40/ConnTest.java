@@ -23,7 +23,7 @@ import javax.microedition.lcdui.StringItem;
  */
 final class ConnTest implements CommandListener, Runnable {
 
-    /** Must equal ECHO_PROBE in services/claude-s40-gateway/src/constants.ts. */
+    /** Must equal echoProbe in server/main.go (a protocol constant: keeps the old name). */
     static final String PROBE = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü";
 
     private final ClaudeS40MIDlet midlet;

@@ -1357,7 +1357,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.setFont(Theme.bold);
         g.setColor(Theme.barInk);
         int tx = PAD + bh + 2;
-        g.drawString(Text.fit("Claude S40", Theme.bold, right - tx), tx, 4,
+        g.drawString(Text.fit("AIKON", Theme.bold, right - tx), tx, 4,
                 Graphics.TOP | Graphics.LEFT);
     }
 

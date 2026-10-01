@@ -79,7 +79,7 @@ deploy/admin.sh $SERVER devices          # then: deploy/admin.sh $SERVER revoke 
 ```
 echo "GATEWAY_URL=https://$IP" > app/app.local.properties
 make -C app            # build + 47 checks + reproducible rebuild
-ls app/dist            # ClaudeS40.jad, ClaudeS40.jar, SHA256SUMS
+ls app/dist            # AIKON.jad, AIKON.jar, SHA256SUMS
 ```
 
 (Without `app.local.properties` the address can be typed in the app's
@@ -92,10 +92,11 @@ Pick one:
 - **Gammu over USB** (phone in "Nokia mode"/PC Suite mode):
   `app/tools/install-gammu.sh` (dry run), then
   `app/tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone`.
-  It never overwrites; delete an older Claude S40 in the phone menu first.
-- **Bluetooth**: send `ClaudeS40.jar` to the phone, open it from the inbox.
+  It never overwrites unless you add `--replace` (deletes only the old
+  AIKON / Claude S40 JAD and JAR first); otherwise delete the older app in the phone menu first.
+- **Bluetooth**: send `AIKON.jar` to the phone, open it from the inbox.
 - **Nokia PC Suite** (Windows): Install applications.
-- **Browser (OTA)**: serve `ClaudeS40.jad` (`text/vnd.sun.j2me.app-descriptor`)
+- **Browser (OTA)**: serve `AIKON.jad` (`text/vnd.sun.j2me.app-descriptor`)
   and `.jar` (`application/java-archive`) from any web server the phone can
   open, then open the JAD URL on the phone.
 
@@ -108,7 +109,7 @@ The first network access asks for permission; allow it.
   opened from the Messaging inbox with "Messaging feature not supported".
   The app appears under Menu → Installat.
 - **Permissions:** an unsigned app cannot get "Always allowed" network
-  access on S60 3rd Edition. Go to App. mgr. → Claude S40 → Options →
+  access on S60 3rd Edition. Go to App. mgr. → AIKON → Options →
   Open (or Settings). Set Network access to "Ask first time" (one question
   per start), and Access point to your access point (e.g. WLAN), so it is not
   asked for every request. Leave the app with the Menu key instead of Exit to
@@ -138,7 +139,7 @@ point, not an old WAP profile.
 
 ## 7. Connection test and pairing
 
-On the phone, in Claude S40. A fresh install opens a setup wizard
+On the phone, in AIKON. A fresh install opens a setup wizard
 (language, server address, connection test, pairing: "Setup 1/4" to "4/4")
 that walks through exactly these steps; it can be skipped and reopened from
 Settings → Options → Setup wizard.
@@ -220,7 +221,7 @@ server/deploy/admin.sh $SERVER logs 50           # method/path/status/TLS only, 
 server/deploy/push.sh $SERVER --execute          # update after a code change
 ```
 
-Updating the app: delete Claude S40 in the phone menu and install the new
+Updating the app: delete AIKON in the phone menu (or use `--replace`) and install the new
 build. Since 0.7.2 the app keeps its setup (server address, access code,
 language, notes for Claude) in `ClaudeS40/claude-s40-setup.dat` on the
 memory card (or in the phone's image folder), which survives deleting the
@@ -238,7 +239,7 @@ your hands, revoke the device.
 | "Could not connect ... TLS" and nothing in `admin.sh logs` | mobile data / access point; or a CDN/proxy in front of the server |
 | "signature not verified" | root CA not saved on the phone (step 6), or a SHA-256 certificate on a phone that only verifies SHA-1 |
 | "host name mismatch" | server certificate issued for a different name/IP than the app uses |
-| HTTP code but "not a Claude S40 server reply" | operator proxy or wrong address |
+| HTTP code but "not this server's reply" | operator proxy or wrong address |
 | "No credits" | the Claude API account has no credit balance |
 | "Daily limit reached" | raise `S40_REQ_LIMIT` / `S40_TOK_LIMIT` |
 | Claude no longer searches the web | the phone's daily search budget is used up (`S40_SEARCH_LIMIT`) or web search is off in Settings / `S40_SEARCH=0` |

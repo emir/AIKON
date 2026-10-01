@@ -1,6 +1,6 @@
 /*
  * Compile-only stub of the JSR 135 (MMAPI 1.1) VideoControl: only the
- * members Claude S40 uses (camera viewfinder and snapshot). The phone
+ * members AIKON uses (camera viewfinder and snapshot). The phone
  * provides the real interface; never packaged.
  */
 package javax.microedition.media.control;

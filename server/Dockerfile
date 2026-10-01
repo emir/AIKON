@@ -1,4 +1,4 @@
-# Claude S40 server: phone-facing TLS + chat backend + SQLite, one static Go
+# AIKON server: phone-facing TLS + chat backend + SQLite, one static Go
 # binary on distroless (non-root), plus a minimal static ffmpeg for voice
 # messages (AMR from the phone -> PCM for speech-to-text). That ffmpeg is
 # built from the pinned source with only the AMR/WAV demuxers and decoders,

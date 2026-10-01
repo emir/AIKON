@@ -17,7 +17,9 @@ import javax.microedition.lcdui.TextField;
 import javax.microedition.midlet.MIDlet;
 
 /**
- * Claude S40: an unofficial Claude client for Nokia Series 40.
+ * AIKON (formerly Claude S40): an unofficial AI chat client for Nokia Series 40
+ * and Symbian S60 (QWERTY, e.g. E63) phones.
+ * The package, class and RMS names keep the old name.
  *
  * Screens: animated splash (Splash), main menu (HomeCanvas), chat
  * (ChatCanvas), chats on the server (ChatList), replies saved on the phone
@@ -330,7 +332,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     String userAgent() {
-        return "ClaudeS40/" + attr("MIDlet-Version");
+        return "AIKON/" + attr("MIDlet-Version");
     }
 
     /** One line under the title on the home screen. */
@@ -349,7 +351,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         String left = session.remainingToday();
         return left.length() > 0 ? L.s("Hazır · bugün " + left + " hak kaldı", "Ready · " + left + " left today")
-                : L.s("Hazır · Nokia 6300'de Claude", "Ready · Claude on a Nokia 6300");
+                : L.s("Hazır · Nokia 6300'de yapay zekâ", "Ready · AI on a Nokia 6300");
     }
 
     /** Second line of a home row; the Chat row shows the draft or the last message. */
@@ -870,7 +872,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     void info(String text, Displayable next) {
-        Alert a = new Alert("Claude S40", text, null, AlertType.INFO);
+        Alert a = new Alert("AIKON", text, null, AlertType.INFO);
         a.setTimeout(Alert.FOREVER);
         display.setCurrent(a, next);
     }
@@ -1261,8 +1263,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(attr("MIDlet-Name"),
                 L.s("Sürüm ", "Version ") + attr("MIDlet-Version") + L.s(" (derleme ", " (build ")
                         + attr("ClaudeS40-Build") + ")"));
-        about.append(new StringItem(null, L.s("Nokia Series 40 için resmî olmayan yapay zekâ istemcisi.",
-                "An unofficial AI chat client for Nokia Series 40.")));
+        about.append(new StringItem(null, L.s("Nokia S40 ve S60 telefonlar için resmî olmayan yapay zekâ istemcisi.",
+                "An unofficial AI chat client for Nokia S40 and S60 phones.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
         about.append(new StringItem(null, "github.com/emir/claude-s40"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));

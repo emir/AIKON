@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Draws the Claude S40 spark (same geometry as Logo.java) with Pillow.
+Draws the app's spark (same geometry as Logo.java) with Pillow.
 
   make_art.py icon OUT.png          46x48 MIDlet icon (transparent), packaged in the JAR
   make_art.py logo OUT.png [SIZE]   large logo for README / social posts

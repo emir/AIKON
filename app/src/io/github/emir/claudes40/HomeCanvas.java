@@ -29,7 +29,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         L.s("Telefondaki yanıtlar, internetsiz", "Replies on the phone, offline"),
         L.s("Sunucuya ulaşıyor muyuz?", "Can we reach the server?"),
         L.s("Görünüm, dil, ses, eşleştirme", "Look, language, sound, pairing"),
-        L.s("Claude S40 nedir?", "What is Claude S40?"),
+        L.s("AIKON nedir?", "What is AIKON?"),
         L.s("Görüşmek üzere", "See you soon") };
 
     private static final int MARGIN = 6;
@@ -105,7 +105,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         int tx = MARGIN + ls + 10;
         g.setColor(Theme.barInk);
         g.setFont(f);
-        g.drawString("Claude S40", tx, 5, Graphics.TOP | Graphics.LEFT);
+        g.drawString("AIKON", tx, 5, Graphics.TOP | Graphics.LEFT);
         g.setFont(sm);
         g.setColor(Theme.mix(Theme.barInk, Theme.bar, 90));
         g.drawString(Text.fit(midlet.homeStatus(), sm, w - tx - MARGIN), tx, 5 + f.getHeight(), Graphics.TOP | Graphics.LEFT);

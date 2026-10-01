@@ -1,7 +1,7 @@
 #!/bin/sh
-# Install Claude S40 on a Nokia Series 40 phone with Gammu over USB
+# Install AIKON on a Nokia Series 40 phone with Gammu over USB
 # ("gammu nokiaaddfile Application"). This WRITES two files to the phone
-# (d:/predefjava/predefcollections/ClaudeS40.jad and .jar on S40 3rd Ed).
+# (d:/predefjava/predefcollections/AIKON.jad and .jar on S40 3rd Ed).
 #
 #   tools/install-gammu.sh                      dry run: local checks + exact command
 #   tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone
@@ -9,12 +9,14 @@
 #
 # Env: GAMMU (default: gammu in PATH), GAMMURC (optional config file),
 #      GAMMU_LIB (optional: directory with a locally built libGammu).
-# Never passes -overwrite/-overwriteall. Without --replace an older Claude S40
+# Never passes -overwrite/-overwriteall. Without --replace an older AIKON
 # must be removed with the phone's own menu first (that also deletes its
 # settings and pairing). With --replace exactly the two files
 # d:/predefjava/predefcollections/<FILE_BASE>.jad and .jar are deleted
 # (gammu deletefiles, nothing else) before the new ones are added; the
 # app's settings (RMS) are not touched, so the pairing usually stays.
+# --replace also removes the app under its old name (ClaudeS40.jad/.jar,
+# "Claude S40" before 0.11.0); that one's settings do not carry over.
 # Other ways to install: Bluetooth "send file" to the phone, Nokia PC Suite,
 # or serving the JAD/JAR over HTTP to the phone browser (see docs/SETUP.md).
 set -eu
@@ -60,23 +62,31 @@ mkdir -p "$LOG"
 echo "-- read-only pre-check ($TARGET_DIR)"
 $GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/before.txt" || { echo "refusing: could not list $TARGET_DIR" >&2; exit 1; }
 old=$(grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/before.txt" | cut -d';' -f1 || true)
+LEGACY=ClaudeS40
+legacy=$(grep -i "^$TARGET_DIR/$LEGACY\.ja[rd];" "$LOG/before.txt" | cut -d';' -f1 || true)
+if [ -n "$legacy" ] && [ "$replace" != yes ]; then
+	echo "note: the old \"Claude S40\" app is still on the phone; remove it with the phone menu, or use --replace"
+fi
+[ "$replace" = yes ] && old="$old $legacy"
 if [ -n "$old" ] && [ "$replace" != yes ]; then
 	echo "$old"
 	echo "refusing: $NAME already on the phone; delete it with the phone menu first, or add --replace" >&2
 	exit 1
 fi
+old=$(echo $old)
 if [ -n "$old" ]; then
-	echo "-- deleting the old $NAME files (writes to the phone)"
+	echo "-- deleting the old files (writes to the phone)"
 	for f in $old; do
 		case "$f" in
 		"$TARGET_DIR/$NAME.jar" | "$TARGET_DIR/$NAME.jad" | "$TARGET_DIR/$NAME.JAR" | "$TARGET_DIR/$NAME.JAD") ;;
+		"$TARGET_DIR/$LEGACY.jar" | "$TARGET_DIR/$LEGACY.jad" | "$TARGET_DIR/$LEGACY.JAR" | "$TARGET_DIR/$LEGACY.JAD") ;;
 		*) echo "refusing: unexpected file id $f" >&2; exit 1 ;;
 		esac
 		echo "   $f"
 		$GAMMU $CFG deletefiles "$f"
 	done
 	$GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/deleted.txt"
-	if grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/deleted.txt"; then
+	if grep -iE "^$TARGET_DIR/($NAME|$LEGACY)\.ja[rd];" "$LOG/deleted.txt"; then
 		echo "stopping: the old files are still there; nothing new was added" >&2
 		exit 1
 	fi

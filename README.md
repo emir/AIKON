@@ -1,31 +1,41 @@
-# Claude S40
+# AIKON
 
-![Claude S40: chat with Claude on a 2007 Nokia](docs/images/cover.png)
+> **Formerly Claude S40.** The project was called *Claude S40* up to phone
+> app 0.10.x / server 0.7.x, while it only talked to Claude. Since it also
+> speaks to OpenAI, Gemini and Grok it is called **AIKON** (Nokia spelled
+> backwards). The repository, Java package and server names keep the old
+> name.
 
-**Chat with Claude on a 2007 Nokia.** Claude S40 is an unofficial Claude
-client for Nokia Series 40 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus the
-small Go server it talks to. Type on the keypad, get Claude's answer on a
-240x320 screen: with today's news, weather and exchange rates from web
-search, long answers you can page through, and a UI in Turkish or English.
-It also runs on Symbian S60 QWERTY phones such as the Nokia E63.
+![AIKON: today's AI on a 2007 Nokia](docs/images/cover.png)
 
-**Video:** [Claude S40 on a Nokia 6300, on X](https://x.com/EmirKarsiyakali/status/2104183718483018026)
+**Today's AI on a 2007 Nokia.** AIKON is an unofficial AI chat client for
+Nokia Series 40 and Symbian S60 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus
+the small Go server it talks to. Pick a model per chat (Claude, OpenAI, Gemini or Grok),
+type on the keypad, get the answer on a 240x320 screen: with today's news,
+weather and exchange rates from web search, long answers you can page
+through, and a UI in Turkish or English. Tested on the Nokia 6300 (S40) and
+the Nokia E63 (S60 QWERTY).
+
+**Video** (still as Claude S40): [on a Nokia 6300, on X](https://x.com/EmirKarsiyakali/status/2104183718483018026)
 
 ## Features
 
 **On the phone**
 
+- **Pick the model per chat**: first the provider (Claude, OpenAI, Gemini,
+  Grok), then one of the models the server offers; switch in the middle of
+  a chat with Options > Model. Every reply is labelled with its model.
 - **Chat** with bubbles, timestamps and a typing indicator that counts the
   seconds. Replies keep their paragraphs and lists (dots, numbers, hanging
   indent).
-- **Web search** for news, weather, rates: Claude searches on the server,
-  the phone's 2007 browser is not involved. Sources are listed under the
+- **Web search** for news, weather, rates: the model searches on the server
+  with its provider's search tool; the phone's 2007 browser is not involved. Sources are listed under the
   reply.
 - **Reading mode** (key 7): one reply full width, page by page, whole lines
   only, page number and progress line. It keeps its place when you change
   the text size (key 9) or load the rest.
 - **Long replies in parts**: "0 · Show the rest" fetches the next part
-  from the server for free; Claude is not asked again.
+  from the server for free; the model is not asked again.
 - **Message actions**: select a message with 1/3, press the centre key:
   shorten, explain more simply, translate, ask about it, open it in the
   editor. They only fill in the editor; nothing is sent until you press
@@ -42,28 +52,34 @@ It also runs on Symbian S60 QWERTY phones such as the Nokia E63.
   list. Works from any message too.
 - **Voice messages**: press Dictate, speak up to 30 seconds; the server
   turns it into text, which opens in the editor so you can check and fix
-  it before you send it to Claude.
+  it before you send it.
 - **Photos**: take one with the camera or pick one from the phone and ask
   about it ("what is this?", "translate this sign", "read this label");
   follow-up questions in the same chat still see it.
-- **Your notes for Claude** (Settings): "I'm Emir, I live in Istanbul, keep
+- **Your notes for the AI** (Settings): "I'm Emir, I live in Istanbul, keep
   it short" is sent with every message.
 - **Data usage**: requests and approximate kilobytes today and in total.
 - **20 quick prompts** (search the web, weather, translate, reply to a
   message, add to my calendar, summarize, fix my writing, ...).
+- **Short notes, details on request**: info and errors are one line; select
+  one (1/3) and press the centre key for the explanation; setup and settings
+  screens keep theirs under Options > Info.
 - **Setup wizard** on first start: language, server address, connection
   test, pairing with a 6-digit code (no long code to type).
 - **Keypad-first**: every screen works with the keypad (on QWERTY phones
   like the E63, the digits printed on the letter keys); a Shortcuts screen
   lists every key. Retry after an error is one key and never charges twice.
-- **Look and feel**: light and dark theme, three text sizes, start-up
-  animation and jingle, reply chime, vibration and backlight. Texts are
+- **Look and feel**: full screen menu and chat, light and dark theme, three
+  text sizes, start-up animation and jingle, reply chime, vibration and
+  backlight. Texts are
   fitted to the screen and checked from 128x160 to 320x240.
 
 **On the server**
 
 - One Go binary / Docker image that speaks TLS 1.0 to the phone with a
-  certificate from your own private CA, and modern HTTPS to the Claude API.
+  certificate from your own private CA, and modern HTTPS to the model
+  providers: Claude (official SDK), OpenAI and xAI Grok (Responses API) and
+  Google Gemini, listed in one `MODELS` setting with a `DEFAULT_MODEL`.
 - Per-device access tokens through pairing, daily request, token,
   web-search, voice-message and photo limits, no automatic retries of paid
   calls.
@@ -74,7 +90,7 @@ It also runs on Symbian S60 QWERTY phones such as the Nokia E63.
 
 ## Screens
 
-| Home | Waiting for Claude | Lists and paragraphs | Reading mode |
+| Home | Waiting for a reply | Lists and paragraphs | Reading mode |
 |---|---|---|---|
 | ![](docs/images/home.png) | ![](docs/images/typing.png) | ![](docs/images/lists.png) | ![](docs/images/reading.png) |
 | **A calendar entry, selected** | **Message actions** | **Quick prompts** | **Dark theme, large text** |
@@ -86,8 +102,8 @@ calendar API, so the harness turns the calendar actions on for these
 screens and never saves); the cover is a drawing.
 Start-up animation: [docs/images/splash.gif](docs/images/splash.gif).
 
-> Unofficial side project. Not made, endorsed or supported by Anthropic or
-> Nokia. See [TRADEMARKS.md](TRADEMARKS.md).
+> Unofficial side project. Not made, endorsed or supported by Anthropic,
+> OpenAI, Google, xAI or Nokia. See [TRADEMARKS.md](TRADEMARKS.md).
 
 Tested on a **Nokia 6300 (RM-217, firmware V06.60)**, and on a **Nokia E63**
 (Symbian S60 3rd Edition FP1, 320x240, QWERTY, over WLAN; see
@@ -97,7 +113,7 @@ phones (CLDC 1.1 / MIDP 2.0, 240x320) may work but are untested.
 ## How it works
 
 ```
-Nokia (Java ME app) --HTTPS: TLS 1.0, RSA, no SNI, cert from YOUR private CA--> claude-s40-server --HTTPS--> Claude API
+Nokia (Java ME app) --HTTPS: TLS 1.0, RSA, no SNI, cert from YOUR private CA--> claude-s40-server --HTTPS--> Claude / OpenAI / Gemini / Grok APIs
                                                                                      |
                                                                               SQLite (Docker volume)
 ```
@@ -113,7 +129,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 | Path | What |
 |---|---|
 | [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~130 KB JAR, English + Turkish UI (see Features). Reproducible build with 47 package checks. |
-| [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (official `anthropic-sdk-go`), SQLite, pairing, admin API bound to localhost. |
+| [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (Claude via the official `anthropic-sdk-go`; OpenAI, Gemini, Grok over plain HTTPS), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
 ## Get it
@@ -132,13 +148,14 @@ Full guide: **[docs/SETUP.md](docs/SETUP.md)**. In short:
    `server/scripts/pki.sh server ~/.config/claude-s40/pki <server-ip>`.
 3. `server/deploy/push.sh root@<server-ip> --execute` (starts in test mode, no API cost).
 4. `echo GATEWAY_URL=https://<server-ip> > app/app.local.properties && make -C app`,
-   then install `app/dist/ClaudeS40.jad/.jar` on the phone.
+   then install `app/dist/AIKON.jad/.jar` on the phone.
 5. Put the root CA on the phone (`server/deploy/serve-ca.sh`, compare the fingerprint).
 6. On the phone the setup wizard walks through the connection test and
    pairing; approve the code with
    `server/deploy/admin.sh root@<server-ip> pair <code>`.
-7. `server/deploy/set-key.sh root@<server-ip>` and
-   `S40_MOCK=0 server/deploy/push.sh root@<server-ip> --execute` to go live.
+7. `server/deploy/set-key.sh root@<server-ip>` (Claude; add `openai`, `gemini`
+   or `xai` for the others), then
+   `S40_MOCK=0 S40_MODELS=... server/deploy/push.sh root@<server-ip> --execute` to go live.
 
 ## Development
 
@@ -153,22 +170,23 @@ deployment), OpenSSL or LibreSSL.
 
 ## Privacy and cost
 
-- The Claude API key lives only on your server. The phone gets a per-device,
+- The API keys live only on your server. The phone gets a per-device,
   revocable access token through pairing.
 - Chats are stored on your server for 30 days after the last message;
   pinned chats until you unpin or delete them. The phone keeps the last
   chat only if you turn on "Keep last chat on phone"; replies you save and
-  calendar entries you add stay on the phone. Your notes for Claude are
+  calendar entries you add stay on the phone. Your notes for the AI are
   stored on the phone and sent with each message (never logged).
 - The setup (server address, access code, notes) is also kept in a file on
   the memory card so a new build needs no new pairing; revoke the device
   if the card leaves your hands, or use Settings > Reset setup.
   Logs contain no message text.
-- Every message is a Claude API call billed to your key. The server enforces
+- Every message is an API call to the chat's model, billed to your key with
+  that provider. The server enforces
   per-device daily request, output-token and web-search limits and never
   retries a paid call automatically. Web searches are billed per search and
-  their results count as input tokens. Set a spending limit in the Claude
-  Console.
+  their results count as input tokens. Set a spending limit in each
+  provider's console.
 - Voice messages (off unless you turn them on) go to OpenAI's
   speech-to-text, billed to your OpenAI key. The recording is not stored;
   the text is kept for a day so a retry never pays twice.
