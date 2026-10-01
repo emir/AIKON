@@ -25,7 +25,9 @@ import javax.microedition.lcdui.Graphics;
  * bubbles, only whole lines on screen, a thin header with the page number and
  * a progress line. The reading position is kept by character offset, so it
  * survives loading the rest of the reply and changing the text size (9).
- * The phone's full-screen mode is not used: softkeys stay where they are.
+ * With Settings > Screen > Full screen (default) the canvas covers the
+ * phone's status bar; its own top bar stays and the softkeys are still the
+ * phone's Commands.
  * The backlight is left to the phone: Display.flashBacklight, the only MIDP
  * way to keep it on, blinks a lit screen on the Nokia 6300.
  *

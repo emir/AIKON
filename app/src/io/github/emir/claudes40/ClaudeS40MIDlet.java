@@ -216,6 +216,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         promptTexts = L.turkish() ? PROMPTS_TR : PROMPTS_EN;
         chat = new ChatCanvas(this, session);
         home = new HomeCanvas(this);
+        applyFullScreen();
         prompts = null;
         composer = null;
         chatList = null;
@@ -369,11 +370,23 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         return (nl < 0 ? t : t.substring(0, nl)).trim();
     }
 
-    /** Re-applies theme and text size after a settings change. */
+    /** Re-applies theme, text size and full screen after a settings change. */
     void applyLook() {
         Theme.apply(settings);
+        applyFullScreen();
         chat.repaint();
         home.repaint();
+    }
+
+    /**
+     * Settings > Screen > Full screen: the menu and the chat (with reading
+     * mode) draw over the phone's status bar. Their own top bar stays; the
+     * softkeys are still the phone's Commands. Lists and forms cannot be
+     * full screen in MIDP.
+     */
+    private void applyFullScreen() {
+        chat.setFullScreenMode(settings.fullScreen);
+        home.setFullScreenMode(settings.fullScreen);
     }
 
     /**
@@ -1042,10 +1055,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     L.s("Yanıtta titreşim", "Vibrate on reply") }, null);
         feedbackChoice.setSelectedIndex(0, settings.sound);
         feedbackChoice.setSelectedIndex(1, settings.vibrate);
-        lightChoice = new ChoiceGroup(L.s("Ekran ışığı", "Backlight"), ChoiceGroup.MULTIPLE,
-                new String[] { L.s("Yanıt gelince yak (ekran kararmışsa)", "Light up for a reply (if the screen went dark)") },
+        lightChoice = new ChoiceGroup(L.s("Ekran", "Screen"), ChoiceGroup.MULTIPLE,
+                new String[] { L.s("Tam ekran", "Full screen"),
+                    L.s("Yanıt gelince ışığı yak (ekran kararmışsa)", "Light up for a reply (if the screen went dark)") },
                 null);
-        lightChoice.setSelectedIndex(0, settings.lightReply);
+        lightChoice.setSelectedIndex(0, settings.fullScreen);
+        lightChoice.setSelectedIndex(1, settings.lightReply);
         urlField = new TextField(L.s("Sunucu adresi (https://...)", "Server address (https://...)"), settings.url,
                 200, TextField.URL);
         tokenField = new TextField(L.s("Erişim kodu", "Access code"), settings.token, 64,
@@ -1116,7 +1131,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settings.fontSize = fs >= 0 && fs <= 2 ? fs : 1;
         settings.sound = feedbackChoice.isSelected(0);
         settings.vibrate = feedbackChoice.isSelected(1);
-        settings.lightReply = lightChoice.isSelected(0);
+        settings.fullScreen = lightChoice.isSelected(0);
+        settings.lightReply = lightChoice.isSelected(1);
         settings.webSearch = claudeChoice.isSelected(0);
         settings.instructions = notesField.getString().trim();
         boolean keep = claudeChoice.isSelected(1);

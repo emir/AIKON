@@ -99,7 +99,9 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   URL, test mode, theme, text size, sound, vibration, language, web search
   on/off, "keep last chat", setup wizard done, the backlight option (light up for a reply; the old reading-mode one is kept unused),
   the user's notes for Claude (format 6; records before format 5 count as
-  set up). The setup part (URL, token, verified URL, setup done, language,
+  set up), full screen for the menu and chat (format 7, 0.10.5; on by
+  default: the canvases cover the phone's status bar, the softkeys stay
+  the phone's Commands). The setup part (URL, token, verified URL, setup done, language,
   notes) is also written by `Backup` to `ClaudeS40/claude-s40-setup.dat`
   (memory card or image folder, never the app's private folder) whenever
   it changes, and restored at the first start after an install, so a new
