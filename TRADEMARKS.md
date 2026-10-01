@@ -8,7 +8,7 @@ by Nokia / HMD.
   "ChatGPT" and "GPT", "Gemini" and "Google", "Grok" and "xAI" are
   trademarks of their owners. The app names these services only to say
   which model answers.
-- The AIKON mark (a speech bubble holding a keypad,
+- The AIKON mark (a white "AK" monogram on a blue rounded square,
   `app/src/io/github/emir/claudes40/Logo.java`, `app/tools/make_art.py`) is
   the project's own. Until 0.10.x the app used a drawn version of the
   Claude mark with permission; that mark is no longer part of the app.

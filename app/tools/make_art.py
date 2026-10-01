@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
-Draws the AIKON mark (same geometry as Logo.java: a speech bubble holding a
-3x3 keypad) with Pillow.
+Draws the AIKON mark (same geometry as Logo.java: a white "AK" monogram on a
+blue rounded square) with Pillow.
 
   make_art.py icon OUT.png          46x48 MIDlet icon (transparent), packaged in the JAR
   make_art.py logo OUT.png [SIZE]   large logo for README / social posts
@@ -13,23 +13,25 @@ import sys
 
 from PIL import Image, ImageDraw
 
-SPARK = (0xD9, 0x77, 0x57, 255)   # Theme.spark (light palette)
-KEY = (0xFB, 0xF3, 0xEE, 255)     # Logo.KEY
+BLUE = (0x07, 0x40, 0xDE, 255)    # Logo.BLUE
+WHITE = (255, 255, 255, 255)
+TILE_H, RADIUS = 969, 190         # per 1000 of the width, as in Logo.java
+STROKES = [                       # polygons, per 1000 of the width (Logo.java)
+    [(41, 700), (174, 700), (474, 396), (474, 252)],               # A diagonal
+    [(381, 513), (474, 513), (474, 700), (381, 700)],              # short bar
+    [(494, 251), (587, 251), (587, 700), (494, 700)],              # stem
+    [(794, 251), (932, 251), (680, 496), (879, 700), (733, 700),   # K arms
+     (605, 575), (605, 435)],
+]
 
 
-def mark(draw, cx, cy, s, color=SPARK, key=KEY):
-    """Same geometry as Logo.draw(): rounded bubble, tail bottom left, 3x3 keys."""
-    w, h = s, s * 0.80
-    x0, y0 = cx - w / 2, cy - h / 2 - s * 0.06
-    draw.rounded_rectangle([x0, y0, x0 + w, y0 + h], radius=s * 0.24, fill=color)
-    tx, bottom = x0 + w * 0.20, y0 + h - 1
-    draw.polygon([(tx, bottom), (tx + w * 0.24, bottom), (x0 + w * 0.10, bottom + s * 0.20)], fill=color)
-    pad_x, pad_y = w * 0.25, h * 0.24
-    gx, gy = (w - 2 * pad_x) / 2, (h - 2 * pad_y) / 2
-    r = s * 0.065
-    for i in range(9):
-        px, py = x0 + pad_x + (i % 3) * gx, y0 + pad_y + (i // 3) * gy
-        draw.ellipse([px - r, py - r, px + r, py + r], fill=key)
+def mark(draw, cx, cy, s, color=BLUE, ink=WHITE):
+    """Same geometry as Logo.draw(): s is the tile's width."""
+    th = s * TILE_H / 1000
+    x0, y0 = cx - s / 2, cy - th / 2
+    draw.rounded_rectangle([x0, y0, x0 + s, y0 + th], radius=s * RADIUS / 1000, fill=color)
+    for poly in STROKES:
+        draw.polygon([(x0 + x * s / 1000, y0 + y * s / 1000) for x, y in poly], fill=ink)
 
 
 def render(w, h, radius_frac, bg=(0, 0, 0, 0), ss=8):
@@ -43,7 +45,7 @@ def render(w, h, radius_frac, bg=(0, 0, 0, 0), ss=8):
 def main():
     kind, out = sys.argv[1], sys.argv[2]
     if kind == "icon":
-        img = render(46, 48, 0.47)
+        img = render(46, 48, 0.5)
     elif kind == "logo":
         size = int(sys.argv[3]) if len(sys.argv) > 3 else 512
         img = render(size, size, 0.46)

@@ -7,8 +7,8 @@ import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * Start-up screen: the mark pops in and its keys light up one by one, as if
- * typed, the title fades in, the jingle plays once. About 2.4 s; any key skips. Full screen, all sizes
+ * Start-up screen: the blue tile pops in and the AK monogram is built
+ * stroke by stroke, the title fades in, the jingle plays once. About 2.4 s; any key skips. Full screen, all sizes
  * derived from getWidth()/getHeight().
  */
 final class Splash extends Canvas {
@@ -97,9 +97,9 @@ final class Splash extends Canvas {
         } else {
             scale = 100 + ((frame / 3) % 2 == 0 ? 0 : 3);
         }
-        // keys light up in reading order from frame 6, all nine by frame 22
-        int keys = frame < 6 ? 0 : Math.min(Logo.ALL, (frame - 6) / 2 + 1);
-        Logo.draw(g, cx, cy, size, scale, keys);
+        // the monogram is built stroke by stroke from frame 6: A, bar, stem, K
+        int parts = frame < 6 ? 0 : Math.min(Logo.ALL, (frame - 6) / 3 + 1);
+        Logo.draw(g, cx, cy, size, scale, parts);
 
         // twinkles around the mark
         if (frame > 10) {

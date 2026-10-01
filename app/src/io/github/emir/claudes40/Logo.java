@@ -3,62 +3,95 @@ package io.github.emir.claudes40;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * The AIKON mark: a speech bubble holding a 3x3 keypad (chat on a keypad
- * phone), drawn with primitives; no image asset is embedded. The same
- * geometry is drawn by tools/make_art.py for the MIDlet icon and the promo
- * images.
+ * The AIKON mark: a white "AK" monogram (the A's diagonal, a short bar, the
+ * shared stem, the K's arms) on a blue rounded square, drawn with
+ * primitives; no image asset is embedded. Geometry measured from the
+ * designer's 1254 px artwork, in 1/1000 of the tile's width (the tile is
+ * 0.969 as tall as wide). tools/make_art.py draws the same shapes for the
+ * MIDlet icon and the promo images.
  */
 final class Logo {
 
-    /** All nine keys lit (the mark at rest). */
-    static final int ALL = 9;
+    /** The four strokes: A diagonal, short bar, stem, K arms. */
+    static final int ALL = 4;
 
-    /** The keys: always light, so they read on both themes. */
-    private static final int KEY = 0xFBF3EE;
+    static final int BLUE = 0x0740DE;
+    private static final int WHITE = 0xFFFFFF;
+
+    /** Tile height and corner radius, per 1000 of the width. */
+    private static final int TILE_H = 969;
+    private static final int RADIUS = 190;
+
+    // strokes as x,y pairs per 1000 of the tile's width (top left of the tile = 0,0)
+    private static final int[] A_DIAG = { 41, 700, 174, 700, 474, 396, 474, 252 };
+    private static final int[] SHORT_BAR = { 381, 513, 474, 700 }; // x0, y0, x1, y1
+    private static final int[] STEM = { 494, 251, 587, 700 };
+    private static final int[] K_UPPER = { 794, 251, 932, 251, 680, 496, 605, 435 };
+    private static final int[] K_JOINT = { 605, 435, 680, 496, 605, 575 };
+    private static final int[] K_LOWER = { 605, 575, 680, 496, 879, 700, 733, 700 };
 
     private Logo() {
     }
 
     /**
-     * @param cx,cy centre of the mark (bubble and tail together)
-     * @param size  width in pixels
+     * @param cx,cy centre of the tile
+     * @param size  tile width in pixels
      * @param scale percent, for animation (100 = rest)
-     * @param keys  keys lit, 0..ALL in reading order; the others are dimmed
+     * @param parts strokes drawn, 0..ALL in order (the splash builds the monogram)
      */
-    static void draw(Graphics g, int cx, int cy, int size, int scale, int keys) {
+    static void draw(Graphics g, int cx, int cy, int size, int scale, int parts) {
         int s = size * scale / 100;
         if (s < 4) {
             return;
         }
-        int w = s;
-        int h = s * 80 / 100;
-        int x0 = cx - w / 2;
-        int y0 = cy - h / 2 - s * 6 / 100;
-        g.setColor(Theme.spark);
-        roundRect(g, x0, y0, w, h, Math.max(1, s * 24 / 100));
-        // tail, bottom left
-        int tx = x0 + w * 20 / 100;
-        int bottom = y0 + h - 1;
-        g.fillTriangle(tx, bottom, tx + w * 24 / 100, bottom, x0 + w * 10 / 100, bottom + s * 20 / 100);
-        if (s < 9) {
-            return; // too small for keys: a plain bubble
+        int th = s * TILE_H / 1000;
+        int x0 = cx - s / 2;
+        int y0 = cy - th / 2;
+        g.setColor(BLUE);
+        roundRect(g, x0, y0, s, th, Math.max(1, s * RADIUS / 1000));
+        if (s < 8) {
+            return; // too small for the monogram: a plain tile
         }
-        int padX = w * 25 / 100;
-        int padY = h * 24 / 100;
-        int gx = (w - 2 * padX) / 2;
-        int gy = (h - 2 * padY) / 2;
-        int d = Math.max(1, s * 13 / 100);
-        int dim = Theme.mix(Theme.spark, KEY, 90);
-        for (int i = 0; i < ALL; i++) {
-            int px = x0 + padX + (i % 3) * gx;
-            int py = y0 + padY + (i / 3) * gy;
-            g.setColor(i < keys ? KEY : dim);
-            if (d <= 2) {
-                g.fillRect(px - d / 2, py - d / 2, d, d);
-            } else {
-                g.fillArc(px - d / 2, py - d / 2, d, d, 0, 360);
-            }
+        g.setColor(WHITE);
+        if (parts >= 1) {
+            quad(g, A_DIAG, x0, y0, s);
         }
+        if (parts >= 2) {
+            rect(g, SHORT_BAR, x0, y0, s);
+        }
+        if (parts >= 3) {
+            rect(g, STEM, x0, y0, s);
+        }
+        if (parts >= 4) {
+            quad(g, K_UPPER, x0, y0, s);
+            tri(g, K_JOINT, x0, y0, s);
+            quad(g, K_LOWER, x0, y0, s);
+        }
+    }
+
+    private static int px(int v, int origin, int s) {
+        return origin + (v * s + 500) / 1000;
+    }
+
+    /** A convex quadrilateral as two triangles. */
+    private static void quad(Graphics g, int[] p, int x0, int y0, int s) {
+        int ax = px(p[0], x0, s), ay = px(p[1], y0, s);
+        int bx = px(p[2], x0, s), by = px(p[3], y0, s);
+        int cx = px(p[4], x0, s), cy = px(p[5], y0, s);
+        int dx = px(p[6], x0, s), dy = px(p[7], y0, s);
+        g.fillTriangle(ax, ay, bx, by, cx, cy);
+        g.fillTriangle(ax, ay, cx, cy, dx, dy);
+    }
+
+    private static void tri(Graphics g, int[] p, int x0, int y0, int s) {
+        g.fillTriangle(px(p[0], x0, s), px(p[1], y0, s), px(p[2], x0, s), px(p[3], y0, s),
+                px(p[4], x0, s), px(p[5], y0, s));
+    }
+
+    private static void rect(Graphics g, int[] r, int x0, int y0, int s) {
+        int ax = px(r[0], x0, s);
+        int ay = px(r[1], y0, s);
+        g.fillRect(ax, ay, Math.max(1, px(r[2], x0, s) - ax), Math.max(1, px(r[3], y0, s) - ay));
     }
 
     /**
