@@ -1,10 +1,10 @@
 package io.github.emir.claudes40;
 
-import javax.microedition.lcdui.ChoiceGroup;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.lcdui.TextField;
 
@@ -28,7 +28,8 @@ final class Setup implements CommandListener {
     private final ClaudeS40MIDlet midlet;
     private int step;
     private Form form;
-    private ChoiceGroup langChoice;
+    /** Step 1: the languages; the centre key picks one and goes on. */
+    private List langList;
     private TextField urlField;
     private Command nextCmd;
     private Command backCmd;
@@ -67,16 +68,18 @@ final class Setup implements CommandListener {
             new ConnTest(midlet, this).show(midlet.display());
             return;
         }
-        form = new Form(title(step));
         if (step == 0) {
-            form.append(new StringItem(null, L.s("Hoş geldin! Telefonu 4 adımda sunucuya bağlayalım.",
-                    "Welcome! Four steps connect this phone to your server.")));
-            langChoice = new ChoiceGroup(L.s("Dil", "Language"), ChoiceGroup.EXCLUSIVE,
+            langList = new List(title(0) + L.s(" · Dil", " · Language"), List.IMPLICIT,
                     new String[] { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" }, null);
-            langChoice.setSelectedIndex(Math.max(0, Math.min(2, s.lang)), true);
-            form.append(langChoice);
-            form.addCommand(nextCmd);
-        } else if (step == 1) {
+            langList.setSelectedIndex(Math.max(0, Math.min(2, s.lang)), true);
+            langList.addCommand(skipCmd);
+            langList.addCommand(helpCmd);
+            langList.setCommandListener(this);
+            midlet.display().setCurrent(langList);
+            return;
+        }
+        form = new Form(title(step));
+        if (step == 1) {
             urlField = new TextField(L.s("Sunucu adresi", "Server address"), s.url.length() > 0 ? s.url : "https://",
                     200, TextField.URL);
             form.append(urlField);
@@ -105,7 +108,9 @@ final class Setup implements CommandListener {
 
     public void commandAction(Command c, Displayable d) {
         if (c == helpCmd) {
-            Help.show(midlet.display(), title(step), helpText(), form);
+            Help.show(midlet.display(), title(step), helpText(), d);
+        } else if (d == langList && c == List.SELECT_COMMAND) {
+            chooseLanguage();
         } else if (c == skipCmd) {
             skip();
         } else if (c == backCmd) {
@@ -115,9 +120,7 @@ final class Setup implements CommandListener {
         } else if (c == startCmd || c == againCmd) {
             new Pairing(midlet, this).start(midlet.display());
         } else if (c == nextCmd) {
-            if (step == 0) {
-                chooseLanguage();
-            } else if (step == 1) {
+            if (step == 1) {
                 saveUrl();
             }
         }
@@ -126,10 +129,12 @@ final class Setup implements CommandListener {
     /** The longer explanation of the current step. */
     private String helpText() {
         if (step == 0) {
-            return L.s("Kurulum dört adım: dil, sunucu adresi, bağlantı testi, eşleştirme. Her adımda "
+            return L.s("Hoş geldin! Telefonu dört adımda sunucuya bağlayalım. Dili seçip orta tuşa bas."
+                    + "\n\nKurulum dört adım: dil, sunucu adresi, bağlantı testi, eşleştirme. Her adımda "
                     + "'Kurulumu atla' ile çıkabilir, sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile dönebilirsin."
                     + "\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu (sahte yanıtlar, ağ yok).",
-                    "Setup has four steps: language, server address, connection test, pairing. Every step can be "
+                    "Welcome! Four steps connect this phone to your server. Pick a language and press the centre "
+                    + "key.\n\nSetup has four steps: language, server address, connection test, pairing. Every step can be "
                     + "left with 'Skip setup'; come back later from Settings > Options > Setup wizard."
                     + "\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).");
         }
@@ -149,7 +154,7 @@ final class Setup implements CommandListener {
 
     private void chooseLanguage() {
         Settings s = midlet.settings;
-        int lg = langChoice.getSelectedIndex();
+        int lg = langList.getSelectedIndex();
         if (lg >= 0 && lg <= 2 && lg != s.lang) {
             s.lang = lg;
             s.save();

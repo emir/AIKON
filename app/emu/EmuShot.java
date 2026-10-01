@@ -103,9 +103,9 @@ public class EmuShot {
         }
         Thread.sleep(1200);
         save("setup_1_language");
-        command(t("Next", "İleri"));
+        select(tr ? 1 : 2);                   // centre key on the language: applies it, goes on
         save("setup_2_server");
-        // FreeJ2ME's ChoiceGroup stub picks some language in step 1: set it again
+        // set the language again for the rest of the run (harness)
         setting("lang", new Integer(tr ? 1 : 2));
         call("rebuildUi");
         setting("setupDone", Boolean.TRUE);

@@ -16,6 +16,10 @@ import javax.microedition.lcdui.StringItem;
  * Only when both steps pass is the URL marked as verified; chat is locked
  * until then. As step 3 of the setup wizard (Setup) it gets "İleri" once
  * the address is verified, and "Geri" goes to the previous step.
+ *
+ * The screen shows only a short checklist and the result; the technical
+ * details (server version, TLS of both ends, bytes) are behind "Ayrıntılar".
+ * The centre key starts the test, and in the wizard goes on once it passed.
  */
 final class ConnTest implements CommandListener, Runnable {
 
@@ -26,49 +30,63 @@ final class ConnTest implements CommandListener, Runnable {
     /** The wizard this test is a step of, or null. */
     private final Setup setup;
     private final Form form;
-    private final Command startCmd = new Command(L.s("Başlat", "Start"), Command.SCREEN, 1);
+    private final Command startCmd = new Command(L.s("Başlat", "Start"), Command.OK, 1);
+    private final Command againCmd = new Command(L.s("Yeniden test et", "Test again"), Command.SCREEN, 2);
+    private final Command detailsCmd = new Command(L.s("Ayrıntılar", "Details"), Command.HELP, 8);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command nextCmd = new Command(L.s("İleri", "Next"), Command.OK, 1);
     private boolean running;
-    private boolean nextShown;
+    /** Commands shown now (they change with the state). */
+    private Command[] shown = new Command[0];
+    /** Technical details of the last run, for "Ayrıntılar". */
+    private final StringBuffer details = new StringBuffer();
 
     ConnTest(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
         this.setup = setup;
         form = new Form(setup != null ? Setup.title(2) : L.s("Bağlantı testi", "Connection test"));
-        form.addCommand(startCmd);
         form.addCommand(backCmd);
         form.setCommandListener(this);
         intro();
-        showNext(midlet.settings.connectionVerified());
+        commands();
     }
 
-    /** Wizard only: "İleri" while the address is verified. */
-    private synchronized void showNext(boolean want) {
-        if (setup == null || want == nextShown) {
-            return;
-        }
-        if (want) {
-            form.addCommand(nextCmd);
+    /** Start (or, in the wizard once verified, Next) on the centre key; Details once there are any. */
+    private synchronized void commands() {
+        boolean next = setup != null && midlet.settings.connectionVerified() && !running;
+        Command[] want;
+        if (running) {
+            want = new Command[0];
+        } else if (next) {
+            want = details.length() > 0 ? new Command[] { nextCmd, againCmd, detailsCmd } : new Command[] { nextCmd, againCmd };
         } else {
-            form.removeCommand(nextCmd);
+            want = details.length() > 0 ? new Command[] { startCmd, detailsCmd } : new Command[] { startCmd };
         }
-        nextShown = want;
+        for (int i = 0; i < shown.length; i++) {
+            form.removeCommand(shown[i]);
+        }
+        for (int i = 0; i < want.length; i++) {
+            form.addCommand(want[i]);
+        }
+        shown = want;
     }
 
     private void intro() {
         form.deleteAll();
-        line(null, L.s("Sunucu: ", "Server: ") + (midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)")));
-        line(null, L.s("İki adım: /health ve /echo (Türkçe UTF-8). Erişim kodu ve sohbet metni gönderilmez. "
-                + "Telefon ağ izni isteyebilir.",
-                "Two steps: /health and /echo (Turkish UTF-8 round trip). No access code and no chat text are sent. "
-                + "The phone may ask for network access."));
-        line(L.s("Telefonda görünüm", "Rendering on this phone"), "ç ğ ı İ ö ş ü  Ç Ğ Ö Ş Ü");
+        String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)");
+        form.append(new StringItem(L.s("Sunucu", "Server"), url + "\n"));
+        if (midlet.settings.connectionVerified()) {
+            line(L.s("Bu adres daha önce doğrulandı.", "This address was verified before."));
+        } else {
+            line(L.s("Başlat'a bas: güvenli bağlantı ve Türkçe karakterler denenir.",
+                    "Press Start to check the secure connection and Turkish characters."));
+        }
     }
 
     void show(Display d) {
         if (!running) {
             intro();
+            commands();
         }
         d.setCurrent(form);
     }
@@ -82,101 +100,130 @@ final class ConnTest implements CommandListener, Runnable {
             }
         } else if (c == nextCmd) {
             setup.next();
-        } else if (c == startCmd && !running) {
-            running = true;
-            intro();
-            line(null, L.s("Çalışıyor...", "Running..."));
+        } else if (c == detailsCmd) {
+            Help.show(midlet.display(), L.s("Ayrıntılar", "Details"), details.toString(), form);
+        } else if ((c == startCmd || c == againCmd) && !running) {
+            synchronized (this) {
+                running = true;
+                details.setLength(0);
+            }
+            form.deleteAll();
+            String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)");
+            form.append(new StringItem(L.s("Sunucu", "Server"), url + "\n"));
+            line(L.s("Deneniyor...", "Testing..."));
+            commands();
             new Thread(this).start();
         }
     }
 
-    private void line(String label, String text) {
-        form.append(new StringItem(label, text + "\n"));
+    private void line(String text) {
+        form.append(new StringItem(null, text + "\n"));
+    }
+
+    /** One checklist row: what was checked and whether it worked. */
+    private void check(String what, boolean ok) {
+        form.append(new StringItem(what, (ok ? L.s("tamam", "OK") : L.s("olmadı", "failed")) + "\n"));
+    }
+
+    private void detail(String label, String text) {
+        details.append(label).append(": ").append(text).append("\n\n");
     }
 
     public void run() {
         try {
             test();
         } finally {
-            running = false;
+            synchronized (this) {
+                running = false;
+            }
+            commands();
         }
     }
 
     private void test() {
         Settings s = midlet.settings;
         String base = s.url;
+        if (form.size() > 1) {
+            form.delete(form.size() - 1); // "Testing..."
+        }
         if (!Net.isHttps(base)) {
-            line(L.s("SONUÇ", "RESULT"), L.s("Sunucu adresi https:// ile başlamalı. Ayarlar'dan girin.", "The server address must start with https://. Set it in Settings."));
+            result(false, L.s("Adres https:// ile başlamalı. Ayarlar'dan girin.",
+                    "The address must start with https://. Set it in Settings."));
             return;
         }
 
         // 1. health
         Net.Result h = Net.request(base + "/health", "GET", null, null, midlet.userAgent(), null);
-        if (!report("1. /health", h)) {
-            fail();
+        String why = problem("/health", h);
+        check(L.s("Sunucuya ulaşma", "Reaching the server"), why == null);
+        if (why != null) {
+            fail(why);
             return;
         }
         S40Message hm = h.msg;
-        line(L.s("Sunucu", "Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
-                + (hm.flag("mock") ? L.s(", sunucu TEST MODU (sahte yanıtlar)", ", server in TEST MODE (fake replies)") : ""));
-        line(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));
-        line(L.s("Sunucunun gördüğü TLS", "TLS seen by the server"),
-                hm.field("tls-version") + ", " + hm.field("tls-cipher"));
+        detail(L.s("Sunucu", "Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
+                + (hm.flag("mock") ? L.s(", TEST MODU (sahte yanıtlar)", ", TEST MODE (fake replies)") : ""));
+        detail(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));
+        detail(L.s("Sunucunun gördüğü TLS", "TLS seen by the server"), hm.field("tls-version") + ", " + hm.field("tls-cipher"));
 
         // 2. echo
         Net.Result e = Net.request(base + "/echo", "POST", null, PROBE, midlet.userAgent(), null);
-        if (!report("2. /echo", e)) {
-            fail();
+        why = problem("/echo", e);
+        if (why != null) {
+            check(L.s("Türkçe karakterler", "Turkish characters"), false);
+            fail(why);
             return;
         }
         boolean same = PROBE.equals(e.msg.text);
         boolean serverMatch = "match".equals(e.msg.field("probe"));
-        line(L.s("UTF-8 gönderim", "UTF-8 upload"), serverMatch ? L.s("Sunucu Türkçe metni doğru aldı.", "The server received the Turkish text correctly.")
-                : L.s("Sunucu farklı bayt aldı: ", "The server received different bytes: ") + e.msg.field("hex"));
-        line(L.s("UTF-8 alım", "UTF-8 download"), (same ? L.s("Telefon Türkçe metni doğru aldı: ", "The phone received the Turkish text correctly: ")
-                : L.s("Farklı geldi: ", "Received something else: ")) + e.msg.text);
+        check(L.s("Türkçe karakterler", "Turkish characters"), same && serverMatch);
+        detail(L.s("UTF-8 gönderim", "UTF-8 upload"), serverMatch ? L.s("sunucu doğru aldı", "the server got it right")
+                : L.s("sunucu farklı bayt aldı: ", "the server got different bytes: ") + e.msg.field("hex"));
+        detail(L.s("UTF-8 alım", "UTF-8 download"), (same ? L.s("doğru: ", "correct: ") : L.s("farklı: ", "different: "))
+                + e.msg.text);
+        detail(L.s("Telefonda görünüm", "Rendering on this phone"), "ç ğ ı İ ö ş ü  Ç Ğ Ö Ş Ü");
         if (!same || !serverMatch) {
-            line(L.s("SONUÇ", "RESULT"), L.s("Karakter kodlaması hatası. Sohbet kilitli kaldı.", "Character encoding error. Chat stays locked."));
-            showNext(false);
+            fail(L.s("Karakter kodlaması hatası.", "Character encoding error."));
             return;
         }
 
         s.verifiedUrl = base;
         String err = s.save();
-        showNext(true);
-        line(L.s("SONUÇ", "RESULT"), L.s("Bağlantı doğrulandı; sohbet kullanılabilir.", "Connection verified; chat is ready.")
-                + (err != null ? " (" + err + ")" : "")
-                + L.s(" Not: bağlantının kurulması tek başına güncel güvenlik düzeyinin kanıtı değildir; "
-                + "yukarıdaki TLS sürümü ve şifreyi kontrol edin.",
-                " Note: a working connection alone does not prove a current security level; "
-                + "check the TLS version and cipher above."));
+        detail(L.s("Not", "Note"), L.s("Bağlantının kurulması tek başına güncel güvenlik düzeyinin kanıtı değildir; "
+                + "yukarıdaki TLS sürümüne ve şifreye bakın.",
+                "A working connection alone does not prove a current security level; check the TLS version and "
+                + "cipher above."));
+        result(true, L.s("Hazır, sohbet kullanılabilir.", "Ready, chat can be used.") + (err != null ? " (" + err + ")" : ""));
     }
 
-    private boolean report(String step, Net.Result r) {
+    /** Why a step failed (also kept in the details), or null if it passed. */
+    private String problem(String step, Net.Result r) {
+        String why;
         if (!r.ok()) {
-            line(step, L.s("HATA: ", "ERROR: ") + Net.explain(r));
-            return false;
+            why = Net.explain(r);
+        } else if (r.msg == null) {
+            why = "HTTP " + r.httpCode + L.s(": yanıt bu sunucudan değil (operatör ağı, yanlış adres?).",
+                    ": not this server's reply (carrier network, wrong address?).");
+        } else if (r.httpCode != 200 || !"ok".equals(r.msg.field("status"))) {
+            why = "HTTP " + r.httpCode + L.s(", durum: ", ", status: ") + r.msg.field("status");
+        } else {
+            detail(step, L.s("tamam (HTTP 200)", "OK (HTTP 200)"));
+            return null;
         }
-        if (r.msg == null) {
-            line(step, "HTTP " + r.httpCode + L.s(", yanıt Claude S40 sunucusundan değil (operatör ağı, yanlış adres?).", ", not a Claude S40 server reply (carrier network, wrong address?)."));
-            return false;
-        }
-        String st = r.msg.field("status");
-        if (r.httpCode != 200 || !"ok".equals(st)) {
-            line(step, "HTTP " + r.httpCode + L.s(", durum: ", ", status: ") + st);
-            return false;
-        }
-        line(step, L.s("Tamam (HTTP 200)", "OK (HTTP 200)"));
-        return true;
+        detail(step, why);
+        return why;
     }
 
-    private void fail() {
+    private void result(boolean ok, String text) {
+        form.append(new StringItem(ok ? L.s("Sonuç", "Result") : L.s("Olmadı", "Failed"), text + "\n"));
+    }
+
+    private void fail(String why) {
         Settings s = midlet.settings;
         if (s.connectionVerified()) {
             s.verifiedUrl = "";
             s.save();
         }
-        showNext(false);
-        line(L.s("SONUÇ", "RESULT"), L.s("Bağlantı doğrulanamadı. Sohbet kilitli.", "Connection not verified. Chat is locked."));
+        result(false, why + L.s(" Sohbet kilitli.", " Chat is locked."));
     }
 }
