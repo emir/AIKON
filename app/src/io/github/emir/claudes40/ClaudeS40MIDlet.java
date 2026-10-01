@@ -517,10 +517,6 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         session.forget(id);
     }
 
-    /** MIDP 2.0 Display.flashBacklight; false if the phone cannot. */
-    boolean flashBacklight(int ms) {
-        return display.flashBacklight(ms);
-    }
 
     // ------------------------------------------------------------ navigation
 
@@ -1025,10 +1021,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         feedbackChoice.setSelectedIndex(0, settings.sound);
         feedbackChoice.setSelectedIndex(1, settings.vibrate);
         lightChoice = new ChoiceGroup(L.s("Ekran ışığı", "Backlight"), ChoiceGroup.MULTIPLE,
-                new String[] { L.s("Okuma modunda açık tut", "Keep on in reading mode"),
-                    L.s("Yanıt gelince yak (ekran kararmışsa)", "Light up for a reply (if the screen went dark)") }, null);
-        lightChoice.setSelectedIndex(0, settings.lightReading);
-        lightChoice.setSelectedIndex(1, settings.lightReply);
+                new String[] { L.s("Yanıt gelince yak (ekran kararmışsa)", "Light up for a reply (if the screen went dark)") },
+                null);
+        lightChoice.setSelectedIndex(0, settings.lightReply);
         urlField = new TextField(L.s("Sunucu adresi (https://...)", "Server address (https://...)"), settings.url,
                 200, TextField.URL);
         tokenField = new TextField(L.s("Erişim kodu", "Access code"), settings.token, 64,
@@ -1109,8 +1104,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settings.fontSize = fs >= 0 && fs <= 2 ? fs : 1;
         settings.sound = feedbackChoice.isSelected(0);
         settings.vibrate = feedbackChoice.isSelected(1);
-        settings.lightReading = lightChoice.isSelected(0);
-        settings.lightReply = lightChoice.isSelected(1);
+        settings.lightReply = lightChoice.isSelected(0);
         settings.webSearch = claudeChoice.isSelected(0);
         settings.instructions = notesField.getString().trim();
         boolean keep = claudeChoice.isSelected(1);

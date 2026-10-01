@@ -23,7 +23,7 @@ It also runs on Symbian S60 QWERTY phones such as the Nokia E63.
   reply.
 - **Reading mode** (key 7): one reply full width, page by page, whole lines
   only, page number and progress line. It keeps its place when you change
-  the text size (key 9) or load the rest, and keeps the backlight on.
+  the text size (key 9) or load the rest.
 - **Long replies in parts**: "0 · Show the rest" fetches the next part
   from the server for free; Claude is not asked again.
 - **Message actions**: select a message with 1/3, press the centre key:

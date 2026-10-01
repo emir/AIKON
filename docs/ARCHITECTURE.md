@@ -45,8 +45,10 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   out by `Text.layout`: paragraphs, "- " items with a dot and "1. " items
   with their number, both with a hanging indent. Reading mode pages through
   one reply with whole lines only and keeps its place by character offset
-  (across text-size changes and loading the rest) and keeps the backlight
-  on with `Display.flashBacklight` until a minute without a key press.
+  (across text-size changes and loading the rest). The backlight is left
+  to the phone: `Display.flashBacklight`, the only MIDP way to keep it on,
+  blinks a lit Nokia 6300 screen (0.6.0-0.10.0 did that every 8 s while
+  reading; removed in 0.10.1).
   Message actions only prefill the editor; every paid request still needs
   the user's Send. A reply line `EVENT: YYYY-MM-DD HH:MM | title` or
   `TODO: YYYY-MM-DD | title` (see "Calendar entries") is shown in a
@@ -89,7 +91,7 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   the photo". A message sent with a photo is shown with "[Photo]".
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
-  on/off, "keep last chat", setup wizard done, the two backlight options,
+  on/off, "keep last chat", setup wizard done, the backlight option (light up for a reply; the old reading-mode one is kept unused),
   the user's notes for Claude (format 6; records before format 5 count as
   set up). The setup part (URL, token, verified URL, setup done, language,
   notes) is also written by `Backup` to `ClaudeS40/claude-s40-setup.dat`

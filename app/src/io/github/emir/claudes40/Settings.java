@@ -16,7 +16,7 @@ import javax.microedition.rms.RecordStoreException;
  * connection test last passed, look & feel (theme, text size, sound,
  * vibration, language), web search on/off and whether the last chat is kept
  * on the phone (ChatStore; off by default), and whether the setup wizard was
- * finished or skipped, the two backlight options and the user's notes for
+ * finished or skipped, the backlight option (and the unused reading one) and the user's notes for
  * Claude (sent with every message). No chat content is stored here. The
  * setup part is also kept outside the app (Backup), so reinstalling does
  * not need the setup wizard again.
@@ -51,7 +51,10 @@ final class Settings {
     boolean saveChat;
     /** The setup wizard was finished or skipped (Setup); true for settings from before 0.5.0. */
     boolean setupDone;
-    /** Keep the backlight on while a reply is read in reading mode (Display.flashBacklight). */
+    /**
+     * Unused since 0.10.1 (keeping the light on in reading mode blinked the
+     * Nokia 6300's screen); still read and written so the record format stays.
+     */
     boolean lightReading = true;
     /** Light the screen up when a reply arrives. */
     boolean lightReply = true;

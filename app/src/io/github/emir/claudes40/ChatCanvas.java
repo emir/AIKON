@@ -26,8 +26,8 @@ import javax.microedition.lcdui.Graphics;
  * a progress line. The reading position is kept by character offset, so it
  * survives loading the rest of the reply and changing the text size (9).
  * The phone's full-screen mode is not used: softkeys stay where they are.
- * While reading, the backlight is kept on (Display.flashBacklight) until a
- * minute passes without a key press.
+ * The backlight is left to the phone: Display.flashBacklight, the only MIDP
+ * way to keep it on, blinks a lit screen on the Nokia 6300.
  *
  * 1/3 select a message (a ring around it); the centre key then opens its
  * actions (ClaudeS40MIDlet.showActions), after an error it retries the same
@@ -50,8 +50,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private static final int TOAST_MS = 1600;
     /** After this many seconds with web search on, say that searching takes time. */
     private static final int SLOW_SECONDS = 15;
-    private static final int LIGHT_EVERY_MS = 8000;
-    private static final int LIGHT_IDLE_MS = 60000;
 
     private final ClaudeS40MIDlet midlet;
     private final ChatSession session;
@@ -126,9 +124,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
 
     private Timer anim;
     private int animFrame;
-    /** Keeps the backlight on in reading mode (Settings.lightReading). */
-    private Timer light;
-    private long lastKey;
     private String toast;
     private long toastUntil;
 
@@ -326,7 +321,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     protected void showNotify() {
         updateCommands();
         updateAnimation();
-        updateLight();
     }
 
     protected void hideNotify() {
@@ -334,44 +328,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             if (anim != null) {
                 anim.cancel();
                 anim = null;
-            }
-        }
-        updateLight();
-    }
-
-    /**
-     * Reading mode keeps the backlight on: every few seconds the light is
-     * requested again for a little longer, until a minute passes without a
-     * key press. Stops if the phone says it cannot.
-     */
-    private synchronized void updateLight() {
-        boolean want = reading && isShown() && midlet.settings.lightReading;
-        if (want && light == null) {
-            lastKey = System.currentTimeMillis();
-            light = new Timer();
-            light.schedule(new TimerTask() {
-                public void run() {
-                    keepLight();
-                }
-            }, 0, LIGHT_EVERY_MS);
-        } else if (!want && light != null) {
-            light.cancel();
-            light = null;
-        }
-    }
-
-    private void keepLight() {
-        synchronized (this) {
-            if (light == null || System.currentTimeMillis() - lastKey > LIGHT_IDLE_MS) {
-                return; // idle: let the phone switch the light off as usual
-            }
-        }
-        if (!midlet.flashBacklight(LIGHT_EVERY_MS + 3000)) {
-            synchronized (this) {
-                if (light != null) {
-                    light.cancel();
-                    light = null;
-                }
             }
         }
     }
@@ -410,9 +366,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
 
     private void key(int keyCode, boolean repeat) {
         keyCode = Keys.map(keyCode);
-        synchronized (this) {
-            lastKey = System.currentTimeMillis();
-        }
         midlet.userActive();
         String err = null;
         if (keyCode == KEY_NUM5) {
@@ -660,7 +613,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             newWhileReading = false;
         }
         updateCommands();
-        updateLight();
         repaint();
     }
 
@@ -905,7 +857,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             return;
         }
         updateCommands();
-        updateLight();
         repaint();
     }
 
@@ -924,7 +875,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             restoreChatAnchor(readUid, off);
         }
         updateCommands();
-        updateLight();
         repaint();
     }
 
