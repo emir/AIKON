@@ -61,6 +61,21 @@ def attributes(p, local):
     return attrs
 
 
+# Gammu sends files to Nokia phones in 2000-byte parts. A part whose USB
+# frame (14 request + 6 Phonet header + data bytes) is a multiple of 64
+# needs a zero-length packet that is never sent, so the phone waits until
+# the transfer times out (2026-10-02: AIKON.jar stuck twice at 142000 of
+# 142940 bytes: 940 + 20 = 15 x 64). Only the last part can be short.
+GAMMU_PART = 2000
+USB_PACKET = 64
+FRAME_OVERHEAD = 20
+
+
+def gammu_stalls(n):
+    last = n % GAMMU_PART or GAMMU_PART
+    return (last + FRAME_OVERHEAD) % USB_PACKET == 0
+
+
 def zinfo(name):
     zi = zipfile.ZipInfo(name, date_time=FIXED_TIME)
     zi.compress_type = zipfile.ZIP_DEFLATED
@@ -97,20 +112,31 @@ def main():
         for f in sorted(os.listdir(res_dir)):
             resources.append(f)
 
-    with zipfile.ZipFile(jar_path, "w") as z:
-        z.writestr(zinfo("META-INF/MANIFEST.MF"), manifest.encode("utf-8"),
-                   compresslevel=9)
-        for rel in files:
-            with open(os.path.join(classes, rel), "rb") as f:
-                z.writestr(zinfo(rel), f.read(), compresslevel=9)
-        for rel in resources:
-            with open(os.path.join(res_dir, rel), "rb") as f:
-                z.writestr(zinfo(rel), f.read(), compresslevel=9)
+    # a ZIP comment of a few spaces moves the size off a stalling length
+    for pad in range(3):
+        with zipfile.ZipFile(jar_path, "w") as z:
+            z.writestr(zinfo("META-INF/MANIFEST.MF"), manifest.encode("utf-8"),
+                       compresslevel=9)
+            for rel in files:
+                with open(os.path.join(classes, rel), "rb") as f:
+                    z.writestr(zinfo(rel), f.read(), compresslevel=9)
+            for rel in resources:
+                with open(os.path.join(res_dir, rel), "rb") as f:
+                    z.writestr(zinfo(rel), f.read(), compresslevel=9)
+            z.comment = b" " * pad
+        size = os.path.getsize(jar_path)
+        if not gammu_stalls(size):
+            break
 
-    size = os.path.getsize(jar_path)
-    jad = "".join(f"{k}: {v}\n" for k, v in attrs)
-    jad += f"MIDlet-Jar-URL: {jar_name}\n"
-    jad += f"MIDlet-Jar-Size: {size}\n"
+    # the phone receives (and keeps) the JAD with CRLF line ends; a blank
+    # last line moves a stalling length off by two bytes
+    for pad in range(3):
+        jad = "".join(f"{k}: {v}\n" for k, v in attrs)
+        jad += f"MIDlet-Jar-URL: {jar_name}\n"
+        jad += f"MIDlet-Jar-Size: {size}\n"
+        jad += "\n" * pad
+        if not gammu_stalls(len(jad.encode("utf-8")) + jad.count("\n")):
+            break
     with open(jad_path, "w", encoding="utf-8", newline="") as f:
         f.write(jad)
 

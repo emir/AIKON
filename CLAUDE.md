@@ -14,7 +14,7 @@ devices, phone) are in `CLAUDE.local.md` (gitignored), never in tracked files.
     docs/    SETUP.md (user guide), ARCHITECTURE.md (protocol, TLS, rules)
 
     make test                     server tests (race) + app build/checks
-    make -C app                   build + 47 package checks + reproducible rebuild
+    make -C app                   build + 48 package checks + reproducible rebuild
     make -C app emu FREEJ2ME=...  optional emulator screenshots; make -C app promo
     make -C server test | docker
     server/deploy/push.sh HOST [--execute]   plan by default

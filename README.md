@@ -128,7 +128,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~130 KB JAR, English + Turkish UI (see Features). Reproducible build with 47 package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~130 KB JAR, English + Turkish UI (see Features). Reproducible build with 48 package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (Claude via the official `anthropic-sdk-go`; OpenAI, Gemini, Grok over plain HTTPS), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
@@ -160,7 +160,7 @@ Full guide: **[docs/SETUP.md](docs/SETUP.md)**. In short:
 ## Development
 
 ```
-make test          # server: go vet + go test -race; app: build + 47 checks + reproducibility
+make test          # server: go vet + go test -race; app: build + 48 checks + reproducibility
 make -C app        # phone app only (downloads pinned build tools to app/.deps)
 make -C server test
 ```

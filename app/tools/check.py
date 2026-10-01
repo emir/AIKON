@@ -464,6 +464,18 @@ def main():
     check("MIDlet class extends javax.microedition.midlet.MIDlet",
           "javax/microedition/midlet/MIDlet" in chain, chain)
 
+    # Gammu's 2000-byte parts: a last part whose USB frame (+20 bytes) is a
+    # multiple of 64 stalls the upload (see package.py); the JAD goes over
+    # with CRLF line ends
+    def stalls(n):
+        last = n % 2000 or 2000
+        return (last + 20) % 64 == 0
+    jar_n = os.path.getsize(jar_path)
+    jad_raw = open(jad_path, "rb").read()
+    jad_n = len(jad_raw) + jad_raw.count(b"\n")
+    check("JAR/JAD sizes do not stall a Gammu upload", not stalls(jar_n) and not stalls(jad_n),
+          f"jar {jar_n}, jad {jad_n}")
+
     sums = {}
     for line in open(os.path.join(dist, "SHA256SUMS")):
         h, n = line.split()
