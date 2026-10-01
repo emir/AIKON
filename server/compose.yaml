@@ -16,7 +16,7 @@ services:
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
-      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5}
+      CLAUDE_MODEL: ${CLAUDE_MODEL:-claude-opus-5-5}
       CLAUDE_EFFORT: ${CLAUDE_EFFORT:-low}
       CLAUDE_FALLBACKS: ${CLAUDE_FALLBACKS:-default}
       # models offered to the phone: provider:model-id[=Label],... (first =

@@ -100,7 +100,7 @@ func loadConfig() config {
 	c.environment = env("ENVIRONMENT", "production")
 	c.apiKeyFile = env("ANTHROPIC_API_KEY_FILE", "/run/secrets/anthropic_api_key")
 	c.adminTokenFile = env("ADMIN_TOKEN_FILE", "/run/secrets/admin_token")
-	c.model = env("CLAUDE_MODEL", "claude-opus-5")
+	c.model = env("CLAUDE_MODEL", "claude-opus-5-5")
 	c.effort = env("CLAUDE_EFFORT", "low")
 	c.fallbacks = env("CLAUDE_FALLBACKS", "default") == "default"
 	c.models = env("MODELS", "anthropic:"+c.model)

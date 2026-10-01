@@ -46,7 +46,7 @@ cp "$PKI/server-chain.pem" "$STAGE/certs/" && chmod 644 "$STAGE/certs/server-cha
 cp "$PKI/server.key" "$STAGE/certs/" && chmod 600 "$STAGE/certs/server.key"
 cat > "$STAGE/.env" <<ENV
 ENVIRONMENT=${S40_ENVIRONMENT:-production}
-CLAUDE_MODEL=${S40_MODEL:-claude-opus-5}
+CLAUDE_MODEL=${S40_MODEL:-claude-opus-5-5}
 CLAUDE_EFFORT=${S40_EFFORT:-low}
 CLAUDE_FALLBACKS=${S40_FALLBACKS:-default}
 MODELS=$MODELS

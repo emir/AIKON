@@ -1264,7 +1264,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(null, L.s("Nokia S40 ve S60 telefonlar için yapay zekâ sohbeti.",
                 "AI chat for Nokia S40 and S60 phones.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
-        about.append(new StringItem(null, "github.com/emir/claude-s40"));
+        about.append(new StringItem(null, "github.com/emir/aikon"));
         about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));
         about.append(new StringItem(L.s("Ses kaydı", "Voice recording"), (hasRecording() ? L.s("var", "yes")
                 : L.s("yok", "no")) + " (" + prop("audio.encodings") + ")"));

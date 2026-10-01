@@ -1,17 +1,21 @@
 # Setup guide
 
-From zero to "Claude answers on my Nokia". Allow an hour the first time.
+From zero to "AI answers on my Nokia". Allow an hour the first time.
 Commands run on your computer (macOS or Linux) unless stated otherwise.
 
 **What you need**
 
-- A Nokia Series 40 phone with Java (CLDC 1.1 / MIDP 2.0). Verified: Nokia
-  6300 RM-217, V06.60. A SIM with mobile data.
+- A Nokia Series 40 or Symbian S60 phone with Java (CLDC 1.1 / MIDP 2.0).
+  Verified: Nokia 6300 RM-217 (V06.60) and Nokia E63. A SIM with mobile
+  data (or WLAN on S60).
 - A Docker host with a **public IPv4 address** and TCP 443 reachable from
   the internet: a small VPS is enough (512 MB RAM). Cloud platforms that
   terminate HTTPS for you (Cloudflare, App Platform, Vercel, ...) do **not**
   work, the phone cannot complete their TLS handshake.
-- A Claude API key (https://console.anthropic.com). Set a spending limit.
+- An API key for at least one provider: Claude (https://console.anthropic.com),
+  OpenAI (https://platform.openai.com), Gemini (https://aistudio.google.com,
+  a paid-tier key) or xAI Grok (https://console.x.ai). Set a spending limit
+  with each.
 - On your computer: Go 1.26+, JDK 11+, Python 3 with Pillow (`pip install
   pillow`), OpenSSL 3 or LibreSSL, Docker with buildx, ssh.
 - A way to install a Java app on the phone: Gammu over USB, Bluetooth file
@@ -156,16 +160,43 @@ Settings → Options → Setup wizard.
 
 ## 8. Go live
 
+Put the key of each provider you want on the server, in YOUR terminal
+(hidden input, never in a file or the shell history):
+
 ```
-server/deploy/set-key.sh $SERVER                 # in YOUR terminal; hidden input
-S40_MOCK=0 server/deploy/push.sh $SERVER --execute
+server/deploy/set-key.sh $SERVER                 # Claude   (sk-ant-...)
+server/deploy/set-key.sh $SERVER openai          # OpenAI   (sk-...)
+server/deploy/set-key.sh $SERVER gemini          # Gemini   (AQ. or AIza...)
+server/deploy/set-key.sh $SERVER xai             # xAI Grok (xai-...)
 ```
 
-Settings you can pass to `push.sh`: `S40_MODEL` (default `claude-opus-5`),
-`S40_EFFORT` (`low`), `S40_FALLBACKS` (`default` = server-side refusal
-fallback; `off` for models without it), `S40_REQ_LIMIT` (100/day),
-`S40_TOK_LIMIT` (100000 output tokens/day), `S40_SEARCH` (`1` = Claude may
-search the web, `0` = never), `S40_SEARCH_LIMIT` (30 searches/day per
+Then list the models the phone may choose and deploy with real calls:
+
+```
+S40_MOCK=0 \
+S40_MODELS="anthropic:claude-opus-5-5=Claude Opus 5.5,openai:gpt-6-luna=GPT-6 Luna,gemini:gemini-3.8-flash=Gemini 3.8 Flash,xai:grok-4.7=Grok 4.7" \
+S40_DEFAULT_MODEL=gpt-6-luna \
+server/deploy/push.sh $SERVER --execute
+```
+
+`S40_MODELS` is `provider:model-id=Name,...` with the providers
+`anthropic`, `openai`, `gemini` and `xai`; the phone shows them in this
+order, provider first, then its models. Names are ASCII, at most 20
+characters. `S40_DEFAULT_MODEL` answers new chats where no model was
+chosen (and older phones); without it the first one does. List only the
+models you want to pay for: the providers' own lists are long. The plan
+(`push.sh` without `--execute`) names every provider whose key must be on
+the server; the server does not start with a model whose key is missing.
+Without `S40_MODELS` the server offers only `S40_MODEL` (Claude). Each chat
+remembers its model; Options > Model switches it from the next message on.
+
+Other settings for `push.sh`: `S40_EFFORT` (`low`, Claude's effort),
+`S40_OPENAI_EFFORT` (`low`), `S40_XAI_EFFORT` (empty = the model's
+default), `S40_GEMINI_EFFORT` (`low`, Gemini's thinking level),
+`S40_FALLBACKS` (`default` = Claude's server-side refusal fallback; `off`
+to turn it off), `S40_REQ_LIMIT` (100/day), `S40_TOK_LIMIT` (100000
+output tokens/day; both shared by all models), `S40_SEARCH` (`1` = models
+may search the web with their provider's search tool, `0` = never), `S40_SEARCH_LIMIT` (30 searches/day per
 phone), `S40_SEARCH_MAX_USES` (3 per message), and optionally
 `S40_SEARCH_COUNTRY` (e.g. `TR`), `S40_SEARCH_CITY`, `S40_SEARCH_TIMEZONE`
 (e.g. `Europe/Istanbul`) for local results. Web searches are billed per
@@ -185,7 +216,7 @@ S40_MOCK=0 S40_TRANSCRIBE=openai server/deploy/push.sh $SERVER --execute
 `S40_TRANSCRIBE_LIMIT` (30/day per phone), `S40_TRANSCRIBE_MODEL`
 (`gpt-4o-mini-transcribe`). On the phone: **Dictate** in the chat's
 options or in the editor, speak (up to 30 s), **Done**; the text opens in
-the editor, check it and press **Send**. Nothing reaches Claude before
+the editor, check it and press **Send**. Nothing reaches the model before
 that. The phone asks for microphone access. About shows whether the phone
 can record and which formats it reports.
 
@@ -193,7 +224,7 @@ can record and which formats it reports.
 editor, **Add a photo** → take one with the camera or choose one from the
 phone (up to 1 MB); it is uploaded, then the editor opens with "What is in
 this photo?" to change and **Send**. Follow-up questions in the same chat
-still show Claude the photo. `S40_IMAGE_LIMIT` (30 uploads/day per phone).
+still show the model the photo. `S40_IMAGE_LIMIT` (30 uploads/day per phone).
 Each photo adds about 1000 input tokens to every message in its chat
 (the newest 3 photos are sent). About shows whether the phone lets apps
 use the camera.
@@ -203,14 +234,18 @@ shorter" in the same chat. Then try Quick prompts → Weather: a reply
 marked "searched the web" ends with "Web: <sources>".
 
 On the phone: **Chats** lists earlier conversations (open one to continue
-it); in a chat, **0** loads the rest of a long reply (free, Claude is not
-asked again), **2/8** page, **1/3** jump between messages, **\*/#** top and
+it); in a chat, **0** loads the rest of a long reply (free, the model is
+not asked again), **2/8** page, **1/3** jump between messages, **\*/#** top and
 end, **5** write, **7** reading mode (one reply page by page, full width),
 **9** text size. **1/3** also select a message; the centre key then offers
 shorten, translate, ask about it or open it in the editor (these only fill
 the editor, nothing is sent until you press Send). After an error the
-centre key retries the same request. Options → Shortcuts lists every key. Settings → Claude: web search on/off, keep the last chat
-on the phone for offline reading.
+centre key retries the same request. Options → Shortcuts lists every key. **New chat** asks for the provider and
+model; **Options → Model** switches the open chat. Settings → Replies: web
+search on/off, keep the last chat on the phone for offline reading;
+Settings → Screen: full screen. Explanations behind a short note: select
+it with **1/3** and press the centre key; on settings screens, Options →
+Info.
 
 ## 9. Day to day
 
@@ -221,9 +256,13 @@ server/deploy/admin.sh $SERVER logs 50           # method/path/status/TLS only, 
 server/deploy/push.sh $SERVER --execute          # update after a code change
 ```
 
-Updating the app: delete AIKon in the phone menu (or use `--replace`) and install the new
-build. Since 0.7.2 the app keeps its setup (server address, access code,
-language, notes for Claude) in `ClaudeS40/claude-s40-setup.dat` on the
+Updating the app with Gammu: `app/tools/install-gammu.sh --execute
+--i-understand-this-writes-to-the-phone --replace` deletes only the old
+AIKON.jad/.jar (and those of the app under its old name, Claude S40)
+before installing; otherwise delete the app in the phone menu first. The
+build keeps the JAR's size off a length that stalls Gammu's USB upload
+(see `app/tools/package.py`). Since 0.7.2 the app keeps its setup (server
+address, access code, language, notes for the AI) in `ClaudeS40/claude-s40-setup.dat` on the
 memory card (or in the phone's image folder), which survives deleting the
 app: the new build restores it at its first start (the phone asks for file
 access) and needs no new pairing. Without that file (older builds, no file
@@ -240,9 +279,10 @@ your hands, revoke the device.
 | "signature not verified" | root CA not saved on the phone (step 6), or a SHA-256 certificate on a phone that only verifies SHA-1 |
 | "host name mismatch" | server certificate issued for a different name/IP than the app uses |
 | HTTP code but "not this server's reply" | operator proxy or wrong address |
-| "No credits" | the Claude API account has no credit balance |
+| "No credits" | the API account of the chat's model has no credit balance |
+| "Model not offered" | the chat's model was removed from `S40_MODELS`: Options > Model |
 | "Daily limit reached" | raise `S40_REQ_LIMIT` / `S40_TOK_LIMIT` |
-| Claude no longer searches the web | the phone's daily search budget is used up (`S40_SEARCH_LIMIT`) or web search is off in Settings / `S40_SEARCH=0` |
+| The model no longer searches the web | the phone's daily search budget is used up (`S40_SEARCH_LIMIT`) or web search is off in Settings / `S40_SEARCH=0` |
 | "Access code invalid or revoked" | pair again |
 | No **Dictate** command | the phone does not let apps record (About → Voice recording) |
 | "Voice messages are not turned on on the server" | deploy with `S40_TRANSCRIBE=openai` (or `mock`) |
