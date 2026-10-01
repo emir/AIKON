@@ -5,11 +5,16 @@
 #
 #   tools/install-gammu.sh                      dry run: local checks + exact command
 #   tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone
+#   tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone --replace
 #
 # Env: GAMMU (default: gammu in PATH), GAMMURC (optional config file),
 #      GAMMU_LIB (optional: directory with a locally built libGammu).
-# Never passes -overwrite/-overwriteall, so Gammu's delete code paths are not
-# used; remove an older Claude S40 with the phone's own menu first.
+# Never passes -overwrite/-overwriteall. Without --replace an older Claude S40
+# must be removed with the phone's own menu first (that also deletes its
+# settings and pairing). With --replace exactly the two files
+# d:/predefjava/predefcollections/<FILE_BASE>.jad and .jar are deleted
+# (gammu deletefiles, nothing else) before the new ones are added; the
+# app's settings (RMS) are not touched, so the pairing usually stays.
 # Other ways to install: Bluetooth "send file" to the phone, Nokia PC Suite,
 # or serving the JAD/JAR over HTTP to the phone browser (see docs/SETUP.md).
 set -eu
@@ -26,14 +31,24 @@ BASE="$DIST/$NAME"
 TARGET_DIR="d:/predefjava/predefcollections"
 
 mode=dry
+replace=no
 if [ "${1:-}" = "--execute" ]; then
 	[ "${2:-}" = "--i-understand-this-writes-to-the-phone" ] || { echo "refusing: add --i-understand-this-writes-to-the-phone" >&2; exit 2; }
 	mode=execute
+	case "${3:-}" in
+	"") ;;
+	--replace) replace=yes ;;
+	*) echo "unknown option ${3}" >&2; exit 2 ;;
+	esac
 fi
 
 [ -f "$BASE.jar" ] && [ -f "$BASE.jad" ] || { echo "run 'make' first" >&2; exit 1; }
 (cd "$DIST" && shasum -a 256 -c SHA256SUMS)
-echo "will create: $TARGET_DIR/$NAME.jad and $NAME.jar (no overwrite, no delete)"
+if [ "$replace" = yes ]; then
+	echo "will replace: $TARGET_DIR/$NAME.jad and $NAME.jar (deletes only these two if present, then adds)"
+else
+	echo "will create: $TARGET_DIR/$NAME.jad and $NAME.jar (no overwrite, no delete)"
+fi
 echo "command    : $GAMMU $CFG nokiaaddfile Application $BASE"
 [ "$mode" = dry ] && { echo "DRY RUN: phone not touched."; exit 0; }
 
@@ -44,9 +59,27 @@ mkdir -p "$LOG"
 # never ends on a damaged card.
 echo "-- read-only pre-check ($TARGET_DIR)"
 $GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/before.txt" || { echo "refusing: could not list $TARGET_DIR" >&2; exit 1; }
-if grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/before.txt"; then
-	echo "refusing: $NAME already on the phone; delete it with the phone menu first" >&2
+old=$(grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/before.txt" | cut -d';' -f1 || true)
+if [ -n "$old" ] && [ "$replace" != yes ]; then
+	echo "$old"
+	echo "refusing: $NAME already on the phone; delete it with the phone menu first, or add --replace" >&2
 	exit 1
+fi
+if [ -n "$old" ]; then
+	echo "-- deleting the old $NAME files (writes to the phone)"
+	for f in $old; do
+		case "$f" in
+		"$TARGET_DIR/$NAME.jar" | "$TARGET_DIR/$NAME.jad" | "$TARGET_DIR/$NAME.JAR" | "$TARGET_DIR/$NAME.JAD") ;;
+		*) echo "refusing: unexpected file id $f" >&2; exit 1 ;;
+		esac
+		echo "   $f"
+		$GAMMU $CFG deletefiles "$f"
+	done
+	$GAMMU $CFG getfolderlisting "$TARGET_DIR" > "$LOG/deleted.txt"
+	if grep -i "^$TARGET_DIR/$NAME\.ja[rd];" "$LOG/deleted.txt"; then
+		echo "stopping: the old files are still there; nothing new was added" >&2
+		exit 1
+	fi
 fi
 echo "-- installing (writes to the phone)"
 $GAMMU $CFG nokiaaddfile Application "$BASE"
