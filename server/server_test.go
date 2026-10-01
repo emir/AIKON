@@ -36,7 +36,7 @@ func newEnv(t *testing.T, reqLimit int) *tenv {
 	}
 	t.Cleanup(func() { st.close() })
 	s := &server{cfg: config{environment: "test", mock: true}, st: st,
-		chat: &chatService{st: st, models: singleModel("claude-opus-5", "Claude", mockModel{}), reqLimit: reqLimit, tokLimit: 100000}, adminToken: testAdmin}
+		chat: &chatService{st: st, models: singleModel("claude-opus-5", "Claude", mockModel{}), meter: &dailyMeter{st: st, reqLimit: reqLimit, tokLimit: 100000}}, adminToken: testAdmin}
 	return &tenv{t: t, srv: s, pub: s.publicMux(), admin: s.adminMux()}
 }
 
@@ -497,7 +497,7 @@ func TestDailyLimit(t *testing.T) {
 func TestRetentionAndRestart(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "r.db")
 	st, _ := openStore(path)
-	s := &server{cfg: config{mock: true}, st: st, chat: &chatService{st: st, models: singleModel("claude-opus-5", "Claude", mockModel{}), reqLimit: 30, tokLimit: 1e5}, adminToken: testAdmin}
+	s := &server{cfg: config{mock: true}, st: st, chat: &chatService{st: st, models: singleModel("claude-opus-5", "Claude", mockModel{}), meter: &dailyMeter{st: st, reqLimit: 30, tokLimit: 1e5}}, adminToken: testAdmin}
 	e := &tenv{t: t, srv: s, pub: s.publicMux(), admin: s.adminMux()}
 	tok, dev := e.pair("p")
 	conv := e.chat(tok, rid(), "", "eski").msg.get("conversation")

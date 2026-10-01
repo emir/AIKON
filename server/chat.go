@@ -4,7 +4,8 @@ package main
 //
 //   - same request_id again -> answer from the record, never call again
 //   - one request in flight per device
-//   - daily request / output-token limits per device (UTC day)
+//   - the meter (meter.go) admits, reserves and settles each call; by
+//     default daily request / output-token limits per device (UTC day)
 //   - conversation ids are scoped to the device
 //   - the request is recorded as "pending" and counted BEFORE the paid call
 //   - uncertain upstream results are recorded and never retried
@@ -63,8 +64,7 @@ var statusHTTP = map[string]int{
 type chatService struct {
 	st          *store
 	models      *catalog
-	reqLimit    int
-	tokLimit    int64
+	meter       meter
 	search      bool     // web search available at all (server setting)
 	searchLimit int      // searches per device per UTC day
 	deviceLocks sync.Map // device id -> *sync.Mutex (serialises the bookkeeping, not the call)
@@ -87,21 +87,8 @@ func result(status, request string) chatResult {
 	return chatResult{http: statusHTTP[status], status: status, request: request}
 }
 
-func (c *chatService) remainingToday(ctx context.Context, device string) int {
-	var req int
-	var out int64
-	err := c.st.db.QueryRowContext(ctx, `SELECT requests, output_tokens FROM usage WHERE device_id=? AND day=?`,
-		device, utcDay(c.st.ms())).Scan(&req, &out)
-	if errors.Is(err, sql.ErrNoRows) {
-		return c.reqLimit
-	}
-	if err != nil || out >= c.tokLimit {
-		return 0
-	}
-	if r := c.reqLimit - req; r > 0 {
-		return r
-	}
-	return 0
+func (c *chatService) remaining(ctx context.Context, device string) int {
+	return c.meter.left(ctx, callChat, device)
 }
 
 // searchesLeft: web searches the device may still start today.
@@ -174,7 +161,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 			if prevModel != "" {
 				r.model, r.label = prevModel, c.labelOf(prevModel)
 			}
-			r.remaining, r.hasRemaining = c.remainingToday(ctx, device), true
+			r.remaining, r.hasRemaining = c.remaining(ctx, device), true
 			return r, nil
 		case "uncertain":
 			return r, nil
@@ -198,12 +185,15 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 		return result("busy", requestID), nil
 	}
 
-	// 3. daily limits
-	remaining := c.remainingToday(ctx, device)
-	if remaining <= 0 {
+	// 3. the meter (by default the daily limits)
+	call := meterCall{kind: callChat, device: device, request: requestID, started: now, image: o.imageID != ""}
+	if st, err := c.meter.admit(ctx, call); err != nil || st != "" {
 		mu.Unlock()
-		r := result("limit", requestID)
-		r.hasRemaining = true
+		if err != nil {
+			return chatResult{}, err
+		}
+		r := result(st, requestID)
+		r.remaining, r.hasRemaining = c.remaining(ctx, device), true
 		return r, nil
 	}
 
@@ -281,6 +271,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 
 	// 7. record + count BEFORE the paid call
+	call.model, call.search = entry.id, opts.search
 	tx, err := db.BeginTx(ctx, nil)
 	if err != nil {
 		mu.Unlock()
@@ -288,12 +279,23 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	_, e1 := tx.ExecContext(ctx, `INSERT INTO requests (device_id, request_id, conversation_id, message_sha, state, created_at, model)
 		VALUES (?, ?, ?, ?, 'pending', ?, ?)`, device, requestID, conv, sha, now, entry.id)
-	_, e2 := tx.ExecContext(ctx, `INSERT INTO usage (device_id, day, requests) VALUES (?, ?, 1)
-		ON CONFLICT(device_id, day) DO UPDATE SET requests = requests + 1`, device, utcDay(now))
+	var refusal string
+	var e2 error
+	if e1 == nil {
+		refusal, e2 = c.meter.reserve(ctx, tx, call)
+	}
 	if e1 != nil || e2 != nil {
 		tx.Rollback()
 		mu.Unlock()
 		return chatResult{}, errors.Join(e1, e2)
+	}
+	if refusal != "" {
+		tx.Rollback()
+		mu.Unlock()
+		r := result(refusal, requestID)
+		r.conversation = conv
+		r.remaining, r.hasRemaining = c.remaining(ctx, device), true
+		return r, nil
 	}
 	if err := tx.Commit(); err != nil {
 		mu.Unlock()
@@ -323,7 +325,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 			state, ue.code, done, device, requestID)
 		r := result(ue.code, requestID)
 		r.conversation = conv
-		r.remaining, r.hasRemaining = remaining-1, true
+		r.remaining, r.hasRemaining = c.remaining(ctx, device), true
 		return r, nil
 	}
 
@@ -359,8 +361,10 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	tx.ExecContext(ctx, `UPDATE requests SET state='done', reply=?, truncated=?, refused=?, mock=?,
 		input_tokens=?, output_tokens=?, searches=?, finished_at=? WHERE device_id=? AND request_id=?`,
 		text, b2i(truncated), b2i(rep.refused), b2i(rep.mock), rep.inputTokens, rep.outputTokens, rep.searches, done, device, requestID)
-	tx.ExecContext(ctx, `UPDATE usage SET input_tokens = input_tokens + ?, output_tokens = output_tokens + ?,
-		searches = searches + ? WHERE device_id=? AND day=?`, rep.inputTokens, rep.outputTokens, rep.searches, device, utcDay(now))
+	if err := c.meter.settle(ctx, tx, call, meterUse{inputTokens: rep.inputTokens, outputTokens: rep.outputTokens,
+		searches: rep.searches}); err != nil {
+		return chatResult{}, err
+	}
 	if err := tx.Commit(); err != nil {
 		return chatResult{}, err
 	}
@@ -368,7 +372,7 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	r.conversation, r.refused, r.mock, r.searches = conv, rep.refused, rep.mock, rep.searches
 	r.model, r.label = entry.id, entry.label
 	r.firstPart(text, truncated)
-	r.remaining, r.hasRemaining = c.remainingToday(ctx, device), true
+	r.remaining, r.hasRemaining = c.remaining(ctx, device), true
 	return r, nil
 }
 

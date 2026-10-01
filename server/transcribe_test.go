@@ -44,7 +44,7 @@ func (e *tenv) transcribe(token, request, lang string, audio []byte) resp {
 }
 
 func withSTT(e *tenv, stt speechToText, limit int) {
-	e.srv.transcriber = &transcribeService{st: e.srv.st, stt: stt, limit: limit}
+	e.srv.transcriber = &transcribeService{st: e.srv.st, stt: stt, meter: &dailyMeter{st: e.srv.st, transcribeLimit: limit}}
 }
 
 func TestAudioParsing(t *testing.T) {

@@ -9,7 +9,8 @@ package main
 // The transcription is a paid call, so it follows the chat rules:
 //
 //   - same request_id again -> the recorded result, never a second call
-//   - one transcription in flight per device, a daily limit per device
+//   - one transcription in flight per device; the meter (meter.go), by
+//     default a daily limit per device
 //   - recorded as "pending" and counted BEFORE the call, no retries
 //   - no HTTP answer from the service -> "uncertain", never retried
 //
@@ -371,7 +372,7 @@ type transcribeResult struct {
 type transcribeService struct {
 	st          *store
 	stt         speechToText
-	limit       int // transcriptions per device per UTC day
+	meter       meter
 	deviceLocks sync.Map
 }
 
@@ -381,10 +382,7 @@ func (t *transcribeService) lock(device string) *sync.Mutex {
 }
 
 func (t *transcribeService) left(ctx context.Context, device string) int {
-	var n int
-	t.st.db.QueryRowContext(ctx, `SELECT transcripts FROM usage WHERE device_id=? AND day=?`,
-		device, utcDay(t.st.ms())).Scan(&n)
-	return max(0, t.limit-n)
+	return t.meter.left(ctx, callTranscribe, device)
 }
 
 func (t *transcribeService) transcribe(ctx context.Context, device, requestID, lang string, audioSHA string, clip audioClip) (transcribeResult, error) {
@@ -437,11 +435,14 @@ func (t *transcribeService) transcribe(ctx context.Context, device, requestID, l
 		return transcribeResult{status: "busy"}, nil
 	}
 
-	// 3. daily limit
-	left := t.left(ctx, device)
-	if left <= 0 {
+	// 3. the meter (by default the daily limit)
+	call := meterCall{kind: callTranscribe, device: device, request: requestID, started: now, audioMS: clip.ms}
+	if st, err := t.meter.admit(ctx, call); err != nil || st != "" {
 		mu.Unlock()
-		return transcribeResult{status: "limit", has: true}, nil
+		if err != nil {
+			return transcribeResult{}, err
+		}
+		return transcribeResult{status: st, remaining: t.left(ctx, device), has: true}, nil
 	}
 
 	// 4. record + count BEFORE the paid call
@@ -452,13 +453,20 @@ func (t *transcribeService) transcribe(ctx context.Context, device, requestID, l
 	}
 	_, e1 := tx.ExecContext(ctx, `INSERT INTO transcripts (device_id, request_id, audio_sha, state, created_at, audio_ms)
 		VALUES (?, ?, ?, 'pending', ?, ?)`, device, requestID, audioSHA, now, clip.ms)
-	_, e2 := tx.ExecContext(ctx, `INSERT INTO usage (device_id, day, transcripts, audio_ms) VALUES (?, ?, 1, ?)
-		ON CONFLICT(device_id, day) DO UPDATE SET transcripts = transcripts + 1, audio_ms = audio_ms + ?`,
-		device, utcDay(now), clip.ms, clip.ms)
+	var refusal string
+	var e2 error
+	if e1 == nil {
+		refusal, e2 = t.meter.reserve(ctx, tx, call)
+	}
 	if e1 != nil || e2 != nil {
 		tx.Rollback()
 		mu.Unlock()
 		return transcribeResult{}, errors.Join(e1, e2)
+	}
+	if refusal != "" {
+		tx.Rollback()
+		mu.Unlock()
+		return transcribeResult{status: refusal, remaining: t.left(ctx, device), has: true}, nil
 	}
 	if err := tx.Commit(); err != nil {
 		mu.Unlock()
@@ -484,17 +492,29 @@ func (t *transcribeService) transcribe(ctx context.Context, device, requestID, l
 		}
 		db.ExecContext(ctx, `UPDATE transcripts SET state=?, error=?, finished_at=? WHERE device_id=? AND request_id=?`,
 			state, ue.code, done, device, requestID)
-		return transcribeResult{status: ue.code, remaining: left - 1, has: true}, nil
+		return transcribeResult{status: ue.code, remaining: t.left(ctx, device), has: true}, nil
 	}
+	// the service answered (also with no speech): the call is settled
 	text := cleanTranscript(tr.text)
 	status := "ok"
+	tx, err = db.BeginTx(ctx, nil)
+	if err != nil {
+		return transcribeResult{}, err
+	}
+	defer tx.Rollback()
 	if text == "" {
 		status = "no_speech"
-		db.ExecContext(ctx, `UPDATE transcripts SET state='failed', error='no_speech', finished_at=? WHERE device_id=? AND request_id=?`,
+		tx.ExecContext(ctx, `UPDATE transcripts SET state='failed', error='no_speech', finished_at=? WHERE device_id=? AND request_id=?`,
 			done, device, requestID)
 	} else {
-		db.ExecContext(ctx, `UPDATE transcripts SET state='done', text=?, mock=?, finished_at=? WHERE device_id=? AND request_id=?`,
+		tx.ExecContext(ctx, `UPDATE transcripts SET state='done', text=?, mock=?, finished_at=? WHERE device_id=? AND request_id=?`,
 			text, b2i(tr.mock), done, device, requestID)
+	}
+	if err := t.meter.settle(ctx, tx, call, meterUse{audioMS: clip.ms}); err != nil {
+		return transcribeResult{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return transcribeResult{}, err
 	}
 	return transcribeResult{status: status, text: text, mock: tr.mock, remaining: t.left(ctx, device), has: true}, nil
 }

@@ -131,7 +131,7 @@ func loadConfig() config {
 // setupTranscribe: the speech-to-text service for voice messages, or nil
 // when TRANSCRIBE=off. The converter (ffmpeg, needed for AMR) is nil if the
 // binary is missing; WAV from the phone still works then.
-func setupTranscribe(c config, st *store) (*transcribeService, audioConverter) {
+func setupTranscribe(c config, st *store, m meter) (*transcribeService, audioConverter) {
 	var conv audioConverter
 	if p, err := exec.LookPath(c.ffmpeg); err == nil {
 		conv = ffmpegConverter{p}
@@ -151,7 +151,7 @@ func setupTranscribe(c config, st *store) (*transcribeService, audioConverter) {
 	default:
 		log.Fatalf("TRANSCRIBE must be off, mock or openai, not %q", c.transcribe)
 	}
-	return &transcribeService{st: st, stt: stt, limit: c.transcribeLimit}, conv
+	return &transcribeService{st: st, stt: stt, meter: m}, conv
 }
 
 // buildCatalog: the models from MODELS with their keys; with MOCK_ANTHROPIC=1
@@ -241,9 +241,10 @@ func main() {
 	if len(adminToken) < 32 {
 		log.Printf("warning: no admin token (>= 32 chars) in %s; admin API disabled", c.adminTokenFile)
 	}
-	srv := &server{cfg: c, st: st, chat: &chatService{st: st, models: models, reqLimit: c.reqLimit, tokLimit: c.tokLimit,
+	m := meterFactory(st, c)
+	srv := &server{cfg: c, st: st, chat: &chatService{st: st, models: models, meter: m,
 		search: c.search, searchLimit: c.searchLimit}, adminToken: adminToken}
-	srv.transcriber, srv.converter = setupTranscribe(c, st)
+	srv.transcriber, srv.converter = setupTranscribe(c, st, m)
 
 	go func() {
 		for {
