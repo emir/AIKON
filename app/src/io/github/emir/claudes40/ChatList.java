@@ -154,8 +154,8 @@ final class ChatList implements CommandListener, Runnable {
         Net.Result r = search
                 ? Net.request(s.url + "/v1/search", "POST", s.token, S40Message.format(new String[0], new String[0], q),
                         midlet.userAgent(), null)
-                : Net.request(s.url + "/v1/conversations", "POST", s.token, S40Message.format(new String[] { "pins" },
-                        new String[] { "1" }, ""), midlet.userAgent(), null);
+                : Net.request(s.url + "/v1/conversations", "POST", s.token, S40Message.format(new String[] { "pins", "models" },
+                        new String[] { "1", "1" }, ""), midlet.userAgent(), null);
         Vector titles = new Vector();
         Vector found = new Vector();
         Vector pinned = new Vector();
@@ -199,7 +199,10 @@ final class ChatList implements CommandListener, Runnable {
 
     /**
      * List lines: pinned TAB id TAB updated-ms TAB messages TAB title (with
-     * "pins: 1"); search lines: id TAB updated-ms TAB matches TAB snippet.
+     * "pins: 1"), and with "models: 1" (server 0.7.0+) the model id before
+     * the title (titles never contain a tab, so an older server's line
+     * simply has one field less); search lines: id TAB updated-ms TAB
+     * matches TAB snippet.
      */
     private static void parse(String text, boolean search, Vector ids, Vector pinned, Vector titles) {
         int pos = 0;
@@ -226,9 +229,17 @@ final class ChatList implements CommandListener, Runnable {
                 updated = 0;
             }
             String title = line.substring(t3 + 1);
+            String model = "";
+            int t4 = search ? -1 : title.indexOf('\t');
+            if (t4 >= 0) {
+                String id = title.substring(0, t4);
+                title = title.substring(t4 + 1);
+                model = Models.name(id).length() > 0 ? Models.name(id) : id;
+            }
             ids.addElement(line.substring(0, t1));
             pinned.addElement(pin ? Boolean.TRUE : Boolean.FALSE);
-            titles.addElement(Text.shortDate(updated) + " · " + (title.length() > 0 ? title : "-"));
+            titles.addElement(Text.shortDate(updated) + " · " + (model.length() > 0 ? model + " · " : "")
+                    + (title.length() > 0 ? title : "-"));
         }
     }
 
