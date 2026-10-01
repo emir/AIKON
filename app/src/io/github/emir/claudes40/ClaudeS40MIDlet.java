@@ -226,6 +226,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         buildUi();
     }
 
+    ChatSession session() {
+        return session;
+    }
+
     Display display() {
         return display;
     }
@@ -528,15 +532,37 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         display.setCurrent(chat);
     }
 
+    /**
+     * "New chat": with more than one model offered (as last fetched), the
+     * model picker first; otherwise at once with the server's default. The
+     * picker fetches the list when none is kept yet.
+     */
+    void startNewChat(Displayable back) {
+        if (Models.count() > 1 || Models.count() == 0 && !settings.testMode) {
+            showModels(Models.FOR_NEW, back);
+            return;
+        }
+        String err = session.newChat(Models.startId());
+        if (err != null) {
+            info(err, back);
+        } else {
+            showChat();
+        }
+    }
+
+    void showModels(int purpose, Displayable back) {
+        new Models(this, purpose, back).show(display);
+    }
+
     /** Opens the editor with the saved draft, or with `text` if given. */
     void showComposer(String text) {
         showComposer(text, null);
     }
 
-    /** As above; title replaces "Message Claude" this time (a voice message to check). */
+    /** As above; title replaces "Message <model>" this time (a voice message to check). */
     private void showComposer(String text, String title) {
         if (composer == null) {
-            composer = new TextBox(L.s("Claude'a yaz", "Message Claude"), "", ChatSession.MAX_MESSAGE, TextField.ANY);
+            composer = new TextBox(L.s("Mesaj", "Message"), "", ChatSession.MAX_MESSAGE, TextField.ANY);
             composer.addCommand(sendCmd);
             if (hasRecording()) {
                 composer.addCommand(dictateCmd);
@@ -554,7 +580,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             composer.addCommand(photoCmd);
         }
         if (title == null) {
-            title = photo ? L.s("Fotoğraflı mesaj", "Message with a photo") : L.s("Claude'a yaz", "Message Claude");
+            title = photo ? L.s("Fotoğraflı mesaj", "Message with a photo")
+                    : L.s("Mesaj · " + session.ai(), "Message " + session.ai());
         }
         composer.setTitle(title);
         String value = text != null ? text : session.draft();
@@ -676,8 +703,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     "Actions like shorten or translate never send by themselves: the editor opens with the text "
                             + "ready and you press Send.")));
             shortcuts.append(new StringItem(null, L.s(
-                    "Yanıtın devamını almak ücretsizdir: sunucudaki yanıt gelir, Claude'a tekrar sorulmaz.",
-                    "Loading the rest of a reply is free: it comes from the server, Claude is not asked again.")));
+                    "Yanıtın devamını almak ücretsizdir: sunucudaki yanıt gelir, model tekrar çağrılmaz.",
+                    "Loading the rest of a reply is free: it comes from the server, the model is not asked again.")));
             shortcuts.addCommand(formBackCmd);
             shortcuts.setCommandListener(this);
         }
@@ -952,11 +979,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             showPrompts();
             break;
         case 3:
-            String err = session.newChat();
-            if (err != null) {
-                info(err, home);
-            } else if (chatReady()) {
-                showChat();
+            if (chatReady()) {
+                startNewChat(home);
             }
             break;
         case 4:
@@ -1012,7 +1036,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         testChoice = new ChoiceGroup(L.s("Test modu", "Test mode"), ChoiceGroup.MULTIPLE,
                 new String[] { L.s("Sahte yanıt (ağ kullanılmaz)", "Fake replies (no network)") }, null);
         testChoice.setSelectedIndex(0, settings.testMode);
-        claudeChoice = new ChoiceGroup("Claude", ChoiceGroup.MULTIPLE,
+        claudeChoice = new ChoiceGroup(L.s("Yanıtlar", "Replies"), ChoiceGroup.MULTIPLE,
                 new String[] { L.s("Web'de arayabilir (haber, hava, kur...)", "May search the web (news, weather...)"),
                     L.s("Son sohbeti telefonda sakla", "Keep last chat on phone") }, null);
         claudeChoice.setSelectedIndex(0, settings.webSearch);
@@ -1023,7 +1047,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settingsForm.append(feedbackChoice);
         settingsForm.append(lightChoice);
         settingsForm.append(claudeChoice);
-        notesField = new TextField(L.s("Claude için notların", "Your notes for Claude"), settings.instructions,
+        notesField = new TextField(L.s("Yapay zekâ için notların", "Your notes for the AI"), settings.instructions,
                 Settings.MAX_INSTRUCTIONS, TextField.ANY);
         settingsForm.append(notesField);
         settingsForm.append(new StringItem(null, L.s(
@@ -1118,6 +1142,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settings.verifiedUrl = "";
         settings.setupDone = false;
         settings.instructions = "";
+        Models.clear();
         Backup.forget(settings);
         settings.save();
         new Setup(this).start();

@@ -65,6 +65,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.SCREEN, 3);
     final Command chatsCmd = new Command(L.s("Sohbetler", "Chats"), Command.SCREEN, 4);
     final Command newCmd = new Command(L.s("Yeni sohbet", "New chat"), Command.SCREEN, 4);
+    final Command modelCmd = new Command(L.s("Model", "Model"), Command.SCREEN, 4);
     final Command deleteCmd = new Command(L.s("Sohbeti sil", "Delete chat"), Command.SCREEN, 5);
     final Command keysCmd = new Command(L.s("Kısayollar", "Shortcuts"), Command.SCREEN, 6);
     final Command actionsCmd = new Command(L.s("Mesaj işlemleri", "Message actions"), Command.SCREEN, 1);
@@ -72,7 +73,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     final Command closeCmd = new Command(L.s("Kapat", "Close"), Command.BACK, 1);
 
     /** Commands in the order they are added (the phone lists them in this order). */
-    private final Command[] all = { actionsCmd, writeCmd, dictateCmd, photoCmd, moreCmd, readCmd, promptsCmd, retryCmd, chatsCmd, newCmd, deleteCmd,
+    private final Command[] all = { actionsCmd, writeCmd, dictateCmd, photoCmd, moreCmd, readCmd, promptsCmd, retryCmd, chatsCmd, newCmd, modelCmd, deleteCmd,
         keysCmd, backCmd, closeCmd };
     private final boolean[] shown = new boolean[all.length];
 
@@ -161,7 +162,9 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         } else if (c == chatsCmd) {
             midlet.showChats();
         } else if (c == newCmd) {
-            err = session.newChat();
+            midlet.startNewChat(this);
+        } else if (c == modelCmd) {
+            midlet.showModels(Models.FOR_SWITCH, this);
         } else if (c == deleteCmd) {
             err = session.deleteChat();
         } else if (c == closeCmd) {
@@ -742,7 +745,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             }
             if (bubble) {
                 String who = e.kind == ChatSession.KIND_USER ? L.s("Sen", "You")
-                        : e.kind == ChatSession.KIND_CLAUDE ? "Claude" : L.s("Test modu · sahte", "Test mode · fake");
+                        : e.kind == ChatSession.KIND_CLAUDE ? replyName(e) : L.s("Test modu · sahte", "Test mode · fake");
                 b.meta = who + (e.time > 0 ? " · " + hhmm(e.time) : "") + (e.searched > 0 ? " · web" : "");
                 b.footer = e.truncated ? L.s("Yanıt kısaltıldı", "Reply shortened")
                         : b.more ? L.s("0 · Devamını göster", "0 · Show the rest") : null;
@@ -1243,7 +1246,12 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         }
     }
 
-    /** "Claude yazıyor · 12 sn" label, dots bubble and, when slow, a note. */
+    /** Who wrote a reply: its model's name; replies from before server 0.7.0 were Claude's. */
+    private static String replyName(ChatSession.Entry e) {
+        return e.model.length() > 0 ? e.model : "Claude";
+    }
+
+    /** "Claude yazıyor · 12 sn" label (the chat's model), dots bubble and, when slow, a note. */
     private int typingHeight() {
         return Theme.small.getHeight() + 2 + Theme.font.getHeight() + 2 * BUBBLE_PAD
                 + (slowNote() == null ? 0 : Theme.small.getHeight() + 3) + 2 * PAD;
@@ -1258,7 +1266,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private String typingLabel() {
         int sec = session.elapsed();
         String label = session.state() == ChatSession.STATE_SENDING ? L.s("Gönderiliyor", "Sending")
-                : L.s("Claude yazıyor", "Claude is typing");
+                : L.s(session.ai() + " yazıyor", session.ai() + " is typing");
         return sec > 0 ? label + " · " + sec + L.s(" sn", " s") : label + "...";
     }
 
@@ -1293,8 +1301,9 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         Vector title = new Vector();
         Text.wrap(L.s("Merhaba! Ne sormak istersin?", "Hi! What would you like to ask?"), Theme.bold, w - 4 * PAD, title);
         Vector tips = new Vector();
-        Text.wrap(L.s("Yazmak için orta tuş veya 5. Claude gerekirse web'de arar. Tüm tuşlar: Seçenekler > Kısayollar.",
-                "Centre key or 5 to write. Claude searches the web when needed. All keys: Options > Shortcuts."),
+        String ai = session.ai();
+        Text.wrap(L.s("Yazmak için orta tuş veya 5. Yanıtlayan: " + ai + " (Seçenekler > Model). Tüm tuşlar: Seçenekler > Kısayollar.",
+                "Centre key or 5 to write. Answering: " + ai + " (Options > Model). All keys: Options > Shortcuts."),
                 Theme.small, w - 4 * PAD, tips);
         int textH = title.size() * Theme.bold.getHeight() + 6 + tips.size() * Theme.small.getHeight();
         int size = Math.min(Math.min(w, vh) * 34 / 100, vh - textH - 12 - 2 * PAD);
@@ -1404,7 +1413,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             leftColor = Theme.accent;
         } else {
             ChatSession.Entry e = rEntry;
-            left = (e.kind == ChatSession.KIND_TEST ? L.s("Test modu · sahte", "Test mode · fake") : "Claude")
+            left = (e.kind == ChatSession.KIND_TEST ? L.s("Test modu · sahte", "Test mode · fake") : replyName(e))
                     + (e.time > 0 ? " · " + hhmm(e.time) : "") + (e.searched > 0 ? " · web" : "");
         }
         g.setColor(leftColor);

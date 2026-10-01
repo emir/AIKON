@@ -42,9 +42,9 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         status = new StringItem(null, "");
         form.append(status);
         form.append(new StringItem(null, L.s(
-                "Fotoğraf sunucuya gider ve bu sohbette Claude'a gösterilir. Sohbetle birlikte sunucuda kalır "
+                "Fotoğraf sunucuya gider ve bu sohbetin modeline gösterilir. Sohbetle birlikte sunucuda kalır "
                         + "(30 gün ya da sohbeti silene kadar).",
-                "The photo goes to the server and is shown to Claude in this chat. It stays on the server with "
+                "The photo goes to the server and is shown to this chat's model. It stays on the server with "
                         + "the chat (30 days, or until you delete the chat).")));
         form.setCommandListener(this);
     }

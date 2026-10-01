@@ -96,9 +96,19 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   (memory card or image folder, never the app's private folder) whenever
   it changes, and restored at the first start after an install, so a new
   build needs no new pairing; "Reset setup" deletes it. Only with "keep last chat" on, RMS `cs40chat`
-  holds the last conversation (id + newest user/Claude messages, ≤ 8000
-  characters) for offline reading; turning it off deletes it. Deleting the
-  app deletes both.
+  holds the last conversation (id + newest user/model messages with the
+  model name of each reply, format 2, ≤ 8000 characters) for offline
+  reading; turning it off deletes it. Deleting the app deletes both.
+- Models (0.10.0, server 0.7.0+): `Models` keeps the server's model list
+  (`/v1/models`) and the model chosen last for new chats in RMS
+  `cs40models`; it is fetched only when the picker opens without a list or
+  with "Refresh the list" ("Reset setup" deletes it). "New chat" opens the
+  picker when more than one model is offered (or none is known yet);
+  Options > Model switches the open chat from the next message on. The
+  choice is sent as `model:` with the next message only (and kept with its
+  request id for "Retry"); choosing never sends anything. Replies are
+  labelled with the model that wrote them (`model-name`, or `m=` marks in
+  `/v1/history`), replies without a name are Claude's (servers before 0.7.0).
 - `L.s("Türkçe", "English")`: language from `microedition.locale` or the
   Settings choice; changing it rebuilds the screens at once.
 - Packaging is deterministic; `tools/check.py` verifies manifest/JAD

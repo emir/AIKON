@@ -21,6 +21,11 @@ import java.util.Vector;
  * - A photo uploaded with /v1/image (Photo) is attached to the next message
  *   ("image" field) and kept with the request until it is resolved, so
  *   "Tekrar dene" sends the same photo; it is dropped once a reply arrives.
+ * - A conversation has a model (server 0.7.0+). A model chosen for a new
+ *   chat or with "Model" goes with the next message ("model" field) and
+ *   stays with the request until it is resolved; the server then answers
+ *   with that model from this message on. Every reply is labelled with the
+ *   model that wrote it.
  */
 final class ChatSession implements Runnable, Net.Listener {
 
@@ -60,18 +65,22 @@ final class ChatSession implements Runnable, Net.Listener {
         final String next;
         /** Stays the same when a further part replaces the entry (reading position). */
         final int uid;
+        /** Name of the model that wrote a reply; "" if unknown (then it was Claude). */
+        final String model;
 
         Entry(int kind, String text, boolean truncated) {
-            this(kind, text, truncated, System.currentTimeMillis(), 0, null, null);
+            this(kind, text, truncated, System.currentTimeMillis(), 0, null, null, "");
         }
 
-        Entry(int kind, String text, boolean truncated, long time, int searched, String request, String next) {
-            this(kind, text, truncated, time, searched, request, next, nextUid());
+        Entry(int kind, String text, boolean truncated, long time, int searched, String request, String next,
+                String model) {
+            this(kind, text, truncated, time, searched, request, next, model, nextUid());
         }
 
         private Entry(int kind, String text, boolean truncated, long time, int searched, String request, String next,
-                int uid) {
+                String model, int uid) {
             this.uid = uid;
+            this.model = model == null ? "" : model;
             this.kind = kind;
             this.text = text;
             this.truncated = truncated;
@@ -87,12 +96,12 @@ final class ChatSession implements Runnable, Net.Listener {
 
         /** This reply with the next part appended; keeps uid. */
         Entry extend(String part, boolean cut, String nextOffset) {
-            return new Entry(kind, text + part, cut, time, searched, request, nextOffset, uid);
+            return new Entry(kind, text + part, cut, time, searched, request, nextOffset, model, uid);
         }
 
         /** The rest can no longer be fetched; keeps uid. */
         Entry cutOff() {
-            return new Entry(kind, text, true, time, searched, null, null, uid);
+            return new Entry(kind, text, true, time, searched, null, null, model, uid);
         }
     }
 
@@ -124,12 +133,17 @@ final class ChatSession implements Runnable, Net.Listener {
 
     /** Photo id (/v1/image) for the next message, "" if none. */
     private String image = "";
+    /** Model id sent with the next message; "" = the conversation's own (the server knows it). */
+    private String model = "";
+    /** Name of the conversation's model, "" if not known yet. */
+    private String modelName = "";
 
     // the request being resolved (null when none)
     private String pendingId;
     private String pendingText;
     private String pendingImage;
     private String pendingConversation;
+    private String pendingModel;
     private boolean canRetry;
 
     // work item for the worker thread
@@ -268,6 +282,35 @@ final class ChatSession implements Runnable, Net.Listener {
         version++;
     }
 
+    /** The model id this chat uses, if known ("" = the server's default or not known). */
+    synchronized String modelId() {
+        return model;
+    }
+
+    /** Name of the model that answers in this chat: known, chosen for new chats, or "Claude". */
+    synchronized String ai() {
+        if (modelName.length() > 0) {
+            return modelName;
+        }
+        String n = Models.name(Models.startId());
+        return n.length() > 0 ? n : "Claude";
+    }
+
+    /** Switches this chat to another model from the next message on. */
+    String setModel(String id) {
+        synchronized (this) {
+            if (state != STATE_IDLE) {
+                return L.s("Önceki istek sürüyor.", "A request is still running.");
+            }
+            model = id;
+            modelName = Models.name(id);
+            add(KIND_INFO, L.s("Sonraki yanıtlar: " + ai() + ". Sohbetin geçmişi de ona gider.",
+                    "Next replies: " + ai() + ". It gets this chat's history too."), false);
+        }
+        changed(false);
+        return null;
+    }
+
     // ------------------------------------------------------------ actions
 
     /** Returns null if started, or a reason why not. */
@@ -289,6 +332,7 @@ final class ChatSession implements Runnable, Net.Listener {
             pendingText = t;
             pendingImage = image.length() > 0 ? image : null;
             pendingConversation = conversation;
+            pendingModel = model;
             canRetry = false;
             add(KIND_USER, pendingImage != null ? photoMark() + t : t, false);
             begin(JOB_CHAT);
@@ -377,7 +421,11 @@ final class ChatSession implements Runnable, Net.Listener {
             add(KIND_INFO, L.s("Bu telefonda kayıtlı sohbet. Ağ olmadan da okunur; yazınca kaldığı yerden sürer.",
                     "Chat saved on this phone. Readable offline; write to continue it."), false);
             for (int i = 0; i < saved.size(); i++) {
-                entries.addElement(saved.elementAt(i));
+                Entry e = (Entry) saved.elementAt(i);
+                entries.addElement(e);
+                if (e.kind == KIND_CLAUDE && e.model.length() > 0) {
+                    modelName = e.model; // the server continues with the conversation's model
+                }
             }
             trim();
             savedVersion = version;
@@ -385,15 +433,21 @@ final class ChatSession implements Runnable, Net.Listener {
         changed(false);
     }
 
-    /** Starts a new conversation; the old one stays on the server until it expires. */
-    String newChat() {
+    /**
+     * Starts a new conversation with this model id ("" = the server's
+     * default); the old one stays on the server until it expires.
+     */
+    String newChat(String modelId) {
         synchronized (this) {
             if (state != STATE_IDLE) {
                 return L.s("Önceki istek sürüyor.", "A request is still running.");
             }
             resetLocal();
-            add(KIND_INFO, L.s("Yeni sohbet. Önceki sohbet sunucuda süresi dolana kadar (30 gün) kalır.",
-                    "New chat. The previous one stays on the server until it expires (30 days)."), false);
+            model = modelId == null ? "" : modelId;
+            modelName = Models.name(model);
+            String with = modelName.length() > 0 ? L.s(" (" + modelName + ")", " with " + modelName) : "";
+            add(KIND_INFO, L.s("Yeni sohbet" + with + ". Önceki sohbet sunucuda süresi dolana kadar (30 gün) kalır.",
+                    "New chat" + with + ". The previous one stays on the server until it expires (30 days)."), false);
         }
         changed(false);
         return null;
@@ -433,9 +487,12 @@ final class ChatSession implements Runnable, Net.Listener {
     private void resetLocal() {
         entries.removeAllElements();
         conversation = "";
+        model = "";
+        modelName = "";
         pendingId = null;
         pendingText = null;
         pendingImage = null;
+        pendingModel = null;
         canRetry = false;
         status = "";
         version++;
@@ -483,7 +540,9 @@ final class ChatSession implements Runnable, Net.Listener {
         String conv;
         Entry more;
         String img;
+        String mdl;
         synchronized (this) {
+            mdl = pendingModel;
             j = job;
             id = pendingId;
             text = pendingText;
@@ -508,7 +567,7 @@ final class ChatSession implements Runnable, Net.Listener {
         }
         if (j == JOB_HISTORY) {
             Net.Result r = Net.request(s.url + "/v1/history", "POST", s.token,
-                    S40Message.format(new String[] { "conversation", "images" }, new String[] { conv, "1" }, ""),
+                    S40Message.format(new String[] { "conversation", "images", "models" }, new String[] { conv, "1", "1" }, ""),
                     midlet.userAgent(), this);
             finishHistory(r, conv);
             return;
@@ -517,7 +576,7 @@ final class ChatSession implements Runnable, Net.Listener {
             mockReply(text, conv, img != null);
             return;
         }
-        Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token, chatBody(s, id, conv, text, img),
+        Net.Result r = Net.request(s.url + "/v1/chat", "POST", s.token, chatBody(s, id, conv, text, img, mdl),
                 midlet.userAgent(), this);
         finishChat(r);
     }
@@ -527,8 +586,9 @@ final class ChatSession implements Runnable, Net.Listener {
      * the user's notes for Claude, and "calendar" + the phone's clock when
      * the phone can add calendar entries (Claude then may end a reply with an
      * entry line, see Cal). 0.9+: "image" names a photo uploaded with /v1/image.
+     * 0.10+: "model" when one was chosen (server 0.7.0+).
      */
-    private static String chatBody(Settings s, String id, String conv, String text, String img) {
+    private static String chatBody(Settings s, String id, String conv, String text, String img, String mdl) {
         Vector k = new Vector();
         Vector v = new Vector();
         k.addElement("request");
@@ -540,6 +600,10 @@ final class ChatSession implements Runnable, Net.Listener {
         if (img != null && img.length() == 32) { // not the test mode's stand-in
             k.addElement("image");
             v.addElement(img);
+        }
+        if (mdl != null && mdl.length() > 0) {
+            k.addElement("model");
+            v.addElement(mdl);
         }
         if (s.instructions.trim().length() > 0) {
             k.addElement("instructions");
@@ -572,10 +636,10 @@ final class ChatSession implements Runnable, Net.Listener {
                     prior++;
                 }
             }
-            String reply = L.s("[Test modu] Bu gerçek bir Claude yanıtı değildir. Ağ kullanılmadı.\n"
+            String reply = L.s("[Test modu] Bu gerçek bir " + ai() + " yanıtı değildir. Ağ kullanılmadı.\n"
                     + "Mesajın " + text.length() + " karakter; bu sohbette önceki mesaj sayısı: " + (prior - 1)
                     + ".\nAldığım metin: \"" + text + "\"",
-                    "[Test mode] This is not a real Claude reply. No network was used.\n"
+                    "[Test mode] This is not a real " + ai() + " reply. No network was used.\n"
                     + "Your message has " + text.length() + " characters; earlier messages in this chat: "
                     + (prior - 1) + ".\nI received: \"" + text + "\"");
             if (photo) {
@@ -602,8 +666,8 @@ final class ChatSession implements Runnable, Net.Listener {
             S40Message m = r.msg;
             if (!r.ok()) {
                 status = r.httpCode < 0 ? L.s("Bağlantı kurulamadı", "Could not connect") : L.s("Yanıt alınamadı", "No reply");
-                add(KIND_ERROR, Net.explain(r) + L.s("\n'Tekrar dene' aynı isteği sorar; Claude'a ikinci kez gönderilmez.",
-                        "\n'Retry' asks about the same request; it is not sent to Claude twice."), false);
+                add(KIND_ERROR, Net.explain(r) + L.s("\n'Tekrar dene' aynı isteği sorar; " + ai() + " ikinci kez çağrılmaz.",
+                        "\n'Retry' asks about the same request; it is not sent to " + ai() + " twice."), false);
                 canRetry = true;
             } else if (m == null) {
                 status = L.s("Yanıt alınamadı", "No reply");
@@ -629,14 +693,19 @@ final class ChatSession implements Runnable, Net.Listener {
         }
         if ("ok".equals(st)) {
             conversation = m.field("conversation");
+            if (m.field("model").length() > 0) {
+                // server 0.7.0+: the model that answered; it also answers what comes next
+                model = m.field("model");
+                modelName = m.field("model-name").length() > 0 ? m.field("model-name") : Models.name(model);
+            }
             // "truncated" is also set while parts are left ("more")
             String next = m.flag("more") && !bodyCut && m.field("next").length() > 0 ? m.field("next") : null;
             boolean cut = (m.flag("truncated") && next == null) || bodyCut;
             if (m.flag("refused")) {
-                add(KIND_INFO, L.s("Claude bu isteğe yanıt vermedi.", "Claude declined to answer this one."), false);
+                add(KIND_INFO, L.s(ai() + " bu isteğe yanıt vermedi.", ai() + " declined to answer this one."), false);
             } else {
                 add(new Entry(m.flag("mock") ? KIND_TEST : KIND_CLAUDE, m.text, cut, System.currentTimeMillis(),
-                        Text.parseInt(m.field("searched"), 0), m.field("request"), next));
+                        Text.parseInt(m.field("searched"), 0), m.field("request"), next, m.field("model-name")));
             }
             dropSentImage();
             resolved();
@@ -662,9 +731,9 @@ final class ChatSession implements Runnable, Net.Listener {
             // gets the recorded result instead of a second paid call
             status = L.s("Yanıt alınamadı", "No reply");
             add(KIND_ERROR, L.s("Aracı sunucu Claude S40 sunucusundan yanıt alamadı (" + st
-                    + "). 'Tekrar dene' aynı isteği sorar; Claude'a ikinci kez gönderilmez.",
+                    + "). 'Tekrar dene' aynı isteği sorar; " + ai() + " ikinci kez çağrılmaz.",
                     "The relay got no answer from the Claude S40 server (" + st
-                    + "). 'Retry' asks about the same request; it is not sent to Claude twice."), false);
+                    + "). 'Retry' asks about the same request; it is not sent to " + ai() + " twice."), false);
             canRetry = true;
             return false;
         }
@@ -675,9 +744,9 @@ final class ChatSession implements Runnable, Net.Listener {
                     "Daily limit reached. Try again tomorrow (UTC).");
         } else if ("uncertain".equals(st)) {
             status = L.s("Sonuç belirsiz", "Unknown result");
-            msg = L.s("Sonuç belirsiz: istek Claude'a ulaşmış olabilir. Otomatik tekrar yapılmadı. "
+            msg = L.s("Sonuç belirsiz: istek " + ai() + " tarafına ulaşmış olabilir. Otomatik tekrar yapılmadı. "
                     + "Mesaj taslakta duruyor; yeniden göndermek yeni bir ücretli istek olur.",
-                    "Unknown result: the request may have reached Claude. Nothing was re-sent. "
+                    "Unknown result: the request may have reached " + ai() + ". Nothing was re-sent. "
                     + "Your draft is kept; sending it again is a new (paid) request.");
         } else if ("conversation_full".equals(st)) {
             status = L.s("Sohbet doldu", "Chat full");
@@ -693,11 +762,18 @@ final class ChatSession implements Runnable, Net.Listener {
                     "Access code invalid or revoked. Settings > Pair this phone.");
         } else if ("billing".equals(st)) {
             status = L.s("Kredi yok", "No credits");
-            msg = L.s("Sunucunun Claude API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.",
-                    "The server's Claude API account is out of credits. Send again once it is topped up.");
+            msg = L.s("Sunucunun " + ai() + " API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.",
+                    "The server's " + ai() + " API account is out of credits. Send again once it is topped up.");
         } else if ("rate_limited".equals(st) || "overloaded".equals(st)) {
-            status = L.s("Claude meşgul", "Claude is busy");
-            msg = L.s("Claude şu an meşgul. Birazdan yeniden gönderin.", "Claude is busy right now. Send again shortly.");
+            status = L.s(ai() + " meşgul", ai() + " is busy");
+            msg = L.s(ai() + " şu an meşgul. Birazdan yeniden gönderin.", ai() + " is busy right now. Send again shortly.");
+        } else if ("model_unavailable".equals(st)) {
+            status = L.s("Model yok", "Model not offered");
+            msg = L.s("Seçilen model sunucuda artık yok. Menü > Model ile başka birini seçin; mesajınız taslakta duruyor.",
+                    "The chosen model is no longer offered by the server. Pick another with Menu > Model; "
+                    + "your message is kept as a draft.");
+            model = "";
+            modelName = "";
         } else if ("image_not_found".equals(st)) {
             status = L.s("Fotoğraf yok", "Photo not found");
             msg = L.s("Fotoğraf sunucuda bulunamadı: bir gün içinde kullanılmamış ya da başka bir sohbette kullanılmış. "
@@ -717,6 +793,7 @@ final class ChatSession implements Runnable, Net.Listener {
         pendingId = null;
         pendingText = null;
         pendingImage = null;
+        pendingModel = null;
         canRetry = false;
         return false;
     }
@@ -736,6 +813,7 @@ final class ChatSession implements Runnable, Net.Listener {
         pendingId = null;
         pendingText = null;
         pendingImage = null;
+        pendingModel = null;
         canRetry = false;
         version++;
     }
@@ -758,8 +836,9 @@ final class ChatSession implements Runnable, Net.Listener {
                         false);
             } else if (i >= 0) {
                 status = L.s("Devamı alınamadı", "Could not load more");
-                add(KIND_ERROR, L.s("Yanıtın devamı yüklenemedi. 0 tuşuyla tekrar deneyin (ücretsiz; Claude'a tekrar sorulmaz). ",
-                        "Could not load the rest. Press 0 to try again (free; Claude is not asked again). ")
+                add(KIND_ERROR, L.s("Yanıtın devamı yüklenemedi. 0 tuşuyla tekrar deneyin (ücretsiz; " + ai()
+                        + " tekrar çağrılmaz). ", "Could not load the rest. Press 0 to try again (free; " + ai()
+                        + " is not asked again). ")
                         + (r.ok() ? (m == null ? "?" : m.field("status")) : Net.explain(r)), false);
             }
             jobEntry = null;
@@ -778,8 +857,8 @@ final class ChatSession implements Runnable, Net.Listener {
                 resetLocal();
                 conversation = conv;
                 if (m.flag("older")) {
-                    add(KIND_INFO, L.s("Daha eski mesajlar gösterilmiyor (Claude onları hâlâ hatırlıyor).",
-                            "Older messages are not shown (Claude still remembers them)."), false);
+                    add(KIND_INFO, L.s("Daha eski mesajlar gösterilmiyor (model onları hâlâ görüyor).",
+                            "Older messages are not shown (the model still sees them)."), false);
                 }
                 parseHistory(m.text, r.bodyCut);
                 add(KIND_INFO, L.s("Sohbet açıldı. Yazarak devam edebilirsiniz.", "Chat opened. Write to continue it."), false);
@@ -800,7 +879,9 @@ final class ChatSession implements Runnable, Net.Listener {
 
     /**
      * Called with the lock held. History text: per message "u N" or "a N"
-     * (N = UTF-16 length), newline, the text, newline.
+     * (N = UTF-16 length) and space-separated marks, newline, the text,
+     * newline. Marks: "i" a message sent with a photo (images: 1), "m=ID"
+     * the model of a reply (models: 1); unknown marks are ignored.
      */
     private void parseHistory(String t, boolean bodyCut) {
         int pos = 0;
@@ -811,17 +892,34 @@ final class ChatSession implements Runnable, Net.Listener {
                 break;
             }
             char role = t.charAt(pos);
-            // "u N" or, for a message sent with a photo, "u N i" (images: 1)
             String head = t.substring(pos + 2, nl);
-            boolean photo = head.endsWith(" i");
-            int len = Text.parseInt(photo ? head.substring(0, head.length() - 2) : head, -1);
+            int sp = head.indexOf(' ');
+            int len = Text.parseInt(sp < 0 ? head : head.substring(0, sp), -1);
+            boolean photo = false;
+            String mdl = "";
+            while (sp >= 0) {
+                int end = head.indexOf(' ', sp + 1);
+                String mark = head.substring(sp + 1, end < 0 ? head.length() : end);
+                if (mark.equals("i")) {
+                    photo = true;
+                } else if (mark.startsWith("m=")) {
+                    mdl = mark.substring(2);
+                }
+                sp = end;
+            }
             int start = nl + 1;
             if (len < 0 || start + len > n) {
                 break; // cut body: drop the incomplete message
             }
             String body = t.substring(start, start + len);
+            String name = mdl.length() > 0 ? Models.name(mdl) : "";
+            if (mdl.length() > 0) {
+                // the newest reply's model is the conversation's model
+                model = mdl;
+                modelName = name.length() > 0 ? name : mdl;
+            }
             entries.addElement(new Entry(role == 'a' ? KIND_CLAUDE : KIND_USER, photo ? photoMark() + body : body, false,
-                    0, 0, null, null));
+                    0, 0, null, null, name.length() > 0 ? name : mdl));
             pos = start + len + 1;
         }
         if (bodyCut) {

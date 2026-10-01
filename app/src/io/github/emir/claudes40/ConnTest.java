@@ -118,7 +118,7 @@ final class ConnTest implements CommandListener, Runnable {
         }
         S40Message hm = h.msg;
         line(L.s("Sunucu", "Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
-                + (hm.flag("mock") ? L.s(", sunucu TEST MODU (sahte Claude)", ", server in TEST MODE (fake Claude)") : ""));
+                + (hm.flag("mock") ? L.s(", sunucu TEST MODU (sahte yanıtlar)", ", server in TEST MODE (fake replies)") : ""));
         line(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));
         line(L.s("Sunucunun gördüğü TLS", "TLS seen by the server"),
                 hm.field("tls-version") + ", " + hm.field("tls-cipher"));

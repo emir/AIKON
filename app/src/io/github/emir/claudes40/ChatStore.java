@@ -16,13 +16,15 @@ import javax.microedition.rms.RecordStoreException;
  * "Keep last chat on phone"; turning it off deletes the store, and so does
  * removing the application.
  *
- * Kept: the conversation id and the user/Claude messages (newest ones, at
- * most MAX_CHARS characters). Never the access code or a draft.
+ * Kept: the conversation id and the user/model messages (newest ones, at
+ * most MAX_CHARS characters) with the name of the model of each reply
+ * (format 2; format 1 records are still read). Never the access code or a
+ * draft.
  */
 final class ChatStore {
 
     private static final String STORE = "cs40chat";
-    private static final int FORMAT = 1;
+    private static final int FORMAT = 2;
     private static final int MAX_CHARS = 8000;
 
     private ChatStore() {
@@ -63,6 +65,7 @@ final class ChatStore {
                 out.writeUTF(e.request == null ? "" : e.request);
                 out.writeUTF(e.next == null ? "" : e.next);
                 out.writeUTF(Text.clip(e.text, MAX_CHARS));
+                out.writeUTF(e.model);
             }
             out.close();
             byte[] b = bo.toByteArray();
@@ -89,7 +92,8 @@ final class ChatStore {
         try {
             rs = RecordStore.openRecordStore(STORE, false);
             DataInputStream in = new DataInputStream(new ByteArrayInputStream(rs.getRecord(1)));
-            if (in.readInt() != FORMAT) {
+            int format = in.readInt();
+            if (format != 1 && format != FORMAT) {
                 return out;
             }
             String conv = in.readUTF();
@@ -102,8 +106,9 @@ final class ChatStore {
                 String request = in.readUTF();
                 String next = in.readUTF();
                 String text = in.readUTF();
+                String model = format >= 2 ? in.readUTF() : "";
                 out.addElement(new ChatSession.Entry(kind, text, truncated, time, searched,
-                        request.length() > 0 ? request : null, next.length() > 0 ? next : null));
+                        request.length() > 0 ? request : null, next.length() > 0 ? next : null, model));
             }
             conversation = conv;
         } catch (RecordStoreException e) {

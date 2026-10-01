@@ -203,6 +203,31 @@ public class EmuShot {
         save("calendar_form");
         command(t("Cancel", "Vazgeç"));
 
+        // models (server 0.7.0): test mode cannot fetch /v1/models, so the
+        // list it would return is put in by reflection (harness only)
+        Class models = Class.forName("io.github.emir.claudes40.Models", true, midlet.getClass().getClassLoader());
+        setStatic(models, "ids", new String[] { "claude-opus-5", "gpt-x", "grok-y" });
+        setStatic(models, "names", new String[] { "Claude", "ChatGPT", "Grok" });
+        setStatic(models, "defaultId", "claude-opus-5");
+        setStatic(models, "loaded", Boolean.TRUE);
+        Method newChat = midlet.getClass().getDeclaredMethod("startNewChat", Displayable.class);
+        newChat.setAccessible(true);
+        newChat.invoke(midlet, current());
+        settle();
+        save("models_new_chat");              // "New chat: model", the default marked
+        select(2);                            // Grok
+        save("chat_new_grok");
+        command(t("Write", "Yaz"));
+        type(t("Which phone is this?", "Bu hangi telefon?"));
+        command(t("Send", "Gönder"));
+        Thread.sleep(300);
+        save("chat_grok_typing");             // "Grok is typing"
+        Thread.sleep(1700);
+        save("chat_grok_reply");              // test-mode reply naming Grok
+        command(t("Model", "Model"));
+        save("models_switch");                // Grok marked "(now)"
+        command(t("Back", "Geri"));
+
         call("showDataUsage");                // Settings > Options > Data usage (test mode: no data)
         save("data_usage");
         command(t("Back", "Geri"));
@@ -282,12 +307,12 @@ public class EmuShot {
         Object session = field(midlet, "session");
         Class entry = Class.forName("io.github.emir.claudes40.ChatSession$Entry", true, session.getClass().getClassLoader());
         Constructor c = entry.getDeclaredConstructor(new Class[] { int.class, String.class, boolean.class, long.class,
-            int.class, String.class, String.class });
+            int.class, String.class, String.class, String.class });
         c.setAccessible(true);
         String text = t("[Test mode] Harness entry: pretend this is the first part of a long reply. ",
                 "[Test modu] Test düzeneği kaydı: bunu uzun bir yanıtın ilk parçası say. ");
         Object e = c.newInstance(new Object[] { new Integer(2), text + text + text, Boolean.FALSE,
-            new Long(System.currentTimeMillis()), new Integer(1), "emu-request", "2000" });
+            new Long(System.currentTimeMillis()), new Integer(1), "emu-request", "2000", "" });
         Vector entries = (Vector) field(session, "entries");
         synchronized (session) {
             entries.addElement(e);
@@ -298,6 +323,13 @@ public class EmuShot {
         System.out.println("EMU: added a test-mode entry with 'more' (harness)");
         ((Canvas) current()).repaint();
         settle();
+    }
+
+    static void setStatic(Class c, String name, Object value) throws Exception {
+        Field f = c.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(null, value);
+        System.out.println("EMU: " + c.getName() + "." + name + " set (harness)");
     }
 
     static Object field(Object o, String name) throws Exception {
