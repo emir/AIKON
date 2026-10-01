@@ -34,6 +34,10 @@ Environment (see `.env.example`; `deploy/push.sh` writes `.env` from `S40_*`):
 | `TRANSCRIBE_MODEL` | `gpt-4o-mini-transcribe` | OpenAI transcription model |
 | `DAILY_TRANSCRIBE_LIMIT` | `30` | voice messages per device, UTC day |
 | `DAILY_IMAGE_LIMIT` | `30` | photo uploads per device, UTC day |
+| `PUBLIC_HOSTS` | `` | browser side: DNS names that get a Let's Encrypt certificate by SNI (docs/ARCHITECTURE.md) |
+| `ACME_EMAIL` | `` | optional contact for Let's Encrypt |
+| `PHONE_HOST` | `` | the phone side's DNS name, for download links |
+| `HTTP_LISTEN` | `` | plain-HTTP landing page and ca.cer only (`HTTP_PORT=80` in compose to expose) |
 
 Files on the host (`~/claude-s40-server`): `certs/server-chain.pem`,
 `certs/server.key` (uid 65532, 0400), `secrets/admin_token` (generated on

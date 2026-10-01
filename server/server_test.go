@@ -735,7 +735,7 @@ func TestPhoneTLSHandshake(t *testing.T) {
 	if out, err := cmd.CombinedOutput(); err != nil {
 		t.Skipf("openssl not available: %v %s", err, out)
 	}
-	cfg, err := phoneTLS(cert, key)
+	cfg, err := phoneTLS(cert, key, nil)
 	if err != nil {
 		t.Fatal(err)
 	}

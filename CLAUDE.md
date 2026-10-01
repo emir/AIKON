@@ -50,7 +50,8 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
   request_id replay, the pending-before-call record and `uncertain`
   semantics. No exactly-once claims.
 - TLS: never add a plain-HTTP fallback, never disable certificate checks,
-  never offer RC4/3DES. The phone (Nokia 6300) offers only TLS 1.0 +
+  never offer RC4/3DES. The optional plain-HTTP listener serves only the
+  landing page and ca.cer (server/web.go), never the API or the app. The phone (Nokia 6300) offers only TLS 1.0 +
   RSA/AES-CBC-SHA, no SNI; it verifies SHA-1 certificates from our root.
 - Logs never contain message text, replies, tokens, keys or client IPs.
 - Mock replies say "[Test mode]"; never present them, or emulator results,

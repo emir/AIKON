@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.8.2"
+	version      = "0.9.0"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -73,6 +73,10 @@ type config struct {
 	transcribeLimit                     int
 	ffmpeg                              string
 	imageLimit                          int // photo uploads per device per UTC day
+	// browser side (web.go): public hosts with an ACME certificate, the
+	// phone side's DNS name, downloads, the plain-HTTP landing listener
+	publicHosts, acmeEmail, acmeDir, acmeURL string
+	phoneHost, downloadDir, httpListen       string
 }
 
 func env(k, def string) string {
@@ -125,6 +129,13 @@ func loadConfig() config {
 	c.transcribeLimit = envInt("DAILY_TRANSCRIBE_LIMIT", 30)
 	c.ffmpeg = env("FFMPEG", "ffmpeg")
 	c.imageLimit = envInt("DAILY_IMAGE_LIMIT", 30)
+	c.publicHosts = env("PUBLIC_HOSTS", "")
+	c.acmeEmail = env("ACME_EMAIL", "")
+	c.acmeDir = env("ACME_DIR", "/data/acme")
+	c.acmeURL = env("ACME_URL", "")
+	c.phoneHost = env("PHONE_HOST", "")
+	c.downloadDir = env("DOWNLOAD_DIR", "")
+	c.httpListen = env("HTTP_LISTEN", "")
 	return c
 }
 
@@ -255,12 +266,17 @@ func main() {
 		}
 	}()
 
-	tlsCfg, err := phoneTLS(c.cert, c.key)
+	web, err := newWebSide(c)
+	if err != nil {
+		log.Fatal(err)
+	}
+	srv.web = web
+	tlsCfg, err := phoneTLS(c.cert, c.key, web)
 	if err != nil {
 		log.Fatalf("tls: %v", err)
 	}
 	pub := &http.Server{
-		Addr: c.listen, Handler: srv.publicMux(), TLSConfig: tlsCfg,
+		Addr: c.listen, Handler: srv.rootHandler(), TLSConfig: tlsCfg,
 		// a 1 MB photo over EDGE can take a minute or two to arrive
 		ReadHeaderTimeout: 30 * time.Second, ReadTimeout: 180 * time.Second, WriteTimeout: 240 * time.Second,
 		TLSNextProto: map[string]func(*http.Server, *tls.Conn, http.Handler){}, // HTTP/1.1 only
@@ -268,10 +284,16 @@ func main() {
 	}
 	adm := &http.Server{Addr: c.adminListen, Handler: srv.adminMux(), ReadHeaderTimeout: 10 * time.Second}
 	go func() { log.Fatal(adm.ListenAndServe()) }()
+	if c.httpListen != "" {
+		plain := &http.Server{Addr: c.httpListen, Handler: srv.httpHandler(), ReadHeaderTimeout: 10 * time.Second,
+			ReadTimeout: 20 * time.Second, WriteTimeout: 60 * time.Second, MaxHeaderBytes: 8 << 10}
+		go func() { log.Fatal(plain.ListenAndServe()) }()
+	}
 	logJSON(map[string]any{"evt": "start", "version": version, "listen": c.listen, "admin": c.adminListen,
 		"models": modelIDs(models), "default_model": models.def().id, "mock": c.mock, "env": c.environment, "web_search": c.search, "search_limit": c.searchLimit,
 		"transcribe": c.transcribe, "stt_model": c.sttModel, "transcribe_limit": c.transcribeLimit,
-		"ffmpeg": srv.converter != nil, "image_limit": c.imageLimit})
+		"ffmpeg": srv.converter != nil, "image_limit": c.imageLimit,
+		"public_hosts": len(web.hosts), "downloads": web.download != "", "http": c.httpListen != ""})
 	log.Fatal(pub.ListenAndServeTLS("", ""))
 }
 
@@ -280,7 +302,10 @@ func main() {
 // phoneTLS: TLS 1.0+ with RSA key exchange for the Nokia (measured offer:
 // TLS 1.0, RC4-MD5/RC4-SHA/3DES/AES128/AES256-CBC-SHA, no SNI); ECDHE and
 // TLS 1.2/1.3 for everything else. No RC4, no 3DES.
-func phoneTLS(certFile, keyFile string) (*tls.Config, error) {
+//
+// A client that names one of web's public hosts in SNI gets webTLS instead
+// (web.go); web may be nil.
+func phoneTLS(certFile, keyFile string, web *webSide) (*tls.Config, error) {
 	cert, err := tls.LoadX509KeyPair(certFile, keyFile)
 	if err != nil {
 		return nil, err
@@ -304,6 +329,9 @@ func phoneTLS(certFile, keyFile string) (*tls.Config, error) {
 		}
 		logJSON(map[string]any{"evt": "hello", "sni": h.ServerName != "", "versions": strings.Join(vers, ","),
 			"suites": len(h.CipherSuites)})
+		if web.public(h.ServerName) {
+			return web.webTLS(), nil
+		}
 		return nil, nil
 	}
 	return cfg, nil
@@ -345,6 +373,7 @@ type server struct {
 	// voice messages; transcriber is nil when TRANSCRIBE=off
 	transcriber *transcribeService
 	converter   audioConverter
+	web         *webSide // browser side and downloads; nil in tests that do not set it
 }
 
 type statusRecorder struct {
@@ -376,7 +405,7 @@ func knownPath(p string) bool {
 	switch p {
 	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/models", "/v1/conversations", "/v1/history", "/v1/delete",
 		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/image", "/v1/pair/start", "/v1/pair/claim",
-		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke":
+		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke", "/", "/ca.cer", "/app/AIKON.jad", "/app/AIKON.jar":
 		return true
 	}
 	return extraPaths[p]
@@ -398,6 +427,8 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /v1/image", s.imageHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
+	mux.HandleFunc("GET /{$}", s.phonePage)
+	mux.HandleFunc("GET /app/{file}", s.appFile)
 	for _, add := range extraRoutes {
 		add(s, mux)
 	}

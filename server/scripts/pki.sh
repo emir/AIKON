@@ -3,7 +3,8 @@
 # certificate) and one server certificate for the Claude S40 server.
 #
 #   scripts/pki.sh ca     DIR [sha1|sha256]          create root CA (once)
-#   scripts/pki.sh server DIR HOST [sha1|sha256]     issue the server cert for HOST (DNS name or IPv4)
+#   scripts/pki.sh server DIR HOSTS [sha1|sha256]    issue the server cert for HOSTS: DNS names and/or
+#                                                    IPv4 addresses, comma-separated; the first is the CN
 #   scripts/pki.sh show   DIR                        fingerprints to compare on the phone
 #
 # DIR default for real use: ~/.config/claude-s40/pki (outside the repo,
@@ -50,10 +51,14 @@ server)
 	HOST=${3:?host}; MD=${4:-sha1}
 	[ -f "$DIR/ca.key" ] || { echo "create the CA first" >&2; exit 1; }
 	refuse "$DIR/server.key"
-	case "$HOST" in
-	*[!0-9.]*) SAN="DNS:$HOST" ;;
-	*) SAN="IP:$HOST" ;;
-	esac
+	SAN=""
+	for H in $(printf '%s' "$HOST" | tr ',' ' '); do
+		case "$H" in
+		*[!0-9.]*) SAN="${SAN:+$SAN, }DNS:$H" ;;
+		*) SAN="${SAN:+$SAN, }IP:$H" ;;
+		esac
+	done
+	HOST=${HOST%%,*}
 	$OPENSSL genrsa -out "$DIR/server.key" 2048 2>/dev/null
 	cat > "$DIR/server.cnf" <<CNF
 [req]

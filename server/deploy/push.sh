@@ -15,7 +15,13 @@
 # S40_TRANSCRIBE (voice messages: off (default), mock, openai),
 # S40_TRANSCRIBE_MODEL, S40_TRANSCRIBE_LIMIT (per device per day),
 # S40_IMAGE_LIMIT (photo uploads per device per day).
-# Copies only: image, compose.yaml, .env (no secrets), server-chain.pem, server.key.
+# Browser side (optional): S40_PUBLIC_HOSTS (a,b: Let's Encrypt certificates
+# by SNI), S40_ACME_EMAIL, S40_PHONE_HOST (the phone side's DNS name),
+# S40_HTTP_PORT (e.g. 80: plain-HTTP landing page and ca.cer only),
+# S40_APP_DIR (a folder with AIKON.jad/.jar to offer for download).
+# S40_EXTRA_ENV: a file of settings for extensions, copied as extra.env.
+# Copies only: image, compose.yaml, .env (no secrets), server-chain.pem, server.key,
+# download/ (the root CA's public ca.cer and the optional app), extra.env.
 # On the server: secrets/admin_token is generated there if missing (never
 # leaves the server); secrets/anthropic_api_key must be put there with
 # deploy/set-key.sh (and secrets/openai_api_key / secrets/xai_api_key with
@@ -27,7 +33,7 @@ TARGET=${1:?usage: deploy/push.sh SSH_TARGET [--execute]}
 EXEC=no; [ "${2:-}" = "--execute" ] && EXEC=yes
 PKI=${PKI_DIR:-$HOME/.config/claude-s40/pki}
 REMOTE=claude-s40-server
-IMAGE=claude-s40-server:0.8.2
+IMAGE=claude-s40-server:0.9.0
 MOCK=${S40_MOCK:-1}
 STT=${S40_TRANSCRIBE:-off}
 MODELS=${S40_MODELS:-}
@@ -44,6 +50,20 @@ grep -v '^    build: \.$' "$HERE/compose.yaml" > "$STAGE/compose.yaml"
 mkdir -m 755 "$STAGE/certs"
 cp "$PKI/server-chain.pem" "$STAGE/certs/" && chmod 644 "$STAGE/certs/server-chain.pem"
 cp "$PKI/server.key" "$STAGE/certs/" && chmod 600 "$STAGE/certs/server.key"
+mkdir -m 755 "$STAGE/download"
+[ -f "$PKI/claude-s40-ca.cer" ] && cp "$PKI/claude-s40-ca.cer" "$STAGE/download/ca.cer"
+if [ -n "${S40_APP_DIR:-}" ]; then
+	for f in AIKON.jad AIKON.jar; do
+		[ -f "$S40_APP_DIR/$f" ] || { echo "missing $S40_APP_DIR/$f" >&2; exit 1; }
+		cp "$S40_APP_DIR/$f" "$STAGE/download/"
+	done
+fi
+chmod 644 "$STAGE"/download/* 2>/dev/null || true
+if [ -n "${S40_EXTRA_ENV:-}" ]; then
+	[ -f "$S40_EXTRA_ENV" ] || { echo "missing $S40_EXTRA_ENV" >&2; exit 1; }
+	cp "$S40_EXTRA_ENV" "$STAGE/extra.env"
+fi
+HTTP_LISTEN=""; [ -n "${S40_HTTP_PORT:-}" ] && HTTP_LISTEN=:8080
 cat > "$STAGE/.env" <<ENV
 ENVIRONMENT=${S40_ENVIRONMENT:-production}
 CLAUDE_MODEL=${S40_MODEL:-claude-opus-5-5}
@@ -67,6 +87,11 @@ TRANSCRIBE=$STT
 TRANSCRIBE_MODEL=${S40_TRANSCRIBE_MODEL:-gpt-4o-mini-transcribe}
 DAILY_TRANSCRIBE_LIMIT=${S40_TRANSCRIBE_LIMIT:-30}
 DAILY_IMAGE_LIMIT=${S40_IMAGE_LIMIT:-30}
+PUBLIC_HOSTS=${S40_PUBLIC_HOSTS:-}
+ACME_EMAIL=${S40_ACME_EMAIL:-}
+PHONE_HOST=${S40_PHONE_HOST:-}
+HTTP_LISTEN=$HTTP_LISTEN
+HTTP_PORT=${S40_HTTP_PORT:-127.0.0.1:8080}
 ENV
 
 echo "== plan"
@@ -75,6 +100,10 @@ echo "image   : $IMAGE (built here for linux/amd64; go vet + tests run in the bu
 echo "settings:"; sed 's/^/  /' "$STAGE/.env"
 echo "cert    : $(${OPENSSL:-openssl} x509 -in "$PKI/server.pem" -noout -subject -enddate 2>/dev/null | tr '\n' ' ')"
 echo "ports   : 443 -> 8443 (phone TLS), 127.0.0.1:9090 (admin, server-local only)"
+[ -n "${S40_HTTP_PORT:-}" ] && echo "HTTP    : port ${S40_HTTP_PORT} -> landing page and ca.cer only (open it in the firewall)"
+[ -n "${S40_PUBLIC_HOSTS:-}" ] && echo "WEB     : ${S40_PUBLIC_HOSTS} get Let's Encrypt certificates (TLS-ALPN-01 on 443)"
+echo "download: $(ls "$STAGE/download" | tr '\n' ' ')"
+[ -f "$STAGE/extra.env" ] && echo "extra   : extra.env ($(grep -c . "$STAGE/extra.env") lines, names: $(sed -n 's/=.*//p' "$STAGE/extra.env" | tr '\n' ' '))"
 echo "data    : Docker volume claude-s40-server_s40data (SQLite)"
 [ "$MOCK" = 0 ] && echo "LIVE    : MOCK_ANTHROPIC=0 -> real, paid model calls; keys needed for: $PROVIDERS"
 [ "$MOCK" = 0 ] && [ "${S40_SEARCH:-1}" = 1 ] && echo "SEARCH  : web search on -> billed per search, results count as input tokens"

@@ -271,6 +271,24 @@ device. Settings > Options > "Reset setup" deletes the file and opens the
 setup wizard. The file holds the access code: if the memory card leaves
 your hands, revoke the device.
 
+## 10. Optional: a website and downloads for phones
+
+With a domain (e.g. `example.com`, DNS only, no proxy in front, since a CDN
+breaks the phone's TLS 1.0) the same server can also serve browsers and let
+phones download the app:
+
+1. DNS: `example.com`, `www` and a short phone name such as `m` point to the
+   server. A CAA record `0 issue "letsencrypt.org"` is a good idea.
+2. A phone certificate that names the phone host and the IP (same root, so
+   phones keep working): move the old `server.*` files of your PKI folder
+   aside, then `server/scripts/pki.sh server ~/.config/claude-s40/pki m.example.com,$IP`.
+3. Deploy with `S40_PUBLIC_HOSTS=example.com,www.example.com
+   S40_PHONE_HOST=m.example.com S40_HTTP_PORT=80 S40_APP_DIR=app/dist` and open
+   TCP 80 in the firewall (landing page and ca.cer only).
+4. On a new phone: `http://m.example.com/` → save the certificate (compare
+   the fingerprint) → open the AIKon link (https, verified) → install. Set
+   the server address to `https://m.example.com`.
+
 ## Troubleshooting
 
 | Symptom on the phone | Likely cause |

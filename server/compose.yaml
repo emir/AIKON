@@ -5,14 +5,16 @@
 #   secrets/xai_api_key                        xAI key (an xai: model)
 #   secrets/gemini_api_key                     Gemini API key (a gemini: model)
 #   secrets/admin_token                        generated on the server by deploy/push.sh
+#   download/                                  ca.cer (+ AIKON.jad/.jar) for phones (optional)
 #   .env                                       settings below (no secrets)
+#   extra.env                                  settings of extensions (optional, no secrets)
 #
 #   docker compose up -d
 #   docker compose logs -f        # JSON lines: method/path/status/ms/TLS, no content
 services:
   server:
     build: .
-    image: claude-s40-server:0.8.2
+    image: claude-s40-server:0.9.0
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}
@@ -40,13 +42,26 @@ services:
       TRANSCRIBE_MODEL: ${TRANSCRIBE_MODEL:-gpt-4o-mini-transcribe}
       DAILY_TRANSCRIBE_LIMIT: ${DAILY_TRANSCRIBE_LIMIT:-30}
       DAILY_IMAGE_LIMIT: ${DAILY_IMAGE_LIMIT:-30}
+      # browser side (optional): public hosts get a Let's Encrypt certificate
+      # by SNI, the phone keeps the private CA; downloads for PHONE_HOST
+      PUBLIC_HOSTS: ${PUBLIC_HOSTS:-}
+      ACME_EMAIL: ${ACME_EMAIL:-}
+      PHONE_HOST: ${PHONE_HOST:-}
+      DOWNLOAD_DIR: /download
+      # plain HTTP only for the landing page and ca.cer (HTTP_PORT=80 to expose)
+      HTTP_LISTEN: ${HTTP_LISTEN:-}
       ADMIN_LISTEN: 0.0.0.0:9090
+    env_file:
+      - path: ./extra.env
+        required: false
     ports:
       - "443:8443"
       - "127.0.0.1:9090:9090"   # admin: reachable only on the server itself
+      - "${HTTP_PORT:-127.0.0.1:8080}:8080"   # plain HTTP landing; local only unless HTTP_PORT is set
     volumes:
       - ./certs:/certs:ro
       - ./secrets:/run/secrets:ro
+      - ./download:/download:ro
       - s40data:/data
     read_only: true
     cap_drop: [ALL]

@@ -28,6 +28,27 @@ negotiates AES128-SHA); ECDHE-RSA suites for modern clients; no RC4, no
 SHA-1 root + SHA-1 server certificate (SHA-256 untested). Before the root
 is saved it reports "verification failed" (not "unknown issuer").
 
+### Browser side and downloads (server 0.9.0, optional)
+
+One TLS port serves both: a client that names one of `PUBLIC_HOSTS` in SNI
+(modern browsers) gets a Let's Encrypt certificate (autocert, TLS-ALPN-01 on
+the same port, cache in `ACME_DIR`), TLS 1.2+ with ECDHE-AEAD suites, and
+the web mux (`webMux`, HSTS without subdomains, strict CSP; builds may add
+pages through `extraWebRoutes`). Every other client, including the Nokia
+(no SNI) and a phone browser naming `PHONE_HOST`, gets the private-CA
+certificate and the phone API exactly as before. The Host header must match
+the side chosen in the handshake, else 421, so the phone API is never
+served under a public name and the web pages never under the phone's.
+
+With `DOWNLOAD_DIR` (`ca.cer`, `AIKON.jad`, `AIKON.jar`), the phone's browser
+finds a download page at `https://PHONE_HOST/` and the app under `/app/`;
+the JAD's relative `MIDlet-Jar-URL` is sent as an absolute https URL. The
+optional plain-HTTP listener (`HTTP_LISTEN`) exists only for the first step
+on a phone that does not trust the root yet: a landing page with the root's
+SHA-1 fingerprint and `ca.cer`. It serves nothing else (no API, no app) and
+redirects public hosts to https. The phone's server certificate can name
+several hosts (`scripts/pki.sh server DIR m.example.com,203.0.113.10`).
+
 ## Components
 
 ```
