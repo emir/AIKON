@@ -138,25 +138,19 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        // header: wordmark + status line, on the bar colour above a hairline
+        // header: only the wordmark, on the bar colour above a hairline
         int headH = RowList.barH();
         g.setColor(Theme.chrome);
         g.fillRect(0, 0, w, headH);
         g.setColor(Theme.border);
         g.drawLine(0, headH - 1, w, headH - 1);
-        // the AIKON wordmark (as tall as a bold line), the status line under it
-        int tx = MARGIN + 4;
-        int wh = f.getHeight() - 2;
+        int wh = Math.min(headH - 16, f.getHeight() + 2);
         int ww = wh * 1051 / 244;
-        int gap = (headH - wh - sm.getHeight() - 3) / 2;
-        g.drawImage(Wordmark.get(ww, Theme.accent), tx, gap, Graphics.TOP | Graphics.LEFT);
-        g.setFont(sm);
-        g.setColor(Theme.muted);
-        g.drawString(Text.fit(midlet.homeStatus(), sm, w - tx - MARGIN), tx, gap + wh + 3, Graphics.TOP | Graphics.LEFT);
+        g.drawImage(Wordmark.get(ww, Theme.accent), MARGIN + 4, (headH - wh) / 2, Graphics.TOP | Graphics.LEFT);
 
         // rows
         int rowH = Math.max(f.getHeight() + sm.getHeight() + 6, 30);
-        int footH = sm.getHeight() + 4;
+        int footH = sm.getHeight() + 8;
         int area = h - headH - footH;
         // landscape only (e.g. E63: 320x240 minus the S60 status and softkey bars)
         boolean compact = w > h && area / rowH < 4;
@@ -194,15 +188,24 @@ final class HomeCanvas extends Canvas implements CommandListener {
             y += rowH;
         }
 
-        // footer: the version on the bar colour
+        // footer on the bar colour: the status (setup, credits, update) left, the version right
         g.setColor(Theme.chrome);
         g.fillRect(0, h - footH, w, footH);
         g.setColor(Theme.border);
         g.drawLine(0, h - footH, w, h - footH);
         g.setFont(sm);
-        g.setColor(Theme.muted);
-        g.drawString(Text.fit(L.s("Sürüm ", "Version ") + midlet.attr("MIDlet-Version"), sm,
-                w - 2 * MARGIN), w / 2, h - footH + 2, Graphics.TOP | Graphics.HCENTER);
+        int fy = h - footH + (footH - sm.getHeight()) / 2;
+        String ver = "v" + midlet.attr("MIDlet-Version");
+        int vw = sm.stringWidth(ver);
+        String st = midlet.homeStatus();
+        boolean roomForVersion = sm.stringWidth(st) + vw + 3 * MARGIN + 8 <= w;
+        g.setColor(midlet.homeStatusUrgent() ? Theme.accent : Theme.muted);
+        g.drawString(Text.fit(st, sm, w - 2 * MARGIN - 8 - (roomForVersion ? vw + MARGIN : 0)), MARGIN + 4, fy,
+                Graphics.TOP | Graphics.LEFT);
+        if (roomForVersion) {
+            g.setColor(Theme.mix(Theme.chrome, Theme.muted, 170));
+            g.drawString(ver, w - MARGIN - 2, fy, Graphics.TOP | Graphics.RIGHT);
+        }
     }
 
     /** Item ids are Icons ids (CHAT .. EXIT). */

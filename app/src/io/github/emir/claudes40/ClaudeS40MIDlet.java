@@ -346,7 +346,20 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         return "AIKON/" + attr("MIDlet-Version");
     }
 
-    /** One line under the title on the home screen. */
+    /** The home status asks for something (setup, an update, credits low or gone): shown in the accent colour. */
+    boolean homeStatusUrgent() {
+        if (settings.testMode) {
+            return false;
+        }
+        if (!Net.isHttps(settings.url) || !settings.connectionVerified() || settings.token.length() < 16
+                || updateVersion().length() > 0) {
+            return true;
+        }
+        String bal = session.balance();
+        return bal.length() > 0 && Text.tenths(bal) < lowCredits();
+    }
+
+    /** The home screen's status line (its footer). */
     String homeStatus() {
         if (settings.testMode) {
             return L.s("Test modu: sahte yanıtlar", "Test mode: fake replies");
