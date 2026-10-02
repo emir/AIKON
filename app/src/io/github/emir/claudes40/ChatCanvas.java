@@ -1105,7 +1105,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         if (!typing && onlyInfo()) {
             // nothing written yet (at most a few one-line notes): the welcome below them
             int used = blocks.size() == 0 ? 0 : contentH - scroll;
-            paintEmpty(g, w, top + used, vh - used);
+            paintEmpty(g, w, top, vh, used);
         }
         for (int i = 0; i < blocks.size(); i++) {
             Block b = (Block) blocks.elementAt(i);
@@ -1298,18 +1298,22 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         return true;
     }
 
-    /** The wordmark with two twinkles, a greeting and who answers. */
-    private void paintEmpty(Graphics g, int w, int top, int vh) {
+    /**
+     * The wordmark with two twinkles, a greeting and who answers, centred
+     * between the header and the status line, but below the first used
+     * pixels (one-line notes at the top).
+     */
+    private void paintEmpty(Graphics g, int w, int top, int vh, int used) {
         int cx = w / 2;
         Vector title = new Vector();
         Text.wrap(L.s("Merhaba! Ne sormak istersin?", "Hi! What would you like to ask?"), Theme.bold, w - 4 * PAD, title);
         Vector tips = new Vector();
         Text.wrap(L.s("Yanıtlayan: " + session.ai(), "Answering: " + session.ai()), Theme.small, w - 4 * PAD, tips);
         int textH = title.size() * Theme.bold.getHeight() + 4 + tips.size() * Theme.small.getHeight();
-        int ww = Math.min(w * 55 / 100, (vh - textH - 2 * PAD) * 3);
+        int ww = Math.min(w * 55 / 100, (vh - used - textH - 2 * PAD) * 3);
         int wh = ww >= 24 ? Wordmark.height(ww) : 0;
         int gap = wh > 0 ? Math.max(10, wh * 2 / 3) : 0;
-        int y = top + Math.max(PAD, (vh - wh - gap - textH) * 2 / 5);
+        int y = Math.max(top + used + PAD, top + (vh - wh - gap - textH) / 2);
         int bottom = top + vh;
         if (wh > 0) {
             int x0 = cx - ww / 2;
