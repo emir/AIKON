@@ -91,6 +91,9 @@ public class EmuShot {
         Mobile.getPlatform().runJar();
         Thread.sleep(100);
         midlet = field(Mobile.getPlatform().loader, "mainInst");
+        // a build that names its server would test the connection at once (network): the harness
+        // forgets the address before the splash ends, so the wizard starts with the address step
+        setting("url", "");
         if (tr) {
             setting("lang", new Integer(1));
             call("rebuildUi");
@@ -102,15 +105,7 @@ public class EmuShot {
             ImageIO.write(Mobile.getPlatform().getLCD(), "png", new File(out, String.format("splash/f%02d.png", i)));
         }
         Thread.sleep(1200);
-        save("setup_1_language");
-        // a build that names its server would test the connection next (network): the harness
-        // turns that two-step flow off and shows the address step instead
-        Field preset = Class.forName("io.github.emir.claudes40.Setup", true, midlet.getClass().getClassLoader())
-                .getDeclaredField("preset");
-        preset.setAccessible(true);
-        preset.setBoolean(null, false);
-        select(tr ? 1 : 2);                   // centre key on the language: applies it, goes on
-        save("setup_2_server");
+        save("setup_1_server");               // the wizard starts with the address (language: the phone's)
         // set the language again for the rest of the run (harness)
         setting("lang", new Integer(tr ? 1 : 2));
         call("rebuildUi");

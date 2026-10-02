@@ -56,7 +56,7 @@ final class Credits implements CommandListener, Runnable {
     void showPair() {
         mode = PAIR;
         String shop = midlet.shopLine();
-        codeForm(setup != null ? Setup.title(Setup.STEPS - 1) : L.s("Kredi kodu", "Credit code"),
+        codeForm(setup != null ? Setup.title(Setup.STEPS) : L.s("Kredi kodu", "Credit code"),
                 L.s("16 haneli kredi kodunu gir.", "Type the 16-digit credit code.") + (shop.length() > 0 ? "\n\n" + shop : ""));
     }
 

@@ -151,14 +151,14 @@ point, not an old WAP profile.
 ## 7. Connection test and pairing
 
 On the phone, in AIKON. A fresh install opens a setup wizard
-(language, server address, connection test, pairing: "Setup 1/4" to "4/4")
+(server address, connection test, pairing: "Setup 1/3" to "3/3"; the
+language follows the phone and can be changed in Settings)
 that walks through exactly these steps; it can be skipped and reopened from
 Settings → Options → Setup wizard.
-A build made with `GATEWAY_URL` (as offered on your download page) shows two
-steps instead ("Setup 1/2", "2/2"): the language, then the pairing (the credit
-code form on a server that sells credits); the address is in the build and
-the connection test runs by itself in between, staying on screen only if it
-fails.
+A build made with `GATEWAY_URL` (as offered on your download page) asks only
+for the pairing (the credit code form on a server that sells credits): the
+address is in the build and the connection test runs by itself first,
+staying on screen only if it fails.
 
 1. **Connection test → Start**: it checks `/health` and a UTF-8 round trip
    (`/echo`) and shows the TLS version, cipher and certificate. Chat stays

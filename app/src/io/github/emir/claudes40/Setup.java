@@ -4,15 +4,17 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.lcdui.TextField;
 
 /**
- * First-run setup in four steps, "Kurulum 1/4" .. "4/4":
+ * First-run setup in three steps, "Kurulum 1/3" .. "3/3" (step indexes 1..3):
  *
- *   1 language (applies at once)   2 server address (https:// only)
- *   3 connection test (ConnTest)   4 pairing (Pairing)
+ *   1 server address (https:// only)   2 connection test (ConnTest)
+ *   3 pairing (Pairing, or the credit code)
+ *
+ * The language is not asked: it follows the phone ("Same as phone") and
+ * can be changed in Settings.
  *
  * Shown after the splash while Settings.setupDone is false (a fresh install;
  * reinstalling deletes the settings) and from Settings > "Kurulum
@@ -22,22 +24,22 @@ import javax.microedition.lcdui.TextField;
  * existing connection test and pairing.
  *
  * A build that names its server (ClaudeS40-Gateway, e.g. the download from
- * the server's site) still on that address shows two steps only: the
- * language, then the pairing (the credit code form on a server that sells
- * credits). The address step is skipped and the connection test runs by
- * itself in between; only a failed test stays on screen.
+ * the server's site) still on that address asks for nothing but the pairing
+ * (the credit code form on a server that sells credits): the language
+ * follows the phone (it stays "Same as phone"), the address is in the build
+ * and the connection test runs by itself first; only a failed test stays on
+ * screen. Back there leaves the setup like "Skip setup".
  */
 final class Setup implements CommandListener {
 
-    static final int STEPS = 4;
+    /** The last step's index (and the number of steps shown). */
+    static final int STEPS = 3;
 
     private final ClaudeS40MIDlet midlet;
     private int step;
     /** The two-step flow of a build that names its server (see above). */
     static boolean preset;
     private Form form;
-    /** Step 1: the languages; the centre key picks one and goes on. */
-    private RowList langList;
     private TextField urlField;
     private Command nextCmd;
     private Command backCmd;
@@ -51,19 +53,19 @@ final class Setup implements CommandListener {
         this.midlet = midlet;
     }
 
-    /** "Kurulum 2/4" / "Setup 2/4" for step index 0..3 ("1/2", "2/2" in the two-step flow). */
+    /** "Kurulum 2/3" / "Setup 2/3" for step index 1..3 (just "Kurulum" in the short flow). */
     static String title(int step) {
         if (preset) {
-            return L.s("Kurulum ", "Setup ") + (step == 0 ? 1 : 2) + "/2";
+            return L.s("Kurulum", "Setup");
         }
-        return L.s("Kurulum ", "Setup ") + (step + 1) + "/" + STEPS;
+        return L.s("Kurulum ", "Setup ") + step + "/" + STEPS;
     }
 
     void start() {
         Settings s = midlet.settings;
         String gw = midlet.attr("ClaudeS40-Gateway").trim();
         preset = Net.isHttps(gw) && gw.equals(s.url);
-        step = 0;
+        step = preset ? 2 : 1; // the short flow starts with the (automatic) connection test
         show();
     }
 
@@ -91,25 +93,12 @@ final class Setup implements CommandListener {
             Credits.pair(midlet, this, midlet.display(), null);
             return;
         }
-        if (step == 0) {
-            langList = new RowList(title(0) + L.s(" · Dil", " · Language"));
-            langList.add(L.s("Telefona göre", "Same as phone"), null, Icons.GLOBE, 0);
-            langList.add("Türkçe", null, Icons.GLOBE, 0);
-            langList.add("English", null, Icons.GLOBE, 0);
-            langList.setSelectedIndex(Math.max(0, Math.min(2, s.lang)), true);
-            langList.addCommand(skipCmd);
-            langList.addCommand(helpCmd);
-            langList.setCommandListener(this);
-            midlet.display().setCurrent(langList);
-            return;
-        }
         form = new Form(title(step));
         if (step == 1) {
             urlField = new TextField(L.s("Sunucu adresi", "Server address"), s.url.length() > 0 ? s.url : "https://",
                     200, TextField.URL);
             form.append(urlField);
             form.addCommand(nextCmd);
-            form.addCommand(backCmd);
         } else {
             if (s.token.length() >= 16) {
                 form.append(new StringItem(null, L.s("Bu telefon zaten eşleştirilmiş. Kurulum tamam.",
@@ -125,7 +114,7 @@ final class Setup implements CommandListener {
             }
             form.addCommand(backCmd);
         }
-        if (step < STEPS - 1 || s.token.length() < 16) {
+        if (step < STEPS || s.token.length() < 16) {
             form.addCommand(skipCmd);
         }
         form.addCommand(helpCmd);
@@ -136,8 +125,6 @@ final class Setup implements CommandListener {
     public void commandAction(Command c, Displayable d) {
         if (c == helpCmd) {
             Help.show(midlet.display(), title(step), helpText(), d);
-        } else if (d == langList && c == List.SELECT_COMMAND) {
-            chooseLanguage();
         } else if (c == skipCmd) {
             skip();
         } else if (c == backCmd) {
@@ -155,28 +142,18 @@ final class Setup implements CommandListener {
 
     /** The longer explanation of the current step. */
     private String helpText() {
-        if (step == 0 && preset) {
-            return L.s("Hoş geldin! İki adım: dil, sonra kredi kodu. Sunucu adresi bu sürümde hazır; bağlantı "
-                    + "arada kendiliğinden denenir.\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu "
-                    + "(sahte yanıtlar, ağ yok).",
-                    "Welcome! Two steps: the language, then your credit code. This build knows its server; the "
-                    + "connection is checked in between by itself.\n\nJust trying it out? Skip setup, then Settings > "
-                    + "Test mode (fake replies, no network).");
-        }
-        if (step == 0) {
-            return L.s("Hoş geldin! Telefonu dört adımda sunucuya bağlayalım. Dili seçip orta tuşa bas."
-                    + "\n\nKurulum dört adım: dil, sunucu adresi, bağlantı testi, eşleştirme. Her adımda "
-                    + "'Kurulumu atla' ile çıkabilir, sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile dönebilirsin."
-                    + "\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu (sahte yanıtlar, ağ yok).",
-                    "Welcome! Four steps connect this phone to your server. Pick a language and press the centre "
-                    + "key.\n\nSetup has four steps: language, server address, connection test, pairing. Every step can be "
-                    + "left with 'Skip setup'; come back later from Settings > Options > Setup wizard."
-                    + "\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).");
-        }
         if (step == 1) {
-            return L.s("Sunucu adresini sunucunun sahibi verir.\n\nAdres https:// ile başlamalı; şifresiz bağlantı "
+            return L.s("Hoş geldin! Üç adım: sunucu adresi, bağlantı testi, eşleştirme. Her adımda 'Kurulumu atla' "
+                    + "ile çıkabilir, sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile dönebilirsin. Dil telefonunkiyle "
+                    + "aynıdır; Ayarlar'dan değişir.\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu "
+                    + "(sahte yanıtlar, ağ yok).\n\n"
+                    + "Sunucu adresini sunucunun sahibi verir.\n\nAdres https:// ile başlamalı; şifresiz bağlantı "
                     + "hiç kullanılmaz. Sonraki adımda güvenli bağlantı test edilir.",
-                    "The server's owner gives you its address.\n\nIt must start with https://; unencrypted "
+                    "Welcome! Three steps: server address, connection test, pairing. Every step can be left with "
+                    + "'Skip setup'; come back later from Settings > Options > Setup wizard. The language follows the "
+                    + "phone; change it in Settings.\n\nJust trying it out? Skip setup, then Settings > Test mode (fake "
+                    + "replies, no network).\n\n"
+                    + "The server's owner gives you its address.\n\nIt must start with https://; unencrypted "
                     + "connections are never used. The next step tests the secure connection.");
         }
         if (midlet.settings.credits) {
@@ -193,17 +170,6 @@ final class Setup implements CommandListener {
                 "Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its "
                 + "access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the "
                 + "setup backup on the memory card, and sent only to the https:// address.");
-    }
-
-    private void chooseLanguage() {
-        Settings s = midlet.settings;
-        int lg = langList.getSelectedIndex();
-        if (lg >= 0 && lg <= 2 && lg != s.lang) {
-            s.lang = lg;
-            s.save();
-            midlet.rebuildUi();
-        }
-        next();
     }
 
     private void saveUrl() {
@@ -233,11 +199,8 @@ final class Setup implements CommandListener {
 
     /** From ConnTest (after a passed test) and the steps above. */
     void next() {
-        if (step < STEPS - 1) {
+        if (step < STEPS) {
             step++;
-        }
-        if (preset && step == 1) {
-            step = 2; // the address is in the build
         }
         show();
     }
@@ -249,11 +212,12 @@ final class Setup implements CommandListener {
     }
 
     void back() {
-        if (step > 0) {
-            step--;
-        }
         if (preset) {
-            step = 0; // the hidden steps are not shown going back either
+            skip(); // nothing before the pairing in the short flow
+            return;
+        }
+        if (step > 1) {
+            step--;
         }
         show();
     }

@@ -40,7 +40,7 @@ final class Pairing implements CommandListener, Runnable {
     Pairing(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
         this.setup = setup;
-        form = new TextPage(setup != null ? Setup.title(Setup.STEPS - 1) : L.s("Cihazı eşleştir", "Pair this phone"));
+        form = new TextPage(setup != null ? Setup.title(Setup.STEPS) : L.s("Cihazı eşleştir", "Pair this phone"));
         codeItem = form.append(L.s("Eşleştirme kodu", "Pairing code"), "-");
         form.setBig(codeItem);
         statusItem = form.append(L.s("Durum", "Status"), "");
