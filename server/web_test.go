@@ -34,7 +34,7 @@ func selfSigned(t *testing.T, name string) *tls.Certificate {
 	return &tls.Certificate{Certificate: [][]byte{der}, PrivateKey: k}
 }
 
-const testJAD = "MIDlet-Name: AIKON\nMIDlet-Jar-URL: AIKON.jar\nMIDlet-Jar-Size: 7\n"
+const testJAD = "MIDlet-Name: AIKON\nMIDlet-Version: 1.2.3\nMIDlet-Jar-URL: AIKON.jar\nMIDlet-Jar-Size: 7\n"
 
 // webEnv: a TLS listener with the phone certificate (CN=127.0.0.1), public
 // hosts example.test / www.example.test and downloads for m.example.test.
@@ -115,6 +115,12 @@ func TestWebSide(t *testing.T) {
 	res, body, cert, err = get(t, addr, "m.example.test", "m.example.test", "GET", "/", tls.VersionTLS12)
 	if err != nil || cert.Subject.CommonName != "127.0.0.1" || !strings.Contains(body, "https://m.example.test/app/AIKON.jad") {
 		t.Fatalf("phone page: %v %q", err, body)
+	}
+	res, body, _, _ = get(t, addr, "m.example.test", "m.example.test", "GET", "/app/AIKON.jad", tls.VersionTLS12)
+	// /health names the newest app and its JAD
+	_, body, _, _ = get(t, addr, "m.example.test", "m.example.test", "GET", "/health", tls.VersionTLS12)
+	if !strings.Contains(body, "\napp-version: 1.2.3\n") || !strings.Contains(body, "\napp-url: https://m.example.test/app/AIKON.jad\n") {
+		t.Fatalf("health: %q", body)
 	}
 	res, body, _, _ = get(t, addr, "m.example.test", "m.example.test", "GET", "/app/AIKON.jad", tls.VersionTLS12)
 	if res.Header.Get("Content-Type") != "text/vnd.sun.j2me.app-descriptor" ||

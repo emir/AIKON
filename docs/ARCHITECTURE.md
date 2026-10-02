@@ -182,7 +182,7 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 
 | Route | Auth | Purpose |
 |---|---|---|
-| `GET /health` | – | server, version, mock flag, the TLS version/cipher of *this* connection |
+| `GET /health` | – | server, version, mock flag, the TLS version/cipher of *this* connection; with downloads (server 0.9.2) `app-version` (MIDlet-Version of the offered JAD) and `app-url` (the JAD over https) |
 | `POST /echo` | – | ≤ 512 bytes strict UTF-8, echoed; `probe: match` for the Turkish test string |
 | `POST /v1/pair/start` | – | → `pair` (128-bit secret), `code` (6 digits, shown on the phone), `expires` |
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
@@ -204,6 +204,18 @@ long reply are left, `searched` = number of web searches, and since server
 `conversation_not_found`, `image_not_found`, `model_unavailable` (the named model is not offered),
 `request_mismatch`, `rate_limited`, `overloaded`,
 `billing`, `upstream_error`, `config_error`, `uncertain`, plus input errors.
+
+### Updates (phone 0.12.3, server 0.9.2)
+
+A server that offers the app for download (`DOWNLOAD_DIR`) names the
+offered version in `/health` (`app-version`, read from the JAD, and
+`app-url`, the JAD over https on the phone host). At most once a day,
+from the home screen and only for a verified server, the phone asks on a
+worker thread (RMS `cs40upd` keeps the answer with its server). When the
+offered version is newer, the home screen says so and gets "Update": a
+confirmation, then `platformRequest` opens the JAD and the phone's own
+installer takes over (the MIDlet exits when the phone asks for that).
+Nothing is downloaded or installed without the user.
 
 ### Credits (optional server extension; phone 0.12.0)
 

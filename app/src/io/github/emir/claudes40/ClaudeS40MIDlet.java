@@ -2,6 +2,7 @@ package io.github.emir.claudes40;
 
 import java.util.Vector;
 
+import javax.microedition.io.ConnectionNotFoundException;
 import javax.microedition.lcdui.Alert;
 import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.ChoiceGroup;
@@ -152,6 +153,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command resetSetupCmd;
     private Command resetYesCmd;
     private Command resetNoCmd;
+    private Command updateYesCmd;
+    private Alert updateConfirm;
     private Alert resetConfirm;
 
     private static final int ACT_READ = 0;
@@ -212,6 +215,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         resetSetupCmd = new Command(L.s("Kurulumu sıfırla", "Reset setup"), Command.SCREEN, 5);
         resetYesCmd = new Command(L.s("Sıfırla", "Reset"), Command.OK, 1);
         resetNoCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+        updateYesCmd = new Command(L.s("Güncelle", "Update"), Command.OK, 1);
         resetCmd = new Command(L.s("Sıfırla", "Reset"), Command.SCREEN, 2);
         helpCmd = Help.command();
         actionList = null;
@@ -350,6 +354,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         if (settings.token.length() < 16) {
             return L.s("Kurulum: cihazı eşleştir", "Setup: pair this phone");
+        }
+        String upd = updateVersion();
+        if (upd.length() > 0) {
+            return L.s("Yeni sürüm " + upd + " · Güncelle", "New version " + upd + " · Update");
         }
         String bal = session.balance();
         if (bal.length() > 0) {
@@ -556,6 +564,49 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     void showMenu() {
         display.setCurrent(home);
+        home.setUpdate(updateVersion().length() > 0);
+        Updates.maybeCheck(this);
+    }
+
+    /** The newer version the server offers, or "". */
+    String updateVersion() {
+        return Updates.available(attr("MIDlet-Version"), settings.url);
+    }
+
+    /** From the update check (worker thread): the answer changed. */
+    void updateChanged() {
+        home.setUpdate(updateVersion().length() > 0);
+    }
+
+    /** "Update": what happens, then the phone's own installer. */
+    void confirmUpdate() {
+        String v = updateVersion();
+        if (v.length() == 0) {
+            return;
+        }
+        updateConfirm = new Alert(L.s("Güncelle", "Update"), L.s("AIKON " + v + " indirilecek. Telefon kurulumu soracak "
+                + "ve AIKON kapanacak; ayarların ve eşleşmen korunur.",
+                "AIKON " + v + " will be downloaded. The phone asks to install it and AIKON closes; your settings "
+                + "and pairing are kept."), null, AlertType.CONFIRMATION);
+        updateConfirm.setTimeout(Alert.FOREVER);
+        updateConfirm.addCommand(updateYesCmd);
+        updateConfirm.addCommand(resetNoCmd);
+        updateConfirm.setCommandListener(this);
+        display.setCurrent(updateConfirm);
+    }
+
+    private void startUpdate() {
+        String u = Updates.url();
+        try {
+            if (platformRequest(u)) {
+                exit(); // this phone installs only after the MIDlet has ended
+            } else {
+                showMenu();
+            }
+        } catch (ConnectionNotFoundException e) {
+            info(L.s("Telefon bağlantıyı açamadı. Tarayıcıda şunu açın: ", "The phone could not open the link. Open this in "
+                    + "the browser: ") + u, home);
+        }
     }
 
     void showChat() {
@@ -970,6 +1021,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             } else {
                 showMenu();
             }
+        } else if (d == updateConfirm) {
+            if (c == updateYesCmd) {
+                startUpdate();
+            } else {
+                showMenu();
+            }
         } else if (d == resetConfirm) {
             if (c == resetYesCmd) {
                 resetSetup();
@@ -1272,6 +1329,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         about.append(new StringItem(attr("MIDlet-Name"),
                 L.s("Sürüm ", "Version ") + attr("MIDlet-Version") + L.s(" (derleme ", " (build ")
                         + attr("ClaudeS40-Build") + ")"));
+        if (updateVersion().length() > 0) {
+            about.append(new StringItem(L.s("Yeni sürüm", "New version"), updateVersion()
+                    + L.s(" · ana ekranda Güncelle", " · Update on the home screen")));
+        }
         about.append(new StringItem(null, L.s("Nokia S40 ve S60 telefonlar için yapay zekâ sohbeti.",
                 "AI chat for Nokia S40 and S60 phones.")));
         about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));

@@ -453,6 +453,10 @@ func tlsFields(r *http.Request) []kv {
 func (s *server) health(w http.ResponseWriter, r *http.Request) {
 	f := []kv{{"status", "ok"}, {"service", service}, {"version", version}, {"environment", s.cfg.environment},
 		{"mock", s.cfg.mock}, {"web-search", s.cfg.search}, {"transcribe", s.transcriber != nil}, {"images", true}, {"time", time.Now().UTC().Format(time.RFC3339)}}
+	if v := s.web.appVersion(); v != "" {
+		// the newest app and where to get it (0.12.3+ phones offer the update)
+		f = append(f, kv{"app-version", v}, kv{"app-url", "https://" + s.web.phoneHostFor(r) + "/app/AIKON.jad"})
+	}
 	for _, add := range extraHealth {
 		f = append(f, add(s)...)
 	}

@@ -37,6 +37,8 @@ final class HomeCanvas extends Canvas implements CommandListener {
     private final ClaudeS40MIDlet midlet;
     private final Command selectCmd = new Command(L.s("Seç", "Select"), Command.OK, 1);
     private final Command exitCmd = new Command(L.s("Çıkış", "Exit"), Command.EXIT, 2);
+    private final Command updateCmd = new Command(L.s("Güncelle", "Update"), Command.SCREEN, 3);
+    private boolean updateShown;
     private int selected;
     private int top;
 
@@ -52,7 +54,22 @@ final class HomeCanvas extends Canvas implements CommandListener {
             midlet.menuSelected(selected);
         } else if (c == exitCmd) {
             midlet.exit();
+        } else if (c == updateCmd) {
+            midlet.confirmUpdate();
         }
+    }
+
+    /** Shows "Update" while the server offers a newer version. */
+    void setUpdate(boolean show) {
+        if (show != updateShown) {
+            updateShown = show;
+            if (show) {
+                addCommand(updateCmd);
+            } else {
+                removeCommand(updateCmd);
+            }
+        }
+        repaint();
     }
 
     protected void keyPressed(int keyCode) {

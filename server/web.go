@@ -227,6 +227,28 @@ func absoluteJarURL(jad []byte, base string) []byte {
 	return out.Bytes()
 }
 
+// appVersion: MIDlet-Version of the JAD offered for download ("" when
+// there is none); phones compare it with their own to offer an update.
+func (w *webSide) appVersion() string {
+	if w == nil || w.download == "" {
+		return ""
+	}
+	b, err := os.ReadFile(filepath.Join(w.download, "AIKON.jad"))
+	if err != nil {
+		return ""
+	}
+	for _, line := range strings.Split(string(b), "\n") {
+		if k, v, ok := strings.Cut(line, ":"); ok && strings.TrimSpace(k) == "MIDlet-Version" {
+			if v = strings.TrimSpace(v); versionRE.MatchString(v) {
+				return v
+			}
+		}
+	}
+	return ""
+}
+
+var versionRE = regexp.MustCompile(`^[0-9]{1,3}(\.[0-9]{1,3}){1,2}$`)
+
 // phonePage: https://PHONE_HOST/ in the phone's browser (the root is saved).
 func (s *server) phonePage(w http.ResponseWriter, r *http.Request) {
 	if s.web == nil || s.web.download == "" {
