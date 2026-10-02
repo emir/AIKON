@@ -30,6 +30,7 @@ final class Icons {
     static final int BULB = 15;
     static final int RESEND = 16;
     static final int SEARCH = 17;
+    static final int CREDIT = 18;
 
     // shape codes, coordinates in grid units (0..24)
     private static final int LINE = 1;   // n, x0, y0, ... xn-1, yn-1: polyline through n points
@@ -88,6 +89,8 @@ final class Icons {
             ARC, 12, 12, 8, 60, 360, LINE, 3, 15, 1, 16, 5, 20, 7 },
         { // magnifier: search
             CIRCLE, 10, 10, 7, LINE, 2, 15, 15, 21, 21 },
+        { // card: credits
+            RECT, 2, 5, 22, 19, 3, LINE, 2, 2, 10, 22, 10, LINE, 2, 6, 15, 10, 15 },
     };
 
     private static final Hashtable cache = new Hashtable();

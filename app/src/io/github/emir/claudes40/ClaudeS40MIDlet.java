@@ -367,6 +367,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     : L.s("Yeni sürüm " + upd + " · Güncelle", "New version " + upd + " · Update");
         }
         if (bal.length() > 0) {
+            int b = Text.tenths(bal);
+            if (b <= 0) {
+                return L.s("Kredi bitti · Kredi'den kod gir", "No credits left · add a code under Credits");
+            }
+            if (b < lowCredits()) {
+                return L.s("Kredi azaldı · " + bal + " kredi", "Credits low · " + bal + " left");
+            }
             return L.s("Hazır · " + bal + " kredi", "Ready · " + bal + " credits");
         }
         String left = session.remainingToday();
@@ -374,8 +381,30 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 : L.s("Hazır · eski Nokia'da yeni yapay zekâ", "Ready · new AI on an old Nokia");
     }
 
+    /**
+     * "Low" in tenths of a credit: about ten typical messages with the
+     * chat's model (Models' cost; 2 credits a message when unknown).
+     */
+    private int lowCredits() {
+        int cost = Text.tenths(Models.cost(session.modelId()));
+        return 10 * (cost > 0 ? cost : 20);
+    }
+
+    /** Where to buy, as a line for the Credits screens; "" without a shop address. */
+    String shopLine() {
+        String shop = Updates.shop(settings.url);
+        return shop.length() == 0 ? "" : L.s("Kredi kodu al (bilgisayardan ya da akıllı telefondan): ",
+                "Buy a credit code (on a computer or smartphone): ") + shop;
+    }
+
     /** Second line of a home row; the Chat row shows the draft or the last message. */
     String homeHint(int row, String fallback) {
+        if (row == Icons.CREDIT) {
+            String bal = session.balance();
+            String shop = Updates.shop(settings.url);
+            return bal.length() > 0 ? bal + L.s(" kredi", " credits") + (shop.length() > 0 ? " · " + shop : "")
+                    : shop.length() > 0 ? shop : fallback;
+        }
         if (row != 0) {
             return fallback;
         }
@@ -1151,6 +1180,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             break;
         case 8:
             exit();
+            break;
+        case Icons.CREDIT:
+            new Credits(this, null, home).showBalance();
             break;
         default:
             break;

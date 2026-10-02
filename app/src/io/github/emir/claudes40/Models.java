@@ -53,6 +53,17 @@ final class Models implements CommandListener, Runnable {
     }
 
     /** Display name of a model id, or "" if not in the list. */
+    /** Credits a typical message costs with the model, "" if unknown or free. */
+    static synchronized String cost(String id) {
+        load();
+        for (int i = 0; i < ids.length; i++) {
+            if (ids[i].equals(id)) {
+                return i < costs.length ? costs[i] : "";
+            }
+        }
+        return "";
+    }
+
     static synchronized String name(String id) {
         load();
         for (int i = 0; i < ids.length; i++) {

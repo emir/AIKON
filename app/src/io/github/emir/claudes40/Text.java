@@ -257,6 +257,27 @@ final class Text {
         return two(c.get(Calendar.DAY_OF_MONTH)) + "." + two(c.get(Calendar.MONTH) + 1);
     }
 
+    /** A credit amount ("12", "12.5", "~3") in tenths (125); 0 if it is not a number. */
+    static int tenths(String s) {
+        int whole = 0;
+        int frac = -1;
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c >= '0' && c <= '9') {
+                if (frac >= 0) {
+                    if (frac == 0) {
+                        frac = c - '0' + 1; // one decimal is enough
+                    }
+                } else {
+                    whole = whole * 10 + (c - '0');
+                }
+            } else if (c == '.' || c == ',') {
+                frac = 0;
+            }
+        }
+        return whole * 10 + (frac > 0 ? frac - 1 : 0);
+    }
+
     /** A day as a chat heading: "Bugün", "Dün", or "02.10" (with the year if it is not this one). */
     static String dayLabel(long ms) {
         long day = 24L * 60 * 60 * 1000;

@@ -34,10 +34,28 @@ final class HomeCanvas extends Canvas implements CommandListener {
 
     /**
      * Rows on screen, most used first; the values are the item ids of
-     * titles/hints, Icons and ClaudeS40MIDlet.menuSelected. Keys 1-9 follow the rows.
+     * titles/hints (Icons.CREDIT has its own), Icons and
+     * ClaudeS40MIDlet.menuSelected. Keys 1-9 follow the rows. On a server
+     * that sells credits the sixth row is Credits; the connection test is
+     * then under Settings only.
      */
     private static final int[] ORDER = { Icons.CHAT, Icons.NEW_CHAT, Icons.CHATS, Icons.PROMPTS, Icons.SAVED,
-        Icons.SETTINGS, Icons.CONN, Icons.INFO, Icons.EXIT };
+        Icons.CONN, Icons.SETTINGS, Icons.INFO, Icons.EXIT };
+    private static final int[] ORDER_CREDITS = { Icons.CHAT, Icons.NEW_CHAT, Icons.CHATS, Icons.PROMPTS, Icons.SAVED,
+        Icons.CREDIT, Icons.SETTINGS, Icons.INFO, Icons.EXIT };
+
+    private int[] order() {
+        return midlet.settings.credits ? ORDER_CREDITS : ORDER;
+    }
+
+    private String title(int id) {
+        return id == Icons.CREDIT ? L.s("Kredi", "Credits") : titles[id];
+    }
+
+    private String hint(int id) {
+        return midlet.homeHint(id, id == Icons.CREDIT ? L.s("Bakiye, kod gir, kredi al", "Balance, add a code, buy")
+                : hints[id]);
+    }
 
     private static final int MARGIN = 6;
 
@@ -58,7 +76,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
 
     public void commandAction(Command c, Displayable d) {
         if (c == selectCmd) {
-            midlet.menuSelected(ORDER[selected]);
+            midlet.menuSelected(order()[selected]);
         } else if (c == exitCmd) {
             midlet.exit();
         } else if (c == updateCmd) {
@@ -86,7 +104,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
             selected = keyCode - KEY_NUM1;
             repaint();
             if (selected != titles.length - 1 || raw == KEY_NUM9) { // a stray QWERTY N must not quit
-                midlet.menuSelected(ORDER[selected]);
+                midlet.menuSelected(order()[selected]);
             }
             return;
         }
@@ -96,7 +114,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         } else if (action == DOWN) {
             selected = (selected + 1) % titles.length;
         } else if (action == FIRE) {
-            midlet.menuSelected(ORDER[selected]);
+            midlet.menuSelected(order()[selected]);
             return;
         } else {
             return;
@@ -158,17 +176,17 @@ final class HomeCanvas extends Canvas implements CommandListener {
                 g.fillRoundRect(MARGIN / 2, y + 1, w - MARGIN, rowH - 2, 10, 10);
             }
             int ic = compact ? rowH - 6 : rowH - 12; // the icons need about 20 px
-            icon(g, ORDER[i], MARGIN + 4 + ic / 2, y + rowH / 2, ic, sel);
+            icon(g, order()[i], MARGIN + 4 + ic / 2, y + rowH / 2, ic, sel);
             int x = MARGIN + ic + 14;
             String num = String.valueOf(i + 1);
             int textW = w - x - MARGIN - 6 - sm.stringWidth(num);
             g.setFont(f);
             g.setColor(Theme.ink);
-            g.drawString(Text.fit(titles[ORDER[i]], f, textW), x, compact ? y + (rowH - f.getHeight()) / 2 : y + 3, Graphics.TOP | Graphics.LEFT);
+            g.drawString(Text.fit(title(order()[i]), f, textW), x, compact ? y + (rowH - f.getHeight()) / 2 : y + 3, Graphics.TOP | Graphics.LEFT);
             g.setFont(sm);
             g.setColor(Theme.muted);
             if (!compact) {
-                g.drawString(Text.fit(midlet.homeHint(ORDER[i], hints[ORDER[i]]), sm, textW), x, y + 3 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
+                g.drawString(Text.fit(hint(order()[i]), sm, textW), x, y + 3 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
             }
             g.drawString(num, w - MARGIN - 2, y + rowH / 2 - sm.getHeight() / 2, Graphics.TOP | Graphics.RIGHT);
             y += rowH;

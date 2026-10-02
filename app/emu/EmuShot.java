@@ -263,6 +263,19 @@ public class EmuShot {
 
         setting("fontSize", new Integer(1));
         call("applyLook");
+
+        // a server that sells credits: the Credits row (a balance set by the harness; nothing is fetched)
+        setting("credits", Boolean.TRUE);
+        Object session = field(midlet, "session");
+        Method bal = session.getClass().getDeclaredMethod("setBalance", String.class);
+        bal.setAccessible(true);
+        bal.invoke(session, "45");
+        call("showMenu");
+        save("home_credits");
+        bal.invoke(session, "");
+        setting("credits", Boolean.FALSE);
+        call("showMenu");
+
         key(Mobile.KEY_NUM8);                 // About
         save("about");
         command(t("Back", "Geri"));

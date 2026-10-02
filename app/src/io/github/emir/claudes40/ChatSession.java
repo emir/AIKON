@@ -794,10 +794,12 @@ final class ChatSession implements Runnable, Net.Listener {
                     "Access code invalid or revoked. Settings > Pair this phone.");
         } else if ("credit".equals(st)) {
             status = L.s("Kredi yetersiz", "Not enough credits");
+            String shop = midlet.shopLine();
             msg = L.s("Bu mesaj için kredi yetmiyor" + (balance.length() > 0 ? " (bakiye: " + balance + ")" : "")
-                    + ". Ayarlar > Seçenekler > 'Kredi' ile yeni kod gir; mesajın taslakta duruyor.",
+                    + ". Ana menü > Kredi'den yeni kod gir; mesajın taslakta duruyor.",
                     "Not enough credits for this message" + (balance.length() > 0 ? " (balance: " + balance + ")" : "")
-                    + ". Add a code in Settings > Options > 'Credits'; your message is kept as a draft.");
+                    + ". Add a code under main menu > Credits; your message is kept as a draft.")
+                    + (shop.length() > 0 ? "\n\n" + shop : "");
         } else if ("account_disabled".equals(st)) {
             status = L.s("Hesap kapalı", "Account closed");
             msg = L.s("Bu hesap kapatılmış. Sunucunun destek adresine yaz.",

@@ -28,6 +28,8 @@ final class Updates implements Runnable {
     private static String server = "";
     private static String latest = "";
     private static String url = "";
+    /** The server's credit shop (/health "shop-url", https), "" if none; kept with the rest. */
+    private static String shop = "";
     private static long checkedAt;
     private static boolean loaded;
     private static boolean running;
@@ -65,6 +67,8 @@ final class Updates implements Runnable {
             if (r.ok() && r.msg != null && "ok".equals(r.msg.field("status"))) {
                 String v = r.msg.field("app-version");
                 String u = r.msg.field("app-url");
+                String sh = r.msg.field("shop-url");
+                shop = Net.isHttps(sh) ? sh : "";
                 if (!Net.isHttps(u)) {
                     v = "";
                     u = "";
@@ -86,6 +90,15 @@ final class Updates implements Runnable {
     static synchronized String available(String current, String serverUrl) {
         load();
         return serverUrl.equals(server) && newer(latest, current) ? latest : "";
+    }
+
+    /** Where credits are sold, without "https://" (shown, not opened), or "" if this server names none. */
+    static synchronized String shop(String serverUrl) {
+        load();
+        if (!serverUrl.equals(server) || shop.length() == 0) {
+            return "";
+        }
+        return shop.startsWith("https://") ? shop.substring(8) : shop;
     }
 
     /** The JAD to open for the update ("" if none). */
@@ -142,6 +155,7 @@ final class Updates implements Runnable {
             latest = in.readUTF();
             url = in.readUTF();
             checkedAt = in.readLong();
+            shop = in.readUTF(); // added in 0.14.2; older records end before it
         } catch (RecordStoreException e) {
             // nothing kept yet
         } catch (IOException e) {
@@ -161,6 +175,7 @@ final class Updates implements Runnable {
             out.writeUTF(latest);
             out.writeUTF(url);
             out.writeLong(checkedAt);
+            out.writeUTF(shop);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);

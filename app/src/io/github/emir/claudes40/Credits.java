@@ -70,6 +70,9 @@ final class Credits implements CommandListener, Runnable {
         form = page;
         page.append(L.s("Bakiye", "Balance"), L.s("Yükleniyor...", "Loading..."));
         page.setBig(0);
+        String shop = midlet.shopLine();
+        page.append(null, (shop.length() > 0 ? shop + "\n" : "")
+                + L.s("Kodu Seçenekler > 'Kredi yükle' ile gir.", "Enter the code with Options > 'Add credits'."));
         form.addCommand(backCmd);
         form.addCommand(topupCmd);
         form.addCommand(refreshCmd);
@@ -255,8 +258,8 @@ final class Credits implements CommandListener, Runnable {
         midlet.session().setBalance(bal);
         status(bal + L.s(" kredi", " credits"));
         // keep the balance item, list the newest charges below it
-        while (page.size() > 1) {
-            page.delete(1);
+        while (page.size() > 2) { // the balance and how to buy stay
+            page.delete(2);
         }
         String t = r.msg.text;
         int start = 0;

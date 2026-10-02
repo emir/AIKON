@@ -235,6 +235,14 @@ open-source server has no such extension; it only offers the hooks
 | `POST /v1/redeem` | Bearer token | `voucher: <16 digits>` → `ok` + `balance` |
 | `POST /v1/balance` | Bearer token | → `ok` + `credits` (0/1), `balance`; text: newest charges, one per line `ts-ms TAB kind TAB credits TAB model` (kinds `chat`, `transcribe`, `voucher`, `adjust`) |
 
+Such a server may also name its shop in /health: `shop-url: https://...`
+(only while it takes real payments). The phone keeps it with the daily update
+check and shows the address, without "https://", on the home screen's
+Credits row, the Credits page and the "not enough credits" note; it never
+opens it (old phone browsers cannot reach a modern shop), the code is bought
+on another device and typed in. The home status says "Credits low" below
+about ten typical messages with the chat's model, "No credits left" at zero.
+
 A voucher is 16 digits, the last a Luhn check digit (the phone refuses a
 mistyped code before sending it). Chat and voice answers carry `balance`
 (credits, at most one decimal); the phone shows it on the home screen (when
