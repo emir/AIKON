@@ -381,7 +381,18 @@ public class EmuShot {
     }
 
     static void select(int index) throws Exception {
-        javax.microedition.lcdui.List l = (javax.microedition.lcdui.List) current();
+        Displayable d = current();
+        if (!(d instanceof javax.microedition.lcdui.List)) { // the app's RowList: select, then FIRE
+            Method set = d.getClass().getDeclaredMethod("setSelectedIndex", int.class, boolean.class);
+            set.setAccessible(true);
+            set.invoke(d, index, true);
+            Method fire = d.getClass().getDeclaredMethod("fire");
+            fire.setAccessible(true);
+            fire.invoke(d);
+            settle();
+            return;
+        }
+        javax.microedition.lcdui.List l = (javax.microedition.lcdui.List) d;
         l.setSelectedIndex(index, true);
         Field f = Displayable.class.getDeclaredField("commandlistener");
         f.setAccessible(true);

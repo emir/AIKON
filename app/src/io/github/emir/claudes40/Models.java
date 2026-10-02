@@ -238,7 +238,7 @@ final class Models implements CommandListener, Runnable {
     // ------------------------------------------------------------ the picker
 
     private final ClaudeS40MIDlet midlet;
-    private final List list;
+    private final RowList list;
     private final Command chooseCmd = new Command(L.s("Seç", "Choose"), Command.OK, 1);
     private final Command refreshCmd = new Command(L.s("Listeyi yenile", "Refresh the list"), Command.SCREEN, 2);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
@@ -256,7 +256,7 @@ final class Models implements CommandListener, Runnable {
         this.midlet = midlet;
         this.purpose = purpose;
         this.back = back;
-        list = new List(title(), List.IMPLICIT);
+        list = new RowList(title());
         list.setSelectCommand(chooseCmd);
         list.addCommand(refreshCmd);
         list.addCommand(backCmd);
@@ -287,7 +287,7 @@ final class Models implements CommandListener, Runnable {
             provider = null;
         }
         list.deleteAll();
-        list.append(L.s("Yükleniyor...", "Loading..."), null);
+        list.note(L.s("Yükleniyor...", "Loading..."));
         new Thread(this).start();
     }
 
@@ -316,8 +316,8 @@ final class Models implements CommandListener, Runnable {
             n2 = names;
             p2 = providers;
             c2 = costs;
-            mark = purpose == FOR_SWITCH ? L.s(" (şu an)", " (now)")
-                    : current.equals(last) ? L.s(" (son seçim)", " (last used)") : L.s(" (varsayılan)", " (default)");
+            mark = purpose == FOR_SWITCH ? L.s("şu an", "now")
+                    : current.equals(last) ? L.s("son seçim", "last used") : L.s("varsayılan", "default");
         }
         String currentProvider = "";
         Vector groups = new Vector();
@@ -336,14 +336,14 @@ final class Models implements CommandListener, Runnable {
             prov = provider;
             choosingProvider = step1;
         }
-        list.setTitle(title());
+        list.title(title());
         list.deleteAll();
         if (error != null) {
-            list.append(L.s("Hata: ", "Error: ") + error, null);
+            list.note(L.s("Hata: ", "Error: ") + error);
         } else if (i2.length == 0) {
-            list.append(midlet.settings.testMode
+            list.note(midlet.settings.testMode
                     ? L.s("Test modunda liste sunucudan alınamaz.", "In test mode the list cannot come from the server.")
-                    : L.s("Liste boş. 'Listeyi yenile'yi seçin.", "No list yet. Choose 'Refresh the list'."), null);
+                    : L.s("Liste boş. 'Listeyi yenile'yi seçin.", "No list yet. Choose 'Refresh the list'."));
         }
         Vector v = new Vector();
         int sel = -1;
@@ -351,7 +351,13 @@ final class Models implements CommandListener, Runnable {
             for (int i = 0; i < groups.size(); i++) {
                 String g = (String) groups.elementAt(i);
                 boolean now = g.equals(currentProvider);
-                list.append((g.length() > 0 ? g : L.s("Diğer", "Other")) + (now ? mark : ""), null);
+                int count = 0;
+                for (int k = 0; k < p2.length; k++) {
+                    count += p2[k].equals(g) ? 1 : 0;
+                }
+                list.add(g.length() > 0 ? g : L.s("Diğer", "Other"),
+                        count + L.s(" model", count == 1 ? " model" : " models") + (now ? " · " + mark : ""), -1,
+                        now ? RowList.CHECK : 0);
                 v.addElement(g);
                 if (now) {
                     sel = list.size() - 1;
@@ -364,7 +370,8 @@ final class Models implements CommandListener, Runnable {
                 }
                 boolean now = i2[i].equals(current);
                 String cost = i < c2.length ? c2[i] : "";
-                list.append(n2[i] + (cost.length() > 0 ? " · ~" + cost + L.s(" kr", " cr") : "") + (now ? mark : ""), null);
+                String sub = cost.length() > 0 ? L.s("mesaj başı ~" + cost + " kredi", "~" + cost + " credits a message") : "";
+                list.add(n2[i], now ? (sub.length() > 0 ? sub + " · " : "") + mark : sub, -1, now ? RowList.CHECK : 0);
                 v.addElement(i2[i]);
                 if (now) {
                     sel = list.size() - 1;

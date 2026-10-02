@@ -22,7 +22,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
 
     private final ClaudeS40MIDlet midlet;
     private final boolean fromComposer;
-    private List source;
+    private RowList source;
     private final Form form;
     private final StringItem status;
     private final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.OK, 1);
@@ -51,9 +51,9 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         boolean cam = ClaudeS40MIDlet.hasCamera();
         boolean files = ClaudeS40MIDlet.hasFiles();
         if (cam && files) {
-            source = new List(L.s("Fotoğraf ekle", "Add a photo"), List.IMPLICIT);
-            source.append(L.s("Kamerayla çek", "Take a photo"), null);
-            source.append(L.s("Telefondan seç", "Choose from the phone"), null);
+            source = new RowList(L.s("Fotoğraf ekle", "Add a photo"));
+            source.add(L.s("Kamerayla çek", "Take a photo"), null, -1, 0);
+            source.add(L.s("Telefondan seç", "Choose from the phone"), null, -1, 0);
             source.addCommand(cancelCmd);
             source.setCommandListener(this);
             midlet.display().setCurrent(source);

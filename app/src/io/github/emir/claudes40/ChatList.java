@@ -8,9 +8,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Font;
-import javax.microedition.lcdui.Image;
-import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 
@@ -31,7 +28,7 @@ final class ChatList implements CommandListener, Runnable {
     private static final int JOB_DELETE = 3;
 
     private final ClaudeS40MIDlet midlet;
-    private final List list;
+    private final RowList list;
     private final Command openCmd = new Command(L.s("Aç", "Open"), Command.OK, 1);
     private final Command searchCmd = new Command(L.s("Sohbetlerde ara", "Search chats"), Command.SCREEN, 2);
     private final Command pinCmd = new Command(L.s("Sabitle / kaldır", "Pin / unpin"), Command.SCREEN, 3);
@@ -44,8 +41,6 @@ final class ChatList implements CommandListener, Runnable {
     private final Command noCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
     private TextBox searchBox;
     private Alert confirm;
-    private Image pinIcon;
-    private Image noIcon;
 
     /** Conversation ids and pinned flags (Boolean) in list order; empty while loading or on error. */
     private final Vector ids = new Vector();
@@ -60,7 +55,7 @@ final class ChatList implements CommandListener, Runnable {
 
     ChatList(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
-        list = new List(L.s("Sohbetler", "Chats"), List.IMPLICIT);
+        list = new RowList(L.s("Sohbetler", "Chats"));
         list.setSelectCommand(openCmd);
         list.addCommand(searchCmd);
         list.addCommand(pinCmd);
@@ -92,7 +87,7 @@ final class ChatList implements CommandListener, Runnable {
             }
             searchMode = search;
         }
-        list.setTitle(search ? L.s("Ara: ", "Search: ") + q : L.s("Sohbetler", "Chats"));
+        list.title(search ? L.s("Ara: ", "Search: ") + q : L.s("Sohbetler", "Chats"));
     }
 
     private void start(int j, String id, boolean pin) {
@@ -111,7 +106,7 @@ final class ChatList implements CommandListener, Runnable {
         }
         if (j == JOB_LIST || j == JOB_SEARCH) {
             list.deleteAll();
-            list.append(j == JOB_SEARCH ? L.s("Aranıyor...", "Searching...") : L.s("Yükleniyor...", "Loading..."), null);
+            list.note(j == JOB_SEARCH ? L.s("Aranıyor...", "Searching...") : L.s("Yükleniyor...", "Loading..."));
         }
         new Thread(this).start();
     }
@@ -148,7 +143,7 @@ final class ChatList implements CommandListener, Runnable {
                         + (st.length() > 0 ? st : "?") + ").";
             }
             list.deleteAll();
-            list.append(q != null ? L.s("Aranıyor...", "Searching...") : L.s("Yükleniyor...", "Loading..."), null);
+            list.note(q != null ? L.s("Aranıyor...", "Searching...") : L.s("Yükleniyor...", "Loading..."));
         }
         boolean search = q != null;
         Net.Result r = search
@@ -182,15 +177,17 @@ final class ChatList implements CommandListener, Runnable {
         }
         list.deleteAll();
         if (error != null) {
-            list.append(L.s("Hata: ", "Error: ") + error, null);
+            list.note(L.s("Hata: ", "Error: ") + error);
         } else if (titles.size() == 0) {
-            list.append(search ? L.s("Bulunamadı. Türkçe harf gerekmez: 'sise' de 'şişe'yi bulur.",
+            list.note(search ? L.s("Bulunamadı. Türkçe harf gerekmez: 'sise' de 'şişe'yi bulur.",
                     "Nothing found. Plain letters are fine: 'sise' finds 'şişe'.")
                     : L.s("Henüz sohbet yok. Sohbetler sunucuda 30 gün kalır, sabitlenenler kaldırılana kadar.",
-                            "No chats yet. The server keeps chats for 30 days, pinned ones until unpinned."), null);
+                            "No chats yet. The server keeps chats for 30 days, pinned ones until unpinned."));
         }
         for (int i = 0; i < titles.size(); i++) {
-            list.append((String) titles.elementAt(i), ((Boolean) pinned.elementAt(i)).booleanValue() ? pin() : blank());
+            String[] t = (String[]) titles.elementAt(i);
+            boolean p = ((Boolean) pinned.elementAt(i)).booleanValue();
+            list.add(t[0], t[1], p ? Icons.PIN : Icons.CHAT, p ? RowList.ACCENT : 0);
         }
         if (actionError != null) {
             midlet.info(actionError, list);
@@ -238,29 +235,9 @@ final class ChatList implements CommandListener, Runnable {
             }
             ids.addElement(line.substring(0, t1));
             pinned.addElement(pin ? Boolean.TRUE : Boolean.FALSE);
-            titles.addElement(Text.shortDate(updated) + " · " + (model.length() > 0 ? model + " · " : "")
-                    + (title.length() > 0 ? title : "-"));
+            titles.addElement(new String[] { title.length() > 0 ? title : "-",
+                Text.shortDate(updated) + (model.length() > 0 ? " · " + model : "") });
         }
-    }
-
-    /** A small pin in the accent colour; rows without a pin get a clear image of the same size. */
-    private Image pin() {
-        if (pinIcon == null) {
-            pinIcon = Icons.get(Icons.PIN, iconSize(), Theme.accent);
-        }
-        return pinIcon;
-    }
-
-    private Image blank() {
-        if (noIcon == null) {
-            int s = iconSize();
-            noIcon = Image.createRGBImage(new int[s * s], s, s, true);
-        }
-        return noIcon;
-    }
-
-    private static int iconSize() {
-        return Math.max(10, Math.min(16, Font.getDefaultFont().getHeight() * 3 / 4));
     }
 
     /** {id, "1"/"0" pinned} of the selected row, or null. */

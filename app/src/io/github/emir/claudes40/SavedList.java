@@ -9,7 +9,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.List;
 import javax.microedition.lcdui.StringItem;
 
 /**
@@ -25,7 +24,7 @@ final class SavedList implements CommandListener, Runnable {
     private static final int JOB_SAVE = 3;
 
     private final ClaudeS40MIDlet midlet;
-    private final List list;
+    private final RowList list;
     private final Command openCmd = new Command(L.s("Aç", "Open"), Command.OK, 1);
     private final Command deleteCmd = new Command(L.s("Sil", "Delete"), Command.SCREEN, 2);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
@@ -44,7 +43,7 @@ final class SavedList implements CommandListener, Runnable {
 
     SavedList(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
-        list = new List(L.s("Kaydedilenler", "Saved"), List.IMPLICIT);
+        list = new RowList(L.s("Kaydedilenler", "Saved"));
         list.setSelectCommand(openCmd);
         list.addCommand(deleteCmd);
         list.addCommand(backCmd);
@@ -83,7 +82,7 @@ final class SavedList implements CommandListener, Runnable {
         if (j == JOB_LIST) {
             files.removeAllElements();
             list.deleteAll();
-            list.append(L.s("Yükleniyor...", "Loading..."), null);
+            list.note(L.s("Yükleniyor...", "Loading..."));
         }
         new Thread(this).start();
     }
@@ -137,7 +136,7 @@ final class SavedList implements CommandListener, Runnable {
         }
         if (err != null) {
             if (j == JOB_LIST) {
-                list.append(L.s("Hata: ", "Error: ") + err, null);
+                list.note(L.s("Hata: ", "Error: ") + err);
             } else {
                 midlet.info(err, list);
             }
@@ -153,11 +152,13 @@ final class SavedList implements CommandListener, Runnable {
         }
         list.deleteAll();
         if (found.size() == 0) {
-            list.append(L.s("Henüz kayıt yok. Sohbette bir yanıtı seçin (1/3), orta tuş > Telefona kaydet.",
-                    "Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone."), null);
+            list.note(L.s("Henüz kayıt yok. Sohbette bir yanıtı seçin (1/3), orta tuş > Telefona kaydet.",
+                    "Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone."));
         }
         for (int i = 0; i < found.size(); i++) {
-            list.append(label((String) found.elementAt(i)), null);
+            String l = label((String) found.elementAt(i));
+            int dot = l.indexOf(" · ");
+            list.add(dot > 0 ? l.substring(dot + 3) : l, dot > 0 ? l.substring(0, dot) : null, Icons.SAVED, 0);
         }
     }
 

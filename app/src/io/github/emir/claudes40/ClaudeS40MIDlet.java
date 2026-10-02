@@ -105,7 +105,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private ChatSession session;
     private ChatCanvas chat;
     private HomeCanvas home;
-    private List prompts;
+    private RowList prompts;
     private String[] promptTexts;
     private TextBox composer;
     private Form settingsForm;
@@ -138,7 +138,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Displayable shortcutsBack;
     private ChoiceGroup lightChoice;
     /** Message actions (ChatCanvas selection): list, what each row does, the message. */
-    private List actionList;
+    private RowList actionList;
     private int[] actionIds;
     private ChatSession.Entry actionEntry;
     private TextBox viewer;
@@ -724,8 +724,15 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             return;
         }
         if (prompts == null) {
-            prompts = new List(L.s("Hızlı sorular", "Quick prompts"), List.IMPLICIT,
-                    L.turkish() ? TITLES_TR : TITLES_EN, null);
+            prompts = new RowList(L.s("Hızlı sorular", "Quick prompts"));
+            String[] titles = L.turkish() ? TITLES_TR : TITLES_EN;
+            for (int i = 0; i < titles.length; i++) {
+                String sub = promptTexts[i].trim();
+                sub = sub.endsWith(":") ? sub.substring(0, sub.length() - 1) + "..." : sub;
+                String head = titles[i].toLowerCase().substring(0, Math.min(8, titles[i].length()));
+                // no second line when it only repeats the title
+                prompts.add(titles[i], sub.toLowerCase().startsWith(head) ? null : sub, -1, 0);
+            }
             prompts.addCommand(promptsBackCmd);
             prompts.setCommandListener(this);
         }
@@ -831,16 +838,39 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         for (int i = 0; i < ids.length; i++) {
             ids[i] = ((Integer) v.elementAt(i)).intValue();
         }
-        String[] labels = new String[ids.length];
+        actionList = new RowList(reply ? L.s("Yanıt", "Reply") : L.s("Mesajın", "Your message"));
         for (int i = 0; i < ids.length; i++) {
-            labels[i] = actionLabel(ids[i]);
+            actionList.add(actionLabel(ids[i]), null, actionIcon(ids[i]), 0);
         }
-        actionList = new List(reply ? L.s("Yanıt", "Reply") : L.s("Mesajın", "Your message"), List.IMPLICIT, labels, null);
         actionList.addCommand(listBackCmd);
         actionList.setCommandListener(this);
         actionIds = ids;
         actionEntry = e;
         display.setCurrent(actionList);
+    }
+
+    private static int actionIcon(int id) {
+        switch (id) {
+        case ACT_READ:
+            return Icons.BOOK;
+        case ACT_SHORTEN:
+            return Icons.SHORT;
+        case ACT_SIMPLER:
+            return Icons.SPARK;
+        case ACT_TO_TR:
+        case ACT_TO_EN:
+            return Icons.GLOBE;
+        case ACT_ASK:
+            return Icons.CHAT;
+        case ACT_RESEND:
+            return Icons.RESEND;
+        case ACT_SAVE:
+            return Icons.SAVED;
+        case ACT_CALENDAR:
+            return Icons.CALENDAR;
+        default:
+            return Icons.NEW_CHAT;
+        }
     }
 
     private static String actionLabel(int id) {

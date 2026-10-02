@@ -45,8 +45,8 @@ import javax.microedition.lcdui.Graphics;
 final class ChatCanvas extends Canvas implements CommandListener, ChatSession.View {
 
     private static final int PAD = 6;
-    private static final int BUBBLE_PAD = 5;
-    private static final int ARC = 14;
+    private static final int BUBBLE_PAD = 6;
+    private static final int ARC = 16;
     /** Side margin in reading mode. */
     private static final int RPAD = 8;
     private static final int TOAST_MS = 1600;
@@ -654,7 +654,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     private int statusH() {
-        return Theme.small.getHeight() + 6;
+        return Theme.small.getHeight() + 14;
     }
 
     private int viewH() {
@@ -688,8 +688,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             b.more = e.more();
             b.lines = new Vector();
             boolean bubble = isBubble(e.kind);
+            boolean mine = e.kind == ChatSession.KIND_USER;
             if (bubble) {
-                Text.layout(Cal.shown(e.text), f, maxBubble - 2 * BUBBLE_PAD, b.lines);
+                // your messages in a bubble on the right, replies full width without one
+                Text.layout(Cal.shown(e.text), f, (mine ? maxBubble : w - 2 * PAD) - 2 * BUBBLE_PAD, b.lines);
             } else {
                 // notes: one short line (small for info), the explanation on request
                 b.detail = e.detail.length() > 0;
@@ -712,13 +714,14 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             if (bubble) {
                 String who = e.kind == ChatSession.KIND_USER ? L.s("Sen", "You")
                         : e.kind == ChatSession.KIND_CLAUDE ? replyName(e) : L.s("Test modu · sahte", "Test mode · fake");
-                b.meta = who + (e.time > 0 ? " · " + hhmm(e.time) : "") + (e.searched > 0 ? " · web" : "");
+                b.meta = mine ? (e.time > 0 ? hhmm(e.time) : "")
+                        : who + (e.time > 0 ? " · " + hhmm(e.time) : "") + (e.searched > 0 ? " · web" : "");
                 b.footer = e.truncated ? L.s("Yanıt kısaltıldı", "Reply shortened")
                         : b.more ? L.s("0 · Devamını göster", "0 · Show the rest") : null;
                 int metaW = sm.stringWidth(b.meta) + (e.kind == ChatSession.KIND_CLAUDE ? 12 : 0);
                 int footW = b.footer == null ? 0 : sm.stringWidth(b.footer);
-                b.bw = Math.min(Math.max(widest, Math.max(metaW, footW)) + 2 * BUBBLE_PAD, maxBubble);
-                b.textTop = BUBBLE_PAD + sm.getHeight() + 1;
+                b.bw = mine ? Math.min(Math.max(widest, Math.max(metaW, footW)) + 2 * BUBBLE_PAD, maxBubble) : w - 2 * PAD;
+                b.textTop = BUBBLE_PAD + (b.meta.length() > 0 ? sm.getHeight() + 1 : 0);
                 b.h = b.textTop + b.textH + (b.footer == null ? 0 : sm.getHeight() + 5) + BUBBLE_PAD;
             } else {
                 b.bw = w - 2 * PAD;
@@ -1137,14 +1140,19 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         if (isBubble(b.kind)) {
             boolean mine = b.kind == ChatSession.KIND_USER;
             int x = mine ? w - PAD - b.bw : PAD;
-            int fill = mine ? Theme.accent : Theme.surface;
+            int fill = mine ? Theme.accent : Theme.bg;
             int text = mine ? Theme.accentInk : Theme.ink;
-            if (!mine) {
-                g.setColor(Theme.border);
-                g.fillRoundRect(x - 1, y - 1, b.bw + 2, b.h + 2, ARC, ARC);
+            if (mine) {
+                g.setColor(fill);
+                g.fillRoundRect(x, y, b.bw, b.h, ARC, ARC);
+            } else if (b.uid == sel && sel != 0) {
+                // a selected reply: a soft panel with the accent bar, as in the lists
+                fill = Theme.selection;
+                g.setColor(fill);
+                g.fillRoundRect(x, y, b.bw, b.h, 12, 12);
+                g.setColor(Theme.accent);
+                g.fillRoundRect(x, y, 4, b.h, 4, 4);
             }
-            g.setColor(fill);
-            g.fillRoundRect(x, y, b.bw, b.h, ARC, ARC);
             int ty = y + BUBBLE_PAD;
             int mx = x + BUBBLE_PAD;
             if (b.kind == ChatSession.KIND_CLAUDE) {
@@ -1200,7 +1208,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 g.drawString(Text.fit(t, Theme.small, w - 4 * PAD), w / 2, fy + 2, Graphics.TOP | Graphics.HCENTER);
             }
         }
-        if (b.uid == sel && sel != 0) {
+        if (b.uid == sel && sel != 0 && !isReply(b.kind)) {
             paintSelection(g, b, w, y);
         }
     }
@@ -1269,11 +1277,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.drawString(Text.fit(typingLabel(), sm, w - 2 * PAD), PAD + 2, y, Graphics.TOP | Graphics.LEFT);
         int by = y + sm.getHeight() + 2;
         int bh = Theme.font.getHeight() + 2 * BUBBLE_PAD;
-        int bw = 60;
-        g.setColor(Theme.border);
-        g.fillRoundRect(PAD - 1, by - 1, bw + 2, bh + 2, ARC, ARC);
-        g.setColor(Theme.surface);
-        g.fillRoundRect(PAD, by, bw, bh, ARC, ARC);
         for (int i = 0; i < 3; i++) {
             boolean up = animFrame % 3 == i;
             g.setColor(up ? Theme.accent : Theme.border);
@@ -1356,25 +1359,52 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             g.drawString(pill, w - PAD - pw / 2, (bh - ph) / 2 + 1, Graphics.TOP | Graphics.HCENTER);
             right -= pw + 4;
         }
+        // the chat's model, with a chevron: Options > Model changes it
         g.setFont(Theme.bold);
         g.setColor(Theme.barInk);
         int tx = PAD + bh + 2;
-        g.drawString(Text.fit("AIKON", Theme.bold, right - tx), tx, 4,
-                Graphics.TOP | Graphics.LEFT);
+        int cw = 9;
+        String name = Text.fit(session.ai(), Theme.bold, right - tx - cw - 4);
+        g.drawString(name, tx, 4, Graphics.TOP | Graphics.LEFT);
+        int cx = tx + Theme.bold.stringWidth(name) + 4;
+        int cy = bh / 2;
+        g.setColor(Theme.mix(Theme.barInk, test ? Theme.testBar : Theme.bar, 120));
+        g.fillTriangle(cx, cy - 2, cx + cw - 1, cy - 2, cx + cw / 2, cy + 3);
     }
 
     private void paintStatus(Graphics g, int w, int h, int vh) {
+        // an input pill: what the centre key does, or the status; a send mark at the right
         int sh = statusH();
-        g.setColor(Theme.surface);
+        g.setColor(Theme.bg);
         g.fillRect(0, h - sh, w, sh);
+        int ph = sh - 6;
+        int py = h - sh + 2;
         g.setColor(Theme.border);
-        g.drawLine(0, h - sh, w, h - sh);
+        g.fillRoundRect(PAD - 1, py - 1, w - 2 * PAD + 2, ph + 2, ph + 2, ph + 2);
+        g.setColor(Theme.surface);
+        g.fillRoundRect(PAD, py, w - 2 * PAD, ph, ph, ph);
+        int d = ph - 6;
+        int dx = w - PAD - 3 - d;
+        g.setColor(Theme.accent);
+        g.fillArc(dx, py + 3, d, d, 0, 360);
+        int ax = dx + d / 2;
+        int ay = py + 3 + d / 2;
+        int a = Math.max(3, d / 4);
+        g.setColor(Theme.accentInk);
+        g.fillTriangle(ax, ay - a - 1, ax - a - 1, ay, ax + a + 1, ay);
+        g.fillRect(ax - 1, ay, 2, a + 1);
         String st = session.status();
+        String hint = hint(vh);
+        boolean ready = st.length() == 0 && hint == READY;
         g.setFont(Theme.small);
         g.setColor(st.length() > 0 ? Theme.accent : Theme.muted);
-        g.drawString(Text.fit(st.length() > 0 ? st : hint(vh), Theme.small, w - 2 * PAD), PAD, h - sh + 3,
+        String t = st.length() > 0 ? st : ready ? L.s("Bir şey sor...", "Ask anything...") : hint;
+        g.drawString(Text.fit(t, Theme.small, dx - 2 * PAD - 8), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
                 Graphics.TOP | Graphics.LEFT);
     }
+
+    /** The idle hint (a marker: the pill then shows its placeholder). */
+    private static final String READY = "ready";
 
     /** The idle status line suggests the key that helps most right now. */
     private String hint(int vh) {
@@ -1397,7 +1427,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 return L.s("7: okuma modu · 5: yaz", "7: reading mode · 5: write");
             }
         }
-        return L.s("Hazır · yazmak için orta tuş", "Ready · centre key to write");
+        return READY;
     }
 
     private void paintReading(Graphics g, int w, int h) {

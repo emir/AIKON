@@ -29,7 +29,7 @@ final class Setup implements CommandListener {
     private int step;
     private Form form;
     /** Step 1: the languages; the centre key picks one and goes on. */
-    private List langList;
+    private RowList langList;
     private TextField urlField;
     private Command nextCmd;
     private Command backCmd;
@@ -69,8 +69,10 @@ final class Setup implements CommandListener {
             return;
         }
         if (step == 0) {
-            langList = new List(title(0) + L.s(" · Dil", " · Language"), List.IMPLICIT,
-                    new String[] { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" }, null);
+            langList = new RowList(title(0) + L.s(" · Dil", " · Language"));
+            langList.add(L.s("Telefona göre", "Same as phone"), null, Icons.GLOBE, 0);
+            langList.add("Türkçe", null, Icons.GLOBE, 0);
+            langList.add("English", null, Icons.GLOBE, 0);
             langList.setSelectedIndex(Math.max(0, Math.min(2, s.lang)), true);
             langList.addCommand(skipCmd);
             langList.addCommand(helpCmd);

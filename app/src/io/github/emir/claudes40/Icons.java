@@ -22,6 +22,14 @@ final class Icons {
     static final int INFO = 7;
     static final int EXIT = 8;
     static final int PIN = 9;
+    static final int CHECK = 10;
+    static final int GLOBE = 11;
+    static final int BOOK = 12;
+    static final int CALENDAR = 13;
+    static final int SHORT = 14;
+    static final int SPARK = 15;
+    static final int RESEND = 16;
+    static final int SEARCH = 17;
 
     // shape codes, coordinates in grid units (0..24)
     private static final int LINE = 1;   // n, x0, y0, ... xn-1, yn-1: polyline through n points
@@ -61,6 +69,24 @@ final class Icons {
         { // pin: push pin
             LINE, 2, 8, 3, 16, 3, LINE, 5, 9, 3, 9, 10, 5, 15, 19, 15, 15, 10, LINE, 2, 15, 10, 15, 3,
             LINE, 2, 12, 15, 12, 21 },
+        { // check mark
+            LINE, 3, 5, 12, 10, 17, 19, 7 },
+        { // globe: translate
+            CIRCLE, 12, 12, 10, LINE, 2, 2, 12, 22, 12,
+            LINE, 6, 12, 2, 15, 5, 16, 9, 16, 15, 15, 19, 12, 22, LINE, 6, 12, 2, 9, 5, 8, 9, 8, 15, 9, 19, 12, 22 },
+        { // open book: reading mode
+            LINE, 2, 12, 6, 12, 20, LINE, 6, 12, 6, 8, 4, 3, 4, 3, 18, 8, 18, 12, 20,
+            LINE, 6, 12, 6, 16, 4, 21, 4, 21, 18, 16, 18, 12, 20 },
+        { // calendar
+            RECT, 3, 5, 21, 21, 3, LINE, 2, 3, 10, 21, 10, LINE, 2, 8, 3, 8, 7, LINE, 2, 16, 3, 16, 7 },
+        { // shorter: lines getting shorter
+            LINE, 2, 4, 6, 20, 6, LINE, 2, 4, 12, 16, 12, LINE, 2, 4, 18, 11, 18 },
+        { // sparkle: simpler
+            LINE, 9, 12, 3, 14, 10, 21, 12, 14, 14, 12, 21, 10, 14, 3, 12, 10, 10, 12, 3 },
+        { // circular arrow: send again
+            ARC, 12, 12, 8, 60, 360, LINE, 3, 15, 1, 16, 5, 20, 7 },
+        { // magnifier: search
+            CIRCLE, 10, 10, 7, LINE, 2, 15, 15, 21, 21 },
     };
 
     private static final Hashtable cache = new Hashtable();

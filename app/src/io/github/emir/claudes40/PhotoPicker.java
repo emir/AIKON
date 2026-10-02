@@ -21,7 +21,7 @@ final class PhotoPicker implements CommandListener, Runnable {
 
     private final ClaudeS40MIDlet midlet;
     private final Photo photo;
-    private final List list;
+    private final RowList list;
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.SCREEN, 2);
 
@@ -37,7 +37,7 @@ final class PhotoPicker implements CommandListener, Runnable {
     PhotoPicker(ClaudeS40MIDlet midlet, Photo photo) {
         this.midlet = midlet;
         this.photo = photo;
-        list = new List(L.s("Fotoğraf seç", "Choose a photo"), List.IMPLICIT);
+        list = new RowList(L.s("Fotoğraf seç", "Choose a photo"));
         list.addCommand(backCmd);
         list.addCommand(cancelCmd);
         list.setCommandListener(this);
@@ -56,7 +56,7 @@ final class PhotoPicker implements CommandListener, Runnable {
         job = JOB_LIST;
         jobUrl = url;
         list.deleteAll();
-        list.append(L.s("Yükleniyor...", "Loading..."), null);
+        list.note(L.s("Yükleniyor...", "Loading..."));
         new Thread(this).start();
     }
 
@@ -109,23 +109,23 @@ final class PhotoPicker implements CommandListener, Runnable {
             list.deleteAll();
             if (dir != null) {
                 targets.addElement("");
-                list.append(L.s(".. (üst klasör)", ".. (up)"), null);
+                list.add(L.s(".. (üst klasör)", ".. (up)"), null, -1, 0);
             }
             int photos = 0;
             for (int i = 0; i < names.size(); i++) {
                 String n = (String) names.elementAt(i);
                 if (dir == null) {
                     targets.addElement(n);
-                    list.append(n.substring(8), null); // "C:/", "E:/"
+                    list.add(n.substring(8), null, -1, 0); // "C:/", "E:/"
                 } else {
                     targets.addElement(dir + n);
-                    list.append(n, null);
+                    list.add(n, null, -1, 0);
                     if (!n.endsWith("/")) {
                         photos++;
                     }
                 }
             }
-            list.setTitle(dir == null ? L.s("Sürücüler", "Drives") : title(dir) + " (" + photos + ")");
+            list.title(dir == null ? L.s("Sürücüler", "Drives") : title(dir) + " (" + photos + ")");
         }
     }
 
@@ -205,7 +205,7 @@ final class PhotoPicker implements CommandListener, Runnable {
                     job = JOB_READ;
                     jobUrl = t;
                 }
-                list.setTitle(L.s("Okunuyor...", "Reading..."));
+                list.title(L.s("Okunuyor...", "Reading..."));
                 new Thread(this).start();
             }
         } else if (c == backCmd && dir != null) {

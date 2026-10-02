@@ -58,8 +58,10 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 
 ### Phone app
 
-- High-level `List`/`Form`/`TextBox` for input and settings; custom
-  `Canvas` screens (splash, home, chat) sized from `getWidth()/getHeight()`,
+- High-level `Form`/`TextBox` for input and settings; custom `Canvas`
+  screens (splash, home, chat, and every list through `RowList`), with
+  line icons and the wordmark drawn by the app (`Icons`, `Wordmark`), sized
+  from `getWidth()/getHeight()`,
   softkeys as `Command`s, arrows via `getGameAction()` (through `Keys`,
   which first maps the letter codes of QWERTY S60 phones such as the Nokia
   E63 to digits and never turns a letter into a game action). Replies are laid
