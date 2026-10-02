@@ -8,7 +8,7 @@ import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * Main menu with drawn icons. UP/DOWN (game actions) move, FIRE or "Seç"
+ * Main menu with line icons (Icons). UP/DOWN (game actions) move, FIRE or "Seç"
  * opens, number keys 1-9 (Canvas.KEY_NUMx constants) jump directly; the
  * QWERTY N key (9 after Keys.map) only moves to Exit, so a stray N never
  * quits. On short landscape screens (E63) each row is one line.
@@ -176,70 +176,8 @@ final class HomeCanvas extends Canvas implements CommandListener {
                 w - 2 * MARGIN), w / 2, h - footH + 2, Graphics.TOP | Graphics.HCENTER);
     }
 
-    /** Small line icons drawn with primitives. */
+    /** Menu order = Icons order (CHAT .. EXIT). */
     private static void icon(Graphics g, int item, int cx, int cy, int s, boolean sel) {
-        int c = sel ? Theme.accent : Theme.muted;
-        g.setColor(c);
-        int r = s / 2;
-        switch (item) {
-        case 0: // chat bubble
-            g.fillRoundRect(cx - r, cy - r + 2, s, s * 3 / 4, 8, 8);
-            g.fillTriangle(cx - r + 3, cy + r / 2, cx - r + 9, cy + r / 2, cx - r + 1, cy + r);
-            g.setColor(Theme.bg);
-            for (int i = -1; i <= 1; i++) {
-                g.fillArc(cx + i * (s / 4) - 2, cy - 1, 4, 4, 0, 360);
-            }
-            break;
-        case 1: // list of chats: three lines with dots
-            for (int i = -1; i <= 1; i++) {
-                int ly = cy + i * (s / 3) - 1;
-                g.fillArc(cx - r, ly, 4, 4, 0, 360);
-                g.fillRect(cx - r + 6, ly + 1, s - 6, 2);
-            }
-            break;
-        case 2: // lightning
-            g.fillTriangle(cx + 2, cy - r, cx - r / 2, cy + 2, cx + 1, cy + 1);
-            g.fillTriangle(cx - 2, cy + r, cx + r / 2, cy - 2, cx - 1, cy - 1);
-            break;
-        case 3: // plus in a circle
-            g.drawArc(cx - r, cy - r, s, s, 0, 360);
-            g.fillRect(cx - r / 2, cy - 1, r, 3);
-            g.fillRect(cx - 1, cy - r / 2, 3, r);
-            break;
-        case 4: // a page with a folded corner and lines
-            g.fillRect(cx - r + 2, cy - r, s - 4 - r / 2, s);
-            g.fillTriangle(cx + r - 2 - r / 2, cy - r, cx + r - 2, cy - r + r / 2, cx + r - 2 - r / 2, cy - r + r / 2);
-            g.fillRect(cx + r - 2 - r / 2, cy - r + r / 2, r / 2, s - r / 2);
-            g.setColor(Theme.bg);
-            for (int i = 0; i < 3; i++) {
-                g.fillRect(cx - r + 5, cy - r / 3 + i * (s / 4), s - 10, 2);
-            }
-            break;
-        case 5: // signal bars
-            for (int i = 0; i < 4; i++) {
-                int bh = (i + 1) * s / 4;
-                g.fillRect(cx - r + i * (s / 4), cy + r - bh, Math.max(2, s / 6), bh);
-            }
-            break;
-        case 6: // gear-ish: ring with teeth
-            g.fillArc(cx - r, cy - r, s, s, 0, 360);
-            g.setColor(Theme.bg);
-            g.fillArc(cx - r / 2, cy - r / 2, r, r, 0, 360);
-            g.setColor(c);
-            g.fillRect(cx - 1, cy - r - 2, 3, 4);
-            g.fillRect(cx - 1, cy + r - 2, 3, 4);
-            g.fillRect(cx - r - 2, cy - 1, 4, 3);
-            g.fillRect(cx + r - 2, cy - 1, 4, 3);
-            break;
-        case 7: // info "i"
-            g.drawArc(cx - r, cy - r, s, s, 0, 360);
-            g.fillRect(cx - 1, cy - r / 2, 3, 3);
-            g.fillRect(cx - 1, cy - r / 6, 3, r * 2 / 3 + 2);
-            break;
-        default: // power
-            g.drawArc(cx - r, cy - r, s, s, 120, 300);
-            g.fillRect(cx - 1, cy - r - 1, 3, r);
-            break;
-        }
+        g.drawImage(Icons.get(item, s, sel ? Theme.accent : Theme.muted), cx, cy, Graphics.HCENTER | Graphics.VCENTER);
     }
 }

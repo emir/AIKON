@@ -1212,12 +1212,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     /** A small circled "i" after a note: there is more to read (select it, centre key). */
     private static void paintInfoIcon(Graphics g, int x, int y, Font f, int color) {
         int s = iconSize(f);
-        int top = y + (f.getHeight() - s) / 2;
-        g.setColor(color);
-        g.drawArc(x, top, s - 1, s - 1, 0, 360);
-        int cx = x + s / 2;
-        g.fillRect(cx - 1, top + s / 4 - 1, 2, 2);
-        g.fillRect(cx - 1, top + s / 4 + 2, 2, s / 2 - 1);
+        g.drawImage(Icons.get(Icons.INFO, s, color), x, y + (f.getHeight() - s) / 2, Graphics.TOP | Graphics.LEFT);
     }
 
     /** A 2-pixel ring around the selected bubble (or note). */

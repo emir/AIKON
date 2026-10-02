@@ -243,28 +243,10 @@ final class ChatList implements CommandListener, Runnable {
         }
     }
 
-    /** A small pin drawn in the accent colour; rows without a pin get a clear image of the same size. */
+    /** A small pin in the accent colour; rows without a pin get a clear image of the same size. */
     private Image pin() {
         if (pinIcon == null) {
-            int s = iconSize();
-            int[] px = new int[s * s];
-            int r = Math.max(2, s * 3 / 10);
-            int cx = s / 2;
-            int cy = r + 1;
-            int color = 0xFF000000 | Theme.accent;
-            for (int y = 0; y < s; y++) {
-                for (int x = 0; x < s; x++) {
-                    int dx = x - cx;
-                    int dy = y - cy;
-                    boolean head = dx * dx + dy * dy <= r * r;
-                    boolean collar = y == cy + r && dx >= -r && dx <= r;
-                    boolean needle = y > cy + r && (x == cx || (s >= 12 && x == cx - 1)) && y < s - 1;
-                    if (head || collar || needle) {
-                        px[y * s + x] = color;
-                    }
-                }
-            }
-            pinIcon = Image.createRGBImage(px, s, s, true);
+            pinIcon = Icons.get(Icons.PIN, iconSize(), Theme.accent);
         }
         return pinIcon;
     }
