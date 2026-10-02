@@ -78,7 +78,7 @@ final class SavedList implements CommandListener, Runnable {
         if (j == JOB_LIST) {
             files.removeAllElements();
             list.deleteAll();
-            list.note(L.s("Yükleniyor...", "Loading..."));
+            list.skeleton(5);
         }
         new Thread(this).start();
     }

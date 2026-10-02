@@ -287,7 +287,7 @@ final class Models implements CommandListener, Runnable {
             provider = null;
         }
         list.deleteAll();
-        list.note(L.s("Yükleniyor...", "Loading..."));
+        list.skeleton(5);
         new Thread(this).start();
     }
 

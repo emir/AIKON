@@ -104,7 +104,7 @@ final class ChatList implements CommandListener, Runnable {
         }
         if (j == JOB_LIST || j == JOB_SEARCH) {
             list.deleteAll();
-            list.note(j == JOB_SEARCH ? L.s("Aranıyor...", "Searching...") : L.s("Yükleniyor...", "Loading..."));
+            list.skeleton(5);
         }
         new Thread(this).start();
     }
@@ -141,7 +141,7 @@ final class ChatList implements CommandListener, Runnable {
                         + (st.length() > 0 ? st : "?") + ").";
             }
             list.deleteAll();
-            list.note(q != null ? L.s("Aranıyor...", "Searching...") : L.s("Yükleniyor...", "Loading..."));
+            list.skeleton(5);
         }
         boolean search = q != null;
         Net.Result r = search

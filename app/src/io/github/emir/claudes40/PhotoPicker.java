@@ -56,7 +56,7 @@ final class PhotoPicker implements CommandListener, Runnable {
         job = JOB_LIST;
         jobUrl = url;
         list.deleteAll();
-        list.note(L.s("Yükleniyor...", "Loading..."));
+        list.skeleton(5);
         new Thread(this).start();
     }
 

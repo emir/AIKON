@@ -39,6 +39,7 @@ final class RowList extends Canvas {
         String sub;
         String note;
         boolean section;
+        boolean skeleton;
         int item; // the row's place among the selectable rows
         int icon = -1;
         int flags;
@@ -55,11 +56,14 @@ final class RowList extends Canvas {
         setFullScreenMode(full);
     }
 
+    private final Enter enter = new Enter(this);
+
     protected void showNotify() {
         if (full != fullScreen) { // the setting changed since
             full = fullScreen;
             setFullScreenMode(full);
         }
+        enter.start();
     }
 
     synchronized void title(String t) {
@@ -100,6 +104,16 @@ final class RowList extends Canvas {
         Row r = new Row();
         r.note = text;
         rows.addElement(r);
+        repaint();
+    }
+
+    /** Grey placeholder rows while the real ones load (not selectable). */
+    synchronized void skeleton(int n) {
+        for (int i = 0; i < n; i++) {
+            Row r = new Row();
+            r.skeleton = true;
+            rows.addElement(r);
+        }
         repaint();
     }
 
@@ -215,6 +229,9 @@ final class RowList extends Canvas {
         if (r.section) {
             return sm.getHeight() + 10;
         }
+        if (r.skeleton) {
+            return f.getHeight() + sm.getHeight() + 10;
+        }
         if (r.title == null) {
             Vector lines = new Vector();
             Text.wrap(r.note, sm, w - 4 * MARGIN, lines);
@@ -258,6 +275,8 @@ final class RowList extends Canvas {
         scroll = Math.max(0, Math.min(scroll, Math.max(0, ys[n] - area)));
 
         g.setClip(0, top, w, area + 4);
+        int dx = enter.dx();
+        g.translate(dx, 0);
         int ic = Math.max(14, Math.min(22, f.getHeight() + 2));
         for (int i = 0; i < n; i++) {
             int y = top + ys[i] - scroll;
@@ -266,6 +285,14 @@ final class RowList extends Canvas {
                 continue;
             }
             Row r = (Row) rows.elementAt(i);
+            if (r.skeleton) {
+                // bars where a title and its second line will be, shorter each row
+                int bw = (w - 2 * MARGIN - 12) * (70 - (i % 3) * 12) / 100;
+                g.setColor(Theme.mix(Theme.bg, Theme.border, 200));
+                g.fillRoundRect(MARGIN + 6, y + 6, bw, f.getHeight() - 6, 6, 6);
+                g.fillRoundRect(MARGIN + 6, y + 6 + f.getHeight(), bw * 3 / 5, sm.getHeight() - 6, 6, 6);
+                continue;
+            }
             if (r.section) {
                 g.setFont(sm);
                 g.setColor(Theme.muted);
@@ -313,6 +340,7 @@ final class RowList extends Canvas {
                 g.drawString(Text.fit(r.title, f, tw), x, y + (rh - f.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
             }
         }
+        g.translate(-dx, 0);
         g.setClip(0, 0, w, h);
 
         // a thin scroll bar when the rows do not fit
