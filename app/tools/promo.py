@@ -171,7 +171,7 @@ def cover(out, W=1280, H=640, S=3):
     drawn_phone(d, W - 400, 40, 250, S)
     x = 84
     if os.path.exists(WORDMARK):
-        # the designer's wordmark (mark + "AIKON"), scaled to 560 px wide
+        # the AIKON text logo, scaled to 560 px wide
         wm = Image.open(WORDMARK).convert("RGBA")
         wm = wm.resize((560 * S, int(wm.height * 560 * S / wm.width)), Image.LANCZOS)
         img.paste(wm, ((x - 10) * S, (300 * S - wm.height) // 1 - 10 * S), wm)
