@@ -5,7 +5,7 @@ import javax.microedition.lcdui.Font;
 /**
  * Colours and fonts for the custom screens. Two palettes (light "Gündüz",
  * dark "Gece") and three text sizes, chosen in Ayarlar. Warm paper
- * background and a blue accent, the colour of the AIKon mark (#0740DE;
+ * background and a blue accent, the colour of the AIKON mark (#0740DE;
  * lighter on the dark palette).
  */
 final class Theme {

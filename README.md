@@ -1,15 +1,15 @@
-<h1><img src="docs/images/wordmark.png" alt="AIKon" width="420"></h1>
+<h1><img src="docs/images/wordmark.png" alt="AIKON" width="420"></h1>
 
 > **Formerly Claude S40.** The project was called *Claude S40* up to phone
 > app 0.10.x / server 0.7.x, while it only talked to Claude. Since it also
-> speaks to OpenAI, Gemini and Grok it is called **AIKon** (Nokia spelled
+> speaks to OpenAI, Gemini and Grok it is called **AIKON** (Nokia spelled
 > backwards). The repository moved from `emir/claude-s40` to `emir/aikon`
 > (GitHub redirects the old address); the Java package and server names
 > keep the old name.
 
-![AIKon: today's AI on a 2007 Nokia](docs/images/cover.png)
+![AIKON: today's AI on a 2007 Nokia](docs/images/cover.png)
 
-**Today's AI on a 2007 Nokia.** AIKon is an AI chat client for
+**Today's AI on a 2007 Nokia.** AIKON is an AI chat client for
 Nokia Series 40 and Symbian S60 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus
 the small Go server it talks to. Pick a model per chat (Claude, OpenAI, Gemini or Grok),
 type on the keypad, get the answer on a 240x320 screen: with today's news,

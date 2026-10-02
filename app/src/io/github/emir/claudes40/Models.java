@@ -127,7 +127,7 @@ final class Models implements CommandListener, Runnable {
                 out.writeUTF(ids[i]);
                 out.writeUTF(names[i]);
                 out.writeUTF(providers[i]);
-                out.writeUTF(costs[i]);
+                out.writeUTF(i < costs.length ? costs[i] : "");
             }
             out.close();
             byte[] b = bo.toByteArray();
@@ -363,7 +363,8 @@ final class Models implements CommandListener, Runnable {
                     continue;
                 }
                 boolean now = i2[i].equals(current);
-                list.append(n2[i] + (c2[i].length() > 0 ? " · ~" + c2[i] + L.s(" kr", " cr") : "") + (now ? mark : ""), null);
+                String cost = i < c2.length ? c2[i] : "";
+                list.append(n2[i] + (cost.length() > 0 ? " · ~" + cost + L.s(" kr", " cr") : "") + (now ? mark : ""), null);
                 v.addElement(i2[i]);
                 if (now) {
                     sel = list.size() - 1;

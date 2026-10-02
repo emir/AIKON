@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Share material for AIKon, generated from the real build outputs.
+Share material for AIKON, generated from the real build outputs.
 
   promo.py SHOTS_DIR OUT_DIR
 
@@ -171,14 +171,14 @@ def cover(out, W=1280, H=640, S=3):
     drawn_phone(d, W - 400, 40, 250, S)
     x = 84
     if os.path.exists(WORDMARK):
-        # the designer's wordmark (mark + "AIKon"), scaled to 560 px wide
+        # the designer's wordmark (mark + "AIKON"), scaled to 560 px wide
         wm = Image.open(WORDMARK).convert("RGBA")
         wm = wm.resize((560 * S, int(wm.height * 560 * S / wm.width)), Image.LANCZOS)
         img.paste(wm, ((x - 10) * S, (300 * S - wm.height) // 1 - 10 * S), wm)
     else:
         logo = make_art.render(96 * S, 96 * S, 0.46)
         img.paste(logo, (x * S, 84 * S), logo)
-        d.text((x * S, 196 * S), "AIKon", font=font(92 * S, True), fill=INK)
+        d.text((x * S, 196 * S), "AIKON", font=font(92 * S, True), fill=INK)
     d.text((x * S, 318 * S), "Claude, ChatGPT, Gemini, Grok on a 2007 Nokia.", font=font(34 * S), fill=MUTED)
     d.text((x * S, 362 * S), "Nokia S40 & S60 app + a small Go server.", font=font(34 * S), fill=MUTED)
     chips = ["Pick your model", "Web search", "Photos + voice", "Türkçe + English", "TLS 1.0 bridge"]
@@ -202,7 +202,7 @@ def compose(size, shots, out):
     d = ImageDraw.Draw(img)
     logo = make_art.render(140, 140, 0.46)
     img.paste(logo, (W // 2 - 70, 40), logo)
-    d.text((W // 2, 215), "AIKon", font=font(78, True), fill=INK, anchor="mm")
+    d.text((W // 2, 215), "AIKON", font=font(78, True), fill=INK, anchor="mm")
     d.text((W // 2, 280), "Today's AI on a 2007 Nokia 6300", font=font(34), fill=MUTED, anchor="mm")
     phones = [phone(Image.open(p).convert("RGB")) for p in shots]
     chips_h = 150

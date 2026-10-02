@@ -17,7 +17,7 @@ import javax.microedition.lcdui.TextField;
 import javax.microedition.midlet.MIDlet;
 
 /**
- * AIKon (formerly Claude S40): an AI chat client for Nokia Series 40
+ * AIKON (formerly Claude S40): an AI chat client for Nokia Series 40
  * and Symbian S60 (QWERTY, e.g. E63) phones.
  * The package, class and RMS names keep the old name.
  *
@@ -334,7 +334,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     String userAgent() {
-        return "AIKon/" + attr("MIDlet-Version");
+        return "AIKON/" + attr("MIDlet-Version");
     }
 
     /** One line under the title on the home screen. */
@@ -878,7 +878,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     void info(String text, Displayable next) {
-        Alert a = new Alert("AIKon", text, null, AlertType.INFO);
+        Alert a = new Alert("AIKON", text, null, AlertType.INFO);
         a.setTimeout(Alert.FOREVER);
         display.setCurrent(a, next);
     }

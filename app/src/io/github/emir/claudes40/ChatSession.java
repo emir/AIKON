@@ -762,9 +762,9 @@ final class ChatSession implements Runnable, Net.Listener {
             // gateway may have received it, so keep the id: "Tekrar dene"
             // gets the recorded result instead of a second paid call
             status = L.s("Yanıt alınamadı", "No reply");
-            note(KIND_ERROR, status, L.s("Aracı sunucu AIKon sunucusundan yanıt alamadı (" + st
+            note(KIND_ERROR, status, L.s("Aracı sunucu AIKON sunucusundan yanıt alamadı (" + st
                     + "). 'Tekrar dene' aynı isteği sorar; " + ai() + " ikinci kez çağrılmaz.",
-                    "The relay got no answer from the AIKon server (" + st
+                    "The relay got no answer from the AIKON server (" + st
                     + "). 'Retry' asks about the same request; it is not sent to " + ai() + " twice."));
             canRetry = true;
             return false;

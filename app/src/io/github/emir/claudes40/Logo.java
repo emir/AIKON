@@ -3,7 +3,7 @@ package io.github.emir.claudes40;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * The AIKon mark: a white "AK" monogram (the A's diagonal, a short bar, the
+ * The AIKON mark: a white "AK" monogram (the A's diagonal, a short bar, the
  * shared stem, the K's arms) on a blue rounded square, drawn with
  * primitives; no image asset is embedded. Geometry measured from the
  * designer's 1254 px artwork, in 1/1000 of the tile's width (the tile is

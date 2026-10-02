@@ -4,7 +4,7 @@ Deterministic MIDlet packaging: JAR first, then JAD from the final JAR.
 
   package.py app.properties CLASSES_DIR DIST_DIR [LOCAL_PROPERTIES]
 
-AIKon differences: MIDlet-Description, one optional permission
+AIKON differences: MIDlet-Description, one optional permission
 (MIDlet-Permissions-Opt: https), and an optional ClaudeS40-Gateway URL taken
 from an untracked app.local.properties. Secrets are never packaged.
 

@@ -34,7 +34,7 @@ func selfSigned(t *testing.T, name string) *tls.Certificate {
 	return &tls.Certificate{Certificate: [][]byte{der}, PrivateKey: k}
 }
 
-const testJAD = "MIDlet-Name: AIKon\nMIDlet-Jar-URL: AIKON.jar\nMIDlet-Jar-Size: 7\n"
+const testJAD = "MIDlet-Name: AIKON\nMIDlet-Jar-URL: AIKON.jar\nMIDlet-Jar-Size: 7\n"
 
 // webEnv: a TLS listener with the phone certificate (CN=127.0.0.1), public
 // hosts example.test / www.example.test and downloads for m.example.test.
@@ -134,7 +134,7 @@ func TestWebSide(t *testing.T) {
 	// a browser on a public host -> the public certificate and the web mux
 	for _, h := range []string{"example.test", "www.example.test"} {
 		res, body, cert, err = get(t, addr, h, h, "GET", "/", tls.VersionTLS13)
-		if err != nil || cert.Subject.CommonName != "example.test" || !strings.Contains(body, "<h1>AIKon</h1>") ||
+		if err != nil || cert.Subject.CommonName != "example.test" || !strings.Contains(body, "<h1>AIKON</h1>") ||
 			res.Header.Get("Strict-Transport-Security") == "" || res.Header.Get("Content-Security-Policy") == "" {
 			t.Fatalf("web %s: %v %v %q", h, err, cert, body)
 		}

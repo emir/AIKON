@@ -1,4 +1,4 @@
-# AIKon phone app: CLDC 1.1 / MIDP 2.0 MIDlet.
+# AIKON phone app: CLDC 1.1 / MIDP 2.0 MIDlet.
 #
 #   make           build + package checks + reproducible rebuild
 #   make build     -> dist/AIKON.jar, dist/AIKON.jad, dist/SHA256SUMS

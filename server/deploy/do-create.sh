@@ -1,6 +1,6 @@
 #!/bin/sh
 # Optional helper: create a small DigitalOcean droplet + its own cloud
-# firewall for the AIKon server. Any Docker host with a public IPv4
+# firewall for the AIKON server. Any Docker host with a public IPv4
 # and TCP 443 works; this is just one way to get one.
 #
 #   deploy/do-create.sh              plan only (default): read-only checks, prints commands

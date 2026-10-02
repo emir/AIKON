@@ -1,6 +1,6 @@
 /*
  * Compile-only stub of the JSR 135 (MMAPI 1.1) RecordControl: only the
- * members AIKon uses. MIDP 2.0's media subset has no recording; the
+ * members AIKON uses. MIDP 2.0's media subset has no recording; the
  * phone provides the real interface. Never packaged (tools/check.py fails
  * the build if a javax class ends up in the JAR).
  */

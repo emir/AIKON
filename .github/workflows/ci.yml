@@ -29,7 +29,7 @@ jobs:
       - run: make -C app
       - uses: actions/upload-artifact@v7
         with:
-          name: AIKon
+          name: AIKON
           path: app/dist/
   docker:
     runs-on: ubuntu-24.04

@@ -32,4 +32,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           gh release create "$GITHUB_REF_NAME" app/dist/AIKON.jad app/dist/AIKON.jar app/dist/SHA256SUMS \
-            --title "AIKon $GITHUB_REF_NAME" --notes "Phone app $GITHUB_REF_NAME (build $(sed -n 's/^BUILD=//p' app/app.properties)). Copy AIKON.jad and AIKON.jar to the phone (Bluetooth, USB or memory card) or serve them from your server; see docs/SETUP.md. The build is reproducible: make -C app gives the same SHA256SUMS."
+            --title "AIKON $GITHUB_REF_NAME" --notes "Phone app $GITHUB_REF_NAME (build $(sed -n 's/^BUILD=//p' app/app.properties)). Copy AIKON.jad and AIKON.jar to the phone (Bluetooth, USB or memory card) or serve them from your server; see docs/SETUP.md. The build is reproducible: make -C app gives the same SHA256SUMS."

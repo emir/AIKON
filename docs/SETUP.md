@@ -104,7 +104,7 @@ Pick one:
   `app/tools/install-gammu.sh` (dry run), then
   `app/tools/install-gammu.sh --execute --i-understand-this-writes-to-the-phone`.
   It never overwrites unless you add `--replace` (deletes only the old
-  AIKon / Claude S40 JAD and JAR first); otherwise delete the older app in the phone menu first.
+  AIKON / Claude S40 JAD and JAR first); otherwise delete the older app in the phone menu first.
 - **Bluetooth**: send `AIKON.jar` to the phone, open it from the inbox.
 - **Nokia PC Suite** (Windows): Install applications.
 - **Browser (OTA)**: serve `AIKON.jad` (`text/vnd.sun.j2me.app-descriptor`)
@@ -120,7 +120,7 @@ The first network access asks for permission; allow it.
   opened from the Messaging inbox with "Messaging feature not supported".
   The app appears under Menu → Installat.
 - **Permissions:** an unsigned app cannot get "Always allowed" network
-  access on S60 3rd Edition. Go to App. mgr. → AIKon → Options →
+  access on S60 3rd Edition. Go to App. mgr. → AIKON → Options →
   Open (or Settings). Set Network access to "Ask first time" (one question
   per start), and Access point to your access point (e.g. WLAN), so it is not
   asked for every request. Leave the app with the Menu key instead of Exit to
@@ -150,7 +150,7 @@ point, not an old WAP profile.
 
 ## 7. Connection test and pairing
 
-On the phone, in AIKon. A fresh install opens a setup wizard
+On the phone, in AIKON. A fresh install opens a setup wizard
 (language, server address, connection test, pairing: "Setup 1/4" to "4/4")
 that walks through exactly these steps; it can be skipped and reopened from
 Settings → Options → Setup wizard.
@@ -293,7 +293,7 @@ phones download the app:
    S40_PHONE_HOST=m.example.com S40_HTTP_PORT=80 S40_APP_DIR=app/dist` and open
    TCP 80 in the firewall (landing page and ca.cer only).
 4. On a new phone: `http://m.example.com/` → save the certificate (compare
-   the fingerprint) → open the AIKon link (https, verified) → install. Set
+   the fingerprint) → open the AIKON link (https, verified) → install. Set
    the server address to `https://m.example.com`.
 
 ## Troubleshooting

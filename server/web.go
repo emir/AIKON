@@ -162,7 +162,7 @@ func (s *server) webMux() http.Handler {
 			http.NotFound(w, r)
 			return
 		}
-		writeHTML(w, 200, "AIKon", "<h1>AIKon</h1><p>AI chat for Nokia S40 and S60 phones.</p>")
+		writeHTML(w, 200, "AIKON", "<h1>AIKON</h1><p>AI chat for Nokia S40 and S60 phones.</p>")
 	})
 	return logged(webHeaders(mux))
 }
@@ -234,8 +234,8 @@ func (s *server) phonePage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	host := html.EscapeString(s.web.phoneHostFor(r))
-	writeHTML(w, 200, "AIKon", "<h1>AIKon</h1>"+
-		"<p><a href=\"https://"+host+"/app/AIKON.jad\">AIKon'u indir / Download AIKon</a></p>"+
+	writeHTML(w, 200, "AIKON", "<h1>AIKON</h1>"+
+		"<p><a href=\"https://"+host+"/app/AIKON.jad\">AIKON'u indir / Download AIKON</a></p>"+
 		"<p>Yükleme sorusuna Evet deyin. / Answer Yes when the phone asks to install.</p>")
 }
 
@@ -248,12 +248,12 @@ func (s *server) httpHandler() http.Handler {
 		if s.web.caSHA1 != "" {
 			fp = "<p>SHA-1: " + s.web.caSHA1 + "</p>"
 		}
-		writeHTML(w, 200, "AIKon", "<h1>AIKon</h1>"+
+		writeHTML(w, 200, "AIKON", "<h1>AIKON</h1>"+
 			"<p>1. <a href=\"http://"+host+"/ca.cer\">Sertifika / Certificate</a></p>"+
 			"<p>Yetkili (authority) sertifikası olarak kaydedin; parmak izini sunucunun sahibinin "+
 			"yayınladığıyla karşılaştırın. / Save it as an authority certificate after comparing the "+
 			"fingerprint with the one the server's owner publishes.</p>"+fp+
-			"<p>2. <a href=\"https://"+host+"/app/AIKON.jad\">AIKon</a></p>")
+			"<p>2. <a href=\"https://"+host+"/app/AIKON.jad\">AIKON</a></p>")
 	})
 	mux.HandleFunc("GET /ca.cer", func(w http.ResponseWriter, r *http.Request) {
 		b, err := os.ReadFile(filepath.Join(s.web.download, "ca.cer"))

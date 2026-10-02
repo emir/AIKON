@@ -1,4 +1,4 @@
-# AIKon (formerly Claude S40) – development notes (public)
+# AIKON (formerly Claude S40) – development notes (public)
 
 AI chat client (Claude, OpenAI, Gemini, Grok) for Nokia Series 40
 and Symbian S60 phones (Java ME) + its Go server. Named Claude S40 until 0.11.0; the repository is github.com/emir/aikon
@@ -48,7 +48,7 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
 - Logs never contain message text, replies, tokens, keys or client IPs.
 - Mock replies say "[Test mode]"; never present them, or emulator results,
   as real Claude output or device results.
-- Since AIKon (2026-10-02) the app shows no "unofficial" wording and names
+- Since AIKON (2026-10-02) the app shows no "unofficial" wording and names
   no single phone model; README and TRADEMARKS.md keep the statement that
   the project is not affiliated with the model providers or Nokia, and the
   About Info page says so too. The app's mark is its own (not the Claude

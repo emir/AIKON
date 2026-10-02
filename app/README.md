@@ -1,4 +1,4 @@
-# AIKon – phone app
+# AIKON – phone app
 
 Java ME MIDlet for Nokia Series 40 and Symbian S60 (CLDC 1.1 / MIDP 2.0, class file 46.0).
 English and Turkish UI (follows the phone language; Settings > Language).
