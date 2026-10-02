@@ -66,14 +66,11 @@ final class RowList extends Canvas {
         setFullScreenMode(full);
     }
 
-    private final Enter enter = new Enter(this);
-
     protected void showNotify() {
         if (full != fullScreen) { // the setting changed since
             full = fullScreen;
             setFullScreenMode(full);
         }
-        enter.start();
     }
 
     synchronized void title(String t) {
@@ -316,8 +313,6 @@ final class RowList extends Canvas {
         scroll = Math.max(0, Math.min(scroll, Math.max(0, ys[n] - area)));
 
         g.setClip(0, top, w, area + 4);
-        int dx = enter.dx();
-        g.translate(dx, 0);
         int ic = Math.max(14, Math.min(22, f.getHeight() + 2));
         for (int i = 0; i < n; i++) {
             int y = top + ys[i] - scroll;
@@ -401,7 +396,6 @@ final class RowList extends Canvas {
                 g.drawString(Text.fit(r.title, f, tw), x, y + (rh - f.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
             }
         }
-        g.translate(-dx, 0);
         g.setClip(0, 0, w, h);
 
         // a thin scroll bar when the rows do not fit

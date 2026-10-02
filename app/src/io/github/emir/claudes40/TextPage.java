@@ -61,14 +61,11 @@ final class TextPage extends Canvas {
         setFullScreenMode(full);
     }
 
-    private final Enter enter = new Enter(this);
-
     protected void showNotify() {
         if (full != RowList.fullScreen) {
             full = RowList.fullScreen;
             setFullScreenMode(full);
         }
-        enter.start();
     }
 
     /** The page's own title bar (no native title over it). */
@@ -168,8 +165,6 @@ final class TextPage extends Canvas {
         scroll = Math.max(0, Math.min(scroll, maxScroll));
 
         int y = top + 8 - scroll;
-        int dx = enter.dx();
-        g.translate(dx, 0);
         for (int i = 0; i < items.size(); i++) {
             Item it = (Item) items.elementAt(i);
             if (it.label != null && it.label.length() > 0) {
@@ -212,7 +207,6 @@ final class TextPage extends Canvas {
             }
             y += 10;
         }
-        g.translate(-dx, 0);
         contentH = y + scroll - top;
 
         if (contentH > area && area > 0) {
