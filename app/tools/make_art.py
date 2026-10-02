@@ -6,10 +6,15 @@ blue rounded square) with Pillow.
   make_art.py icon OUT.png          46x48 MIDlet icon (transparent), packaged in the JAR
   make_art.py logo OUT.png [SIZE]   large logo for README / social posts
 
-Supersampled 8x and downscaled for smooth edges. Deterministic output
-(no timestamps in the PNG).
+Supersampled 8x and downscaled for smooth edges. Deterministic output: the
+PNG is written here, not by Pillow, with stored (level 0) zlib data, since
+Pillow's builds compress with different zlib code on different platforms
+(same pixels, other bytes: the JAR's checksum changed between a Mac and
+GitHub's Linux). The JAR compresses the file anyway.
 """
+import struct
 import sys
+import zlib
 
 from PIL import Image, ImageDraw
 
@@ -42,6 +47,21 @@ def render(w, h, radius_frac, bg=(0, 0, 0, 0), ss=8):
     return big.resize((w, h), Image.LANCZOS)
 
 
+def write_png(img, out):
+    """An RGBA PNG with no ancillary chunks and uncompressed image data."""
+    img = img.convert("RGBA")
+    w, h = img.size
+    px = img.tobytes()
+    raw = b"".join(b"\x00" + px[y * w * 4:(y + 1) * w * 4] for y in range(h))  # filter 0 per row
+
+    def chunk(kind, data):
+        return struct.pack(">I", len(data)) + kind + data + struct.pack(">I", zlib.crc32(kind + data) & 0xFFFFFFFF)
+
+    with open(out, "wb") as f:
+        f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
+                + chunk(b"IDAT", zlib.compress(raw, 0)) + chunk(b"IEND", b""))
+
+
 def main():
     kind, out = sys.argv[1], sys.argv[2]
     if kind == "icon":
@@ -51,7 +71,7 @@ def main():
         img = render(size, size, 0.46)
     else:
         sys.exit("usage: make_art.py icon|logo OUT [SIZE]")
-    img.save(out, optimize=False)
+    write_png(img, out)
 
 
 if __name__ == "__main__":
