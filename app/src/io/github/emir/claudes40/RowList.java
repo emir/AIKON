@@ -244,9 +244,9 @@ final class RowList extends Canvas {
         repaint();
     }
 
-    /** Height of the title bar of the drawn lists and pages. */
+    /** Height of the title bar of the drawn lists and pages: the home header's, so it does not jump. */
     static int barH() {
-        return Math.max(Theme.bold.getHeight() + 10, 26);
+        return Math.max(Theme.bold.getHeight() + Theme.small.getHeight() + 10, 40);
     }
 
     static void paintBar(Graphics g, int w, String title) {
@@ -289,11 +289,14 @@ final class RowList extends Canvas {
         int n = rows.size();
         int[] ys = new int[n + 1];
         boolean icons = false;
+        boolean subs = false; // any second line: then every title is bold, as on the home menu
         for (int i = 0; i < n; i++) {
             Row r = (Row) rows.elementAt(i);
             ys[i + 1] = ys[i] + rowH(r, w);
             icons |= r.icon >= 0;
+            subs |= r.sub != null;
         }
+        Font tf = subs ? Theme.bold : f;
         int top = barH() + 4;
         int area = h - top - 4;
         if (selected >= 0) {
@@ -372,28 +375,29 @@ final class RowList extends Canvas {
                 g.fillArc(on ? sx + tw2 - k - 2 : sx + 2, sy + 2, k, k, 0, 360);
                 right -= tw2 + 8;
             }
-            if ((r.flags & CHECK) != 0) {
-                int cs = Math.max(12, f.getHeight() - 2);
-                g.drawImage(Icons.get(Icons.CHECK, cs, Theme.accent), right, y + rh / 2, Graphics.RIGHT | Graphics.VCENTER);
-                right -= cs + 6;
-            }
-            if (numbers && items <= 9 && (r.flags & (SWITCH | CHECK)) == 0) {
+            if (numbers && items <= 9 && (r.flags & SWITCH) == 0) {
                 String num = String.valueOf(r.item + 1);
                 g.setFont(sm);
                 g.setColor(Theme.muted);
                 g.drawString(num, right, y + (rh - sm.getHeight()) / 2, Graphics.TOP | Graphics.RIGHT);
                 right -= sm.stringWidth(num) + 8;
             }
+            // the check left of the number, so the numbers line up
+            if ((r.flags & CHECK) != 0) {
+                int cs = Math.max(12, f.getHeight() - 2);
+                g.drawImage(Icons.get(Icons.CHECK, cs, Theme.accent), right, y + rh / 2, Graphics.RIGHT | Graphics.VCENTER);
+                right -= cs + 6;
+            }
             int tw = right - x;
-            g.setFont(f);
+            g.setFont(tf);
             g.setColor(Theme.ink);
             if (r.sub != null) {
-                g.drawString(Text.fit(r.title, f, tw), x, y + 5, Graphics.TOP | Graphics.LEFT);
+                g.drawString(Text.fit(r.title, tf, tw), x, y + 5, Graphics.TOP | Graphics.LEFT);
                 g.setFont(sm);
                 g.setColor(Theme.muted);
                 g.drawString(Text.fit(r.sub, sm, tw), x, y + 5 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
             } else {
-                g.drawString(Text.fit(r.title, f, tw), x, y + (rh - f.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
+                g.drawString(Text.fit(r.title, tf, tw), x, y + (rh - tf.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
             }
         }
         g.setClip(0, 0, w, h);

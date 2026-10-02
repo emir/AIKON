@@ -79,7 +79,7 @@ final class Theme {
             error = 0xB3261E;
             errorBg = 0xFBE4E1;
             testBar = 0xB35C00;
-            selection = 0xE3EAFD;
+            selection = 0xEDE3CF; // warm sand, with the bars' warm grey
             spark = 0x0740DE;
         }
         int size = s.fontSize == 0 ? Font.SIZE_SMALL : s.fontSize == 2 ? Font.SIZE_LARGE : Font.SIZE_MEDIUM;

@@ -139,7 +139,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.fillRect(0, 0, w, h);
 
         // header: wordmark + status line, on the bar colour above a hairline
-        int headH = Math.max(f.getHeight() + sm.getHeight() + 10, 40);
+        int headH = RowList.barH();
         g.setColor(Theme.chrome);
         g.fillRect(0, 0, w, headH);
         g.setColor(Theme.border);
