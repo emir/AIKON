@@ -175,8 +175,9 @@ final class Text {
     }
 
     /** Height of laid-out lines: text lines are a font line, paragraph gaps half of one. */
+    /** A line's height: the font's plus a little leading (1/8), a gap half of it. */
     static int lineH(Line l, Font font) {
-        return l.gap ? font.getHeight() / 2 : font.getHeight();
+        return l.gap ? font.getHeight() / 2 : font.getHeight() + font.getHeight() / 8;
     }
 
     /** Draws one laid-out line at (x0, y) in the current colour. */
@@ -254,6 +255,29 @@ final class Text {
             return two(c.get(Calendar.HOUR_OF_DAY)) + ":" + two(c.get(Calendar.MINUTE));
         }
         return two(c.get(Calendar.DAY_OF_MONTH)) + "." + two(c.get(Calendar.MONTH) + 1);
+    }
+
+    /** A day as a chat heading: "Bugün", "Dün", or "02.10" (with the year if it is not this one). */
+    static String dayLabel(long ms) {
+        long day = 24L * 60 * 60 * 1000;
+        int k = dayKey(ms);
+        if (k == dayKey(System.currentTimeMillis())) {
+            return L.s("Bugün", "Today");
+        }
+        if (k == dayKey(System.currentTimeMillis() - day)) {
+            return L.s("Dün", "Yesterday");
+        }
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(ms));
+        String d = two(c.get(Calendar.DAY_OF_MONTH)) + "." + two(c.get(Calendar.MONTH) + 1);
+        return c.get(Calendar.YEAR) == Calendar.getInstance().get(Calendar.YEAR) ? d : d + "." + c.get(Calendar.YEAR);
+    }
+
+    /** The phone-local day of ms as one number (year * 1000 + day of the year, roughly). */
+    static int dayKey(long ms) {
+        Calendar c = Calendar.getInstance();
+        c.setTime(new Date(ms));
+        return c.get(Calendar.YEAR) * 1000 + c.get(Calendar.MONTH) * 40 + c.get(Calendar.DAY_OF_MONTH);
     }
 
     /** Phone-local "dd.MM.yyyy HH:mm" (without the time if `time` is false); "-" if unknown. */

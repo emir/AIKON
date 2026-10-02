@@ -58,10 +58,11 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 
 ### Phone app
 
-- High-level `Form`/`TextBox` only where text is typed or options are
-  set (settings, setup address, credit code, calendar entry); custom `Canvas`
-  screens elsewhere (splash, home, chat, every list through `RowList`,
-  every text page through `TextPage`), with
+- High-level `TextBox`/`Form` only where text is typed (messages, notes,
+  server address, access code, setup address, credit code, calendar entry);
+  custom `Canvas` screens elsewhere (splash, home, chat, settings and every
+  list through `RowList`, every text page and message through `TextPage`),
+  with
   line icons and the wordmark drawn by the app (`Icons`, `Wordmark`), sized
   from `getWidth()/getHeight()`,
   softkeys as `Command`s, arrows via `getGameAction()` (through `Keys`,

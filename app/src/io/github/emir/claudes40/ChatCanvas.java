@@ -79,6 +79,9 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private final boolean[] shown = new boolean[all.length];
 
     /** One laid-out message. */
+    /** Block kind of a day heading between messages (not an entry). */
+    private static final int KIND_DAY = -1;
+
     private static final class Block {
         int kind;
         int uid;
@@ -679,8 +682,26 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         Font sm = Theme.small;
         int maxBubble = w * 84 / 100;
         int y = PAD;
+        int lastDay = 0;
+        int today = Text.dayKey(System.currentTimeMillis());
         for (int i = 0; i < es.length; i++) {
             ChatSession.Entry e = es[i];
+            if (isBubble(e.kind) && e.time > 0) {
+                // a quiet day heading where the day changes (not over a chat of today only)
+                int day = Text.dayKey(e.time);
+                if (day != lastDay && (lastDay != 0 || day != today)) {
+                    Block d = new Block();
+                    d.kind = KIND_DAY;
+                    d.meta = Text.dayLabel(e.time);
+                    d.lines = new Vector();
+                    d.y = y;
+                    d.h = sm.getHeight() + 4;
+                    d.bw = w - 2 * PAD;
+                    y += d.h + PAD;
+                    blocks.addElement(d);
+                }
+                lastDay = day;
+            }
             Block b = new Block();
             b.kind = e.kind;
             b.uid = e.uid;
@@ -766,7 +787,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         Font f = Theme.font;
         for (int i = 0; i < blocks.size(); i++) {
             Block b = (Block) blocks.elementAt(i);
-            if (b.y + b.h <= scroll) {
+            if (b.y + b.h <= scroll || b.kind == KIND_DAY) {
                 continue;
             }
             int ly = b.y + b.textTop;
@@ -902,7 +923,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     private int readHeadH() {
-        return Theme.small.getHeight() + 6 + 3;
+        return Theme.small.getHeight() + 6 + 2;
     }
 
     private int readAreaH() {
@@ -1137,6 +1158,18 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private void paintBlock(Graphics g, Block b, int w, int y, int clipTop, int clipBottom) {
         Font f = Theme.font;
         Font sm = Theme.small;
+        if (b.kind == KIND_DAY) {
+            // "Today" between two hairlines
+            int tw = sm.stringWidth(b.meta);
+            int cy = y + b.h / 2;
+            g.setColor(Theme.border);
+            g.drawLine(3 * PAD, cy, (w - tw) / 2 - 6, cy);
+            g.drawLine((w + tw) / 2 + 6, cy, w - 3 * PAD, cy);
+            g.setFont(sm);
+            g.setColor(Theme.muted);
+            g.drawString(b.meta, w / 2, y + 2, Graphics.TOP | Graphics.HCENTER);
+            return;
+        }
         if (isBubble(b.kind)) {
             boolean mine = b.kind == ChatSession.KIND_USER;
             int x = mine ? w - PAD - b.bw : PAD;
@@ -1190,7 +1223,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                     paintInfoIcon(g, lx + nf.stringWidth(s) + 4, ty, nf, color);
                     g.setFont(nf);
                 }
-                ty += nf.getHeight();
+                ty += Text.lineH((Text.Line) b.lines.elementAt(k), nf);
             }
             if (b.footer != null) {
                 int fy = ty + 2;
@@ -1421,9 +1454,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        // header: who/when (or what is going on) left, page right, progress line under it
-        g.setColor(Theme.surface);
-        g.fillRect(0, 0, w, head - 3);
+        // header: who/when (or what is going on) left, page right, a progress hairline under it
         int[] p = pages();
         String right = p[0] + "/" + p[1];
         g.setFont(sm);
@@ -1448,9 +1479,9 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         int n = rLines.size();
         int end = visibleEnd(rTop);
         g.setColor(Theme.border);
-        g.fillRect(0, head - 3, w, 3);
+        g.fillRect(0, head - 2, w, 2);
         g.setColor(Theme.accent);
-        g.fillRect(0, head - 3, n == 0 ? w : w * end / n, 3);
+        g.fillRect(0, head - 2, n == 0 ? w : w * end / n, 2);
 
         // whole lines only
         int y = head + 4;

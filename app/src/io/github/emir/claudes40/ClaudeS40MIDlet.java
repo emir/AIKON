@@ -3,14 +3,11 @@ package io.github.emir.claudes40;
 import java.util.Vector;
 
 import javax.microedition.io.ConnectionNotFoundException;
-import javax.microedition.lcdui.ChoiceGroup;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.List;
-import javax.microedition.lcdui.StringItem;
 import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 import javax.microedition.midlet.MIDlet;
@@ -25,7 +22,7 @@ import javax.microedition.midlet.MIDlet;
  * (SavedList), quick prompts (List), message editor (the phone's own
  * TextBox), voice message (Dictation), photo (Photo, Cam, PhotoPicker), add to calendar (CalendarForm), connection test (ConnTest),
  * pairing (Pairing), first-run setup (Setup), settings, data usage,
- * shortcuts and about (Form). English or Turkish UI (L); changing the language rebuilds the
+ * shortcuts and about (TextPage). English or Turkish UI (L); changing the language rebuilds the
  * screens (rebuildUi), no restart needed. Networking happens only on worker
  * threads.
  */
@@ -106,15 +103,28 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private RowList prompts;
     private String[] promptTexts;
     private TextBox composer;
-    private Form settingsForm;
-    private TextField urlField;
-    private TextField tokenField;
-    private ChoiceGroup langChoice;
-    private ChoiceGroup themeChoice;
-    private ChoiceGroup sizeChoice;
-    private ChoiceGroup feedbackChoice;
-    private ChoiceGroup testChoice;
-    private ChoiceGroup claudeChoice;
+    private RowList settingsForm;
+    /** The setting of each selectable row of the settings list (S_*), in order. */
+    private int[] settingRows = new int[0];
+    private TextBox editBox;
+    private int editing;
+    private Command changeCmd;
+    private Command editOkCmd;
+
+    private static final int S_SIZE = 0;
+    private static final int S_THEME = 1;
+    private static final int S_WEB = 2;
+    private static final int S_KEEP = 3;
+    private static final int S_NOTES = 4;
+    private static final int S_SOUND = 5;
+    private static final int S_VIBRATE = 6;
+    private static final int S_FULL = 7;
+    private static final int S_LIGHT = 8;
+    private static final int S_LANG = 9;
+    private static final int S_URL = 10;
+    private static final int S_TOKEN = 11;
+    private static final int S_CONN = 12;
+    private static final int S_TEST = 13;
     private ChatList chatList;
     private ConnTest connTest;
     private TextPage about;
@@ -124,7 +134,6 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command dictateCmd;
     private Command photoCmd;
     private Command removePhotoCmd;
-    private Command saveCmd;
     private Command formBackCmd;
     private Command pairCmd;
     private Command creditsCmd;
@@ -134,14 +143,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command wizardCmd;
     private TextPage shortcuts;
     private Displayable shortcutsBack;
-    private ChoiceGroup lightChoice;
     /** Message actions (ChatCanvas selection): list, what each row does, the message. */
     private RowList actionList;
     private int[] actionIds;
     private ChatSession.Entry actionEntry;
     private TextBox viewer;
     private Command listBackCmd;
-    private TextField notesField;
     private Command dataCmd;
     private TextPage dataForm;
     private Command resetCmd;
@@ -200,7 +207,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         dictateCmd = new Command(L.s("Sesle yaz", "Dictate"), Command.SCREEN, 2);
         photoCmd = new Command(L.s("Fotoğraf ekle", "Add a photo"), Command.SCREEN, 3);
         removePhotoCmd = new Command(L.s("Fotoğrafı kaldır", "Remove the photo"), Command.SCREEN, 3);
-        saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
+        changeCmd = new Command(L.s("Değiştir", "Change"), Command.OK, 1);
+        editOkCmd = new Command(L.s("Tamam", "OK"), Command.OK, 1);
         formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
         creditsCmd = new Command(L.s("Kredi", "Credits"), Command.SCREEN, 2);
@@ -562,6 +570,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     // ------------------------------------------------------------ navigation
 
     void showMenu() {
+        if (Theme.wantsDark(settings) != Theme.dark) {
+            applyLook(); // automatic look: evening or morning came
+        }
         display.setCurrent(home);
         home.setUpdate(updateVersion().length() > 0);
         Updates.maybeCheck(this);
@@ -614,6 +625,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     void showChat() {
+        if (Theme.wantsDark(settings) != Theme.dark) {
+            applyLook();
+        }
         display.setCurrent(chat);
     }
 
@@ -778,8 +792,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "0: the rest of a reply\n"
                     + "9: text size\n"
                     + "7 or Close: back to the chat\n"));
-            shortcuts.append(L.s("Ana menü", "Main menu"), L.s(
-                    "1-9: satırı doğrudan açar\n", "1-9: opens that row directly\n"));
+            shortcuts.append(L.s("Ana menü ve listeler", "Main menu and lists"), L.s(
+                    "1-9: satırı doğrudan açar (listelerde ilk dokuz satır; Ayarlar'da yok)",
+                    "1-9: opens that row directly (in lists the first nine rows; not in Settings)"));
             if (Keys.qwerty || back.getWidth() > back.getHeight()) { // S60 QWERTY phones only (E63: landscape)
                 shortcuts.append(L.s("QWERTY klavye", "QWERTY keyboard"), L.s(
                         "Rakamlar harf tuşlarında: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\n"
@@ -1026,9 +1041,18 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             }
         } else if (c == helpCmd && d != null) {
             Help.show(display, d.getTitle(), helpFor(d), d);
+        } else if (d == editBox) {
+            if (c == editOkCmd) {
+                saveEdit();
+            } else {
+                display.setCurrent(settingsForm);
+            }
         } else if (d == settingsForm) {
-            if (c == saveCmd) {
-                saveSettings();
+            if (c == changeCmd) {
+                int i = settingsForm.getSelectedItem();
+                if (i >= 0 && i < settingRows.length) {
+                    changeSetting(settingRows[i]);
+                }
             } else if (c == pairCmd) {
                 startPairing();
             } else if (c == creditsCmd) {
@@ -1135,56 +1159,15 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     // ------------------------------------------------------------ settings
 
+    /**
+     * Settings as a drawn list: each row names a setting with its value
+     * under it, or a switch; the centre key changes it and it is saved at
+     * once. Notes, server address and access code open a text box.
+     */
     private void showSettings() {
-        settingsForm = new Form(L.s("Ayarlar", "Settings"));
-        langChoice = new ChoiceGroup(L.s("Dil", "Language"), ChoiceGroup.EXCLUSIVE,
-                new String[] { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" }, null);
-        langChoice.setSelectedIndex(Math.max(0, Math.min(2, settings.lang)), true);
-        themeChoice = new ChoiceGroup(L.s("Görünüm", "Look"), ChoiceGroup.EXCLUSIVE,
-                new String[] { L.s("Gündüz", "Light"), L.s("Gece", "Dark") }, null);
-        themeChoice.setSelectedIndex(settings.theme == 1 ? 1 : 0, true);
-        sizeChoice = new ChoiceGroup(L.s("Yazı boyutu", "Text size"), ChoiceGroup.EXCLUSIVE,
-                new String[] { L.s("Küçük", "Small"), L.s("Orta", "Medium"), L.s("Büyük", "Large") }, null);
-        sizeChoice.setSelectedIndex(Math.max(0, Math.min(2, settings.fontSize)), true);
-        feedbackChoice = new ChoiceGroup(L.s("Ses ve titreşim", "Sound & vibration"), ChoiceGroup.MULTIPLE,
-                new String[] { L.s("Melodi ve bildirim sesi", "Jingle and reply sound"),
-                    L.s("Yanıtta titreşim", "Vibrate on reply") }, null);
-        feedbackChoice.setSelectedIndex(0, settings.sound);
-        feedbackChoice.setSelectedIndex(1, settings.vibrate);
-        lightChoice = new ChoiceGroup(L.s("Ekran", "Screen"), ChoiceGroup.MULTIPLE,
-                new String[] { L.s("Tam ekran", "Full screen"),
-                    L.s("Yanıt gelince ışığı yak (ekran kararmışsa)", "Light up for a reply (if the screen went dark)") },
-                null);
-        lightChoice.setSelectedIndex(0, settings.fullScreen);
-        lightChoice.setSelectedIndex(1, settings.lightReply);
-        urlField = new TextField(L.s("Sunucu adresi (https://...)", "Server address (https://...)"), settings.url,
-                200, TextField.URL);
-        tokenField = new TextField(L.s("Erişim kodu", "Access code"), settings.token, 64,
-                TextField.ANY | TextField.SENSITIVE | TextField.NON_PREDICTIVE);
-        testChoice = new ChoiceGroup(L.s("Test modu", "Test mode"), ChoiceGroup.MULTIPLE,
-                new String[] { L.s("Sahte yanıt (ağ kullanılmaz)", "Fake replies (no network)") }, null);
-        testChoice.setSelectedIndex(0, settings.testMode);
-        claudeChoice = new ChoiceGroup(L.s("Yanıtlar", "Replies"), ChoiceGroup.MULTIPLE,
-                new String[] { L.s("Web'de arayabilir (haber, hava, kur...)", "May search the web (news, weather...)"),
-                    L.s("Son sohbeti telefonda sakla", "Keep last chat on phone") }, null);
-        claudeChoice.setSelectedIndex(0, settings.webSearch);
-        claudeChoice.setSelectedIndex(1, settings.saveChat);
-        notesField = new TextField(L.s("Yapay zekâ için notların", "Your notes for the AI"), settings.instructions,
-                Settings.MAX_INSTRUCTIONS, TextField.ANY);
-        // most changed first; server and test mode last
-        settingsForm.append(sizeChoice);
-        settingsForm.append(themeChoice);
-        settingsForm.append(claudeChoice);
-        settingsForm.append(notesField);
-        settingsForm.append(feedbackChoice);
-        settingsForm.append(lightChoice);
-        settingsForm.append(langChoice);
-        settingsForm.append(urlField);
-        settingsForm.append(tokenField);
-        settingsForm.append(new StringItem(L.s("Bağlantı testi", "Connection test"), settings.connectionVerified()
-                ? L.s("geçti", "passed") : L.s("henüz geçmedi", "not passed yet")));
-        settingsForm.append(testChoice);
-        settingsForm.addCommand(saveCmd);
+        settingsForm = new RowList(L.s("Ayarlar", "Settings"));
+        settingsForm.setSelectCommand(changeCmd);
+        settingsForm.setNumbers(false); // a digit would change a setting at once
         settingsForm.addCommand(helpCmd);
         if (settings.credits && settings.token.length() >= 16) {
             settingsForm.addCommand(creditsCmd);
@@ -1195,62 +1178,211 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         settingsForm.addCommand(resetSetupCmd);
         settingsForm.addCommand(formBackCmd);
         settingsForm.setCommandListener(this);
+        fillSettings(0);
         display.setCurrent(settingsForm);
     }
 
-    private void saveSettings() {
-        String url = urlField.getString().trim();
-        while (url.endsWith("/")) {
-            url = url.substring(0, url.length() - 1);
+    /** (Re)builds the rows, keeping the selection on the row that was changed. */
+    private void fillSettings(int keep) {
+        RowList l = settingsForm;
+        l.deleteAll();
+        int[] ids = new int[16];
+        int n = 0;
+        int sel = -1;
+        String[] sizes = { L.s("Küçük", "Small"), L.s("Orta", "Medium"), L.s("Büyük", "Large") };
+        String[] themes = { L.s("Gündüz", "Light"), L.s("Gece", "Dark"), L.s("Otomatik: akşam 19-07 gece", "Automatic: dark 19-07") };
+        String[] langs = { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" };
+        String notes = settings.instructions.length() > 0 ? settings.instructions : L.s("yok", "none");
+        for (int k = 0; k < 14; k++) {
+            if (k == S_SIZE) {
+                l.section(L.s("Görünüm", "Look"));
+            } else if (k == S_WEB) {
+                l.section(L.s("Yanıtlar", "Replies"));
+            } else if (k == S_SOUND) {
+                l.section(L.s("Ses ve ekran", "Sound and screen"));
+            } else if (k == S_LANG) {
+                l.section(L.s("Dil ve sunucu", "Language and server"));
+            }
+            int row;
+            switch (k) {
+            case S_SIZE:
+                row = l.add(L.s("Yazı boyutu", "Text size"), sizes[Math.max(0, Math.min(2, settings.fontSize))], -1, 0);
+                break;
+            case S_THEME:
+                row = l.add(L.s("Görünüm", "Look"), themes[Math.max(0, Math.min(2, settings.theme))], -1, 0);
+                break;
+            case S_WEB:
+                row = l.add(L.s("Web'de arayabilir", "May search the web"), L.s("haber, hava, kur...", "news, weather..."),
+                        -1, sw(settings.webSearch));
+                break;
+            case S_KEEP:
+                row = l.add(L.s("Son sohbeti telefonda sakla", "Keep last chat on phone"), null, -1, sw(settings.saveChat));
+                break;
+            case S_NOTES:
+                row = l.add(L.s("Yapay zekâ için notların", "Your notes for the AI"), notes, -1, 0);
+                break;
+            case S_SOUND:
+                row = l.add(L.s("Melodi ve bildirim sesi", "Jingle and reply sound"), null, -1, sw(settings.sound));
+                break;
+            case S_VIBRATE:
+                row = l.add(L.s("Yanıtta titreşim", "Vibrate on reply"), null, -1, sw(settings.vibrate));
+                break;
+            case S_FULL:
+                row = l.add(L.s("Tam ekran", "Full screen"), null, -1, sw(settings.fullScreen));
+                break;
+            case S_LIGHT:
+                row = l.add(L.s("Yanıtta ışığı yak", "Light up for a reply"), L.s("ekran kararmışsa", "if the screen went dark"),
+                        -1, sw(settings.lightReply));
+                break;
+            case S_LANG:
+                row = l.add(L.s("Dil", "Language"), langs[Math.max(0, Math.min(2, settings.lang))], -1, 0);
+                break;
+            case S_URL:
+                row = l.add(L.s("Sunucu adresi", "Server address"),
+                        settings.url.length() > 0 ? settings.url : L.s("(ayarlanmadı)", "(not set)"), -1, 0);
+                break;
+            case S_TOKEN:
+                row = l.add(L.s("Erişim kodu", "Access code"), settings.token.length() > 0 ? "********" : L.s("yok", "none"), -1, 0);
+                break;
+            case S_CONN:
+                row = l.add(L.s("Bağlantı testi", "Connection test"),
+                        settings.connectionVerified() ? L.s("geçti", "passed") : L.s("henüz geçmedi", "not passed yet"), -1, 0);
+                break;
+            default:
+                row = l.add(L.s("Test modu", "Test mode"), L.s("sahte yanıt, ağ kullanılmaz", "fake replies, no network"),
+                        -1, sw(settings.testMode));
+                break;
+            }
+            ids[n++] = k;
+            if (k == keep) {
+                sel = row;
+            }
         }
-        String token = tokenField.getString().trim();
-        if (url.length() > 0 && !Net.isHttps(url)) {
-            info(L.s("Adres https:// ile başlamalı. HTTP desteklenmez.",
-                    "The address must start with https://. HTTP is not supported."), settingsForm);
-            return;
+        int[] out = new int[n];
+        System.arraycopy(ids, 0, out, 0, n);
+        settingRows = out;
+        if (sel >= 0) {
+            l.setSelectedIndex(sel, true);
         }
-        if (token.length() > 0 && !validToken(token)) {
-            info(L.s("Erişim kodu 16-64 harf/rakam olmalı.", "The access code must be 16-64 letters/digits."),
-                    settingsForm);
-            return;
-        }
-        if (!url.equals(settings.url)) {
-            settings.verifiedUrl = ""; // new address: connection test again
-        }
-        settings.url = url;
-        settings.token = token;
-        settings.testMode = testChoice.isSelected(0);
-        int lg = langChoice.getSelectedIndex();
-        boolean langChanged = lg >= 0 && lg <= 2 && lg != settings.lang;
-        if (lg >= 0 && lg <= 2) {
-            settings.lang = lg;
-        }
-        int t = themeChoice.getSelectedIndex();
-        settings.theme = t == 1 ? 1 : 0;
-        int fs = sizeChoice.getSelectedIndex();
-        settings.fontSize = fs >= 0 && fs <= 2 ? fs : 1;
-        settings.sound = feedbackChoice.isSelected(0);
-        settings.vibrate = feedbackChoice.isSelected(1);
-        settings.fullScreen = lightChoice.isSelected(0);
-        settings.lightReply = lightChoice.isSelected(1);
-        settings.webSearch = claudeChoice.isSelected(0);
-        settings.instructions = notesField.getString().trim();
-        boolean keep = claudeChoice.isSelected(1);
-        if (keep != settings.saveChat) {
-            settings.saveChat = keep;
-            if (keep) {
+    }
+
+    private static int sw(boolean on) {
+        return RowList.SWITCH | (on ? RowList.ON : 0);
+    }
+
+    /** Centre key on a settings row: cycles or toggles and saves, or opens what edits it. */
+    private void changeSetting(int k) {
+        boolean langChanged = false;
+        switch (k) {
+        case S_SIZE:
+            settings.fontSize = (settings.fontSize + 1) % 3;
+            break;
+        case S_THEME:
+            settings.theme = (settings.theme + 1) % 3;
+            break;
+        case S_WEB:
+            settings.webSearch = !settings.webSearch;
+            break;
+        case S_KEEP:
+            settings.saveChat = !settings.saveChat;
+            if (settings.saveChat) {
                 session.markUnsaved();
                 session.persist();
             } else {
                 ChatStore.delete();
             }
+            break;
+        case S_SOUND:
+            settings.sound = !settings.sound;
+            break;
+        case S_VIBRATE:
+            settings.vibrate = !settings.vibrate;
+            break;
+        case S_FULL:
+            settings.fullScreen = !settings.fullScreen;
+            break;
+        case S_LIGHT:
+            settings.lightReply = !settings.lightReply;
+            break;
+        case S_LANG:
+            settings.lang = (settings.lang + 1) % 3;
+            langChanged = true;
+            break;
+        case S_TEST:
+            settings.testMode = !settings.testMode;
+            break;
+        case S_CONN:
+            if (connTest == null) {
+                connTest = new ConnTest(this, null);
+            }
+            connTest.show(display);
+            return;
+        default:
+            edit(k);
+            return;
         }
         String err = settings.save();
         applyLook();
         if (langChanged) {
             rebuildUi();
+            showSettings(); // its commands are new
         }
-        info(err != null ? err : L.s("Kaydedildi.", "Saved."), home);
+        fillSettings(k);
+        if (err != null) {
+            info(err, settingsForm);
+        }
+    }
+
+    /** A text box for the notes, the server address or the access code. */
+    private void edit(int k) {
+        editing = k;
+        if (k == S_NOTES) {
+            editBox = new TextBox(L.s("Yapay zekâ için notların", "Your notes for the AI"), settings.instructions,
+                    Settings.MAX_INSTRUCTIONS, TextField.ANY);
+        } else if (k == S_URL) {
+            editBox = new TextBox(L.s("Sunucu adresi (https://...)", "Server address (https://...)"), settings.url,
+                    200, TextField.URL);
+        } else {
+            editBox = new TextBox(L.s("Erişim kodu", "Access code"), settings.token, 64,
+                    TextField.ANY | TextField.SENSITIVE | TextField.NON_PREDICTIVE);
+        }
+        editBox.addCommand(editOkCmd);
+        editBox.addCommand(formBackCmd);
+        editBox.setCommandListener(this);
+        display.setCurrent(editBox);
+    }
+
+    private void saveEdit() {
+        String v = editBox.getString().trim();
+        if (editing == S_URL) {
+            while (v.endsWith("/")) {
+                v = v.substring(0, v.length() - 1);
+            }
+            if (v.length() > 0 && !Net.isHttps(v)) {
+                info(L.s("Adres https:// ile başlamalı. HTTP desteklenmez.",
+                        "The address must start with https://. HTTP is not supported."), editBox);
+                return;
+            }
+            if (!v.equals(settings.url)) {
+                settings.verifiedUrl = ""; // new address: connection test again
+            }
+            settings.url = v;
+        } else if (editing == S_TOKEN) {
+            if (v.length() > 0 && !validToken(v)) {
+                info(L.s("Erişim kodu 16-64 harf/rakam olmalı.", "The access code must be 16-64 letters/digits."), editBox);
+                return;
+            }
+            settings.token = v;
+        } else {
+            settings.instructions = v;
+        }
+        String err = settings.save();
+        fillSettings(editing);
+        if (err != null) {
+            info(err, settingsForm);
+        } else {
+            display.setCurrent(settingsForm);
+        }
     }
 
     /**

@@ -33,8 +33,21 @@ final class Theme {
     private Theme() {
     }
 
+    /** True while the dark colours are in use. */
+    static boolean dark;
+
+    /** Settings theme 2: dark from 19:00 to 07:00 phone time. */
+    static boolean wantsDark(Settings s) {
+        if (s.theme != 2) {
+            return s.theme == 1;
+        }
+        int hour = java.util.Calendar.getInstance().get(java.util.Calendar.HOUR_OF_DAY);
+        return hour >= 19 || hour < 7;
+    }
+
     static void apply(Settings s) {
-        if (s.theme == 1) {
+        dark = wantsDark(s);
+        if (dark) {
             bg = 0x141417;
             surface = 0x25252B;
             border = 0x34343C;

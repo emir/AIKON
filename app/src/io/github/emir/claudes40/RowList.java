@@ -5,6 +5,7 @@ import java.util.Vector;
 import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
+import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 import javax.microedition.lcdui.List;
@@ -22,6 +23,8 @@ final class RowList extends Canvas {
     /** Row flags. */
     static final int ACCENT = 1; // the icon always in the accent colour (a pin)
     static final int CHECK = 2;  // a check mark at the right (the current choice)
+    static final int SWITCH = 4; // an on/off switch at the right
+    static final int ON = 8;     // the switch is on
 
     private static final int MARGIN = 6;
 
@@ -29,9 +32,12 @@ final class RowList extends Canvas {
     private final Vector rows = new Vector();
     private int selected = -1;
     private int items;
+    /** Keys 1-9 pick the first nine rows (off where a key press would change something at once). */
+    private boolean numbers = true;
     private int scroll;
     private CommandListener listener;
     private Command selectCommand;
+    private final Command defaultSelect;
 
     /** One row: a note when title is null. */
     private static final class Row {
@@ -52,6 +58,10 @@ final class RowList extends Canvas {
 
     RowList(String title) {
         this.title = title;
+        // a centre-key command, as an IMPLICIT List has; setSelectCommand replaces it
+        defaultSelect = new Command(L.s("Seç", "Select"), Command.OK, 1);
+        selectCommand = defaultSelect;
+        addCommand(selectCommand);
         full = fullScreen;
         setFullScreenMode(full);
     }
@@ -80,13 +90,19 @@ final class RowList extends Canvas {
         return title;
     }
 
+    /** The default select command reaches the listener as List.SELECT_COMMAND, like an IMPLICIT List's. */
     public void setCommandListener(CommandListener l) {
         listener = l;
-        super.setCommandListener(l);
+        super.setCommandListener(l == null ? null : new CommandListener() {
+            public void commandAction(Command c, Displayable d) {
+                listener.commandAction(c == defaultSelect ? List.SELECT_COMMAND : c, d);
+            }
+        });
     }
 
     /** Like List.setSelectCommand: FIRE delivers it; it is also an ordinary command. */
     void setSelectCommand(Command c) {
+        removeCommand(selectCommand);
         selectCommand = c;
         addCommand(c);
     }
@@ -104,6 +120,11 @@ final class RowList extends Canvas {
         Row r = new Row();
         r.note = text;
         rows.addElement(r);
+        repaint();
+    }
+
+    synchronized void setNumbers(boolean on) {
+        numbers = on;
         repaint();
     }
 
@@ -167,12 +188,16 @@ final class RowList extends Canvas {
     void fire() {
         CommandListener l = listener;
         if (l != null && getSelectedIndex() >= 0) {
-            l.commandAction(selectCommand != null ? selectCommand : List.SELECT_COMMAND, this);
+            l.commandAction(selectCommand == defaultSelect ? List.SELECT_COMMAND : selectCommand, this);
         }
     }
 
     protected void keyPressed(int keyCode) {
         keyCode = Keys.map(keyCode);
+        if (keyCode >= KEY_NUM1 && keyCode <= KEY_NUM9 && pick(keyCode - KEY_NUM1)) {
+            fire();
+            return;
+        }
         int action = Keys.action(this, keyCode);
         if (action == FIRE) {
             fire();
@@ -188,6 +213,22 @@ final class RowList extends Canvas {
         if (keyCode < 0 && (action == UP || action == DOWN)) {
             move(action == UP ? -1 : 1);
         }
+    }
+
+    /** Selects the n-th selectable row (0-based); false if numbers are off or there is none. */
+    private synchronized boolean pick(int n) {
+        if (!numbers) {
+            return false;
+        }
+        for (int i = 0; i < rows.size(); i++) {
+            Row r = (Row) rows.elementAt(i);
+            if (r.title != null && r.item == n) {
+                selected = i;
+                repaint();
+                return true;
+            }
+        }
+        return false;
     }
 
     private synchronized void move(int d) {
@@ -323,10 +364,30 @@ final class RowList extends Canvas {
                 x += ic + 8;
             }
             int right = w - MARGIN - 6;
+            if ((r.flags & SWITCH) != 0) {
+                boolean on = (r.flags & ON) != 0;
+                int th = Math.max(12, sm.getHeight() - 2);
+                int tw2 = th * 2 - 2;
+                int sx = right - tw2;
+                int sy = y + (rh - th) / 2;
+                g.setColor(on ? Theme.accent : Theme.border);
+                g.fillRoundRect(sx, sy, tw2, th, th, th);
+                g.setColor(on ? Theme.accentInk : Theme.surface);
+                int k = th - 4;
+                g.fillArc(on ? sx + tw2 - k - 2 : sx + 2, sy + 2, k, k, 0, 360);
+                right -= tw2 + 8;
+            }
             if ((r.flags & CHECK) != 0) {
                 int cs = Math.max(12, f.getHeight() - 2);
                 g.drawImage(Icons.get(Icons.CHECK, cs, Theme.accent), right, y + rh / 2, Graphics.RIGHT | Graphics.VCENTER);
                 right -= cs + 6;
+            }
+            if (numbers && items <= 9 && (r.flags & (SWITCH | CHECK)) == 0) {
+                String num = String.valueOf(r.item + 1);
+                g.setFont(sm);
+                g.setColor(Theme.muted);
+                g.drawString(num, right, y + (rh - sm.getHeight()) / 2, Graphics.TOP | Graphics.RIGHT);
+                right -= sm.stringWidth(num) + 8;
             }
             int tw = right - x;
             g.setFont(f);

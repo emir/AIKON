@@ -235,6 +235,14 @@ public class EmuShot {
         save("models_switch");                // Grok marked "(now)"
         command(t("Back", "Geri"));
 
+        call("showSettings");                 // drawn settings list (nothing changed here)
+        save("settings");
+        key(Mobile.NOKIA_DOWN);
+        key(Mobile.NOKIA_DOWN);
+        key(Mobile.NOKIA_DOWN);
+        save("settings_down");
+        command(t("Back", "Geri"));
+
         call("showDataUsage");                // Settings > Options > Data usage (test mode: no data)
         save("data_usage");
         command(t("Back", "Geri"));
