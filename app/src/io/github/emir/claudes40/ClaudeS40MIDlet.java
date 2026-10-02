@@ -356,10 +356,11 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             return L.s("Kurulum: cihazı eşleştir", "Setup: pair this phone");
         }
         String upd = updateVersion();
-        if (upd.length() > 0) {
-            return L.s("Yeni sürüm " + upd + " · Güncelle", "New version " + upd + " · Update");
-        }
         String bal = session.balance();
+        if (upd.length() > 0) {
+            return bal.length() > 0 ? L.s(bal + " kredi · Yeni sürüm " + upd, bal + " credits · New version " + upd)
+                    : L.s("Yeni sürüm " + upd + " · Güncelle", "New version " + upd + " · Update");
+        }
         if (bal.length() > 0) {
             return L.s("Hazır · " + bal + " kredi", "Ready · " + bal + " credits");
         }
@@ -566,6 +567,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         display.setCurrent(home);
         home.setUpdate(updateVersion().length() > 0);
         Updates.maybeCheck(this);
+        Credits.maybeFetchBalance(this);
     }
 
     /** The newer version the server offers, or "". */
@@ -576,6 +578,11 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     /** From the update check (worker thread): the answer changed. */
     void updateChanged() {
         home.setUpdate(updateVersion().length() > 0);
+    }
+
+    /** From the balance request (worker thread). */
+    void balanceChanged() {
+        home.repaint();
     }
 
     /** "Update": what happens, then the phone's own installer. */

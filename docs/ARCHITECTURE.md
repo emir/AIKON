@@ -232,8 +232,9 @@ open-source server has no such extension; it only offers the hooks
 
 A voucher is 16 digits, the last a Luhn check digit (the phone refuses a
 mistyped code before sending it). Chat and voice answers carry `balance`
-(credits, at most one decimal); the phone shows it on the home screen and
-under Settings > Options > Credits; the model picker shows what a typical
+(credits, at most one decimal); the phone shows it on the home screen (when
+unknown there, e.g. after a start, it asks `/v1/balance` at most once a
+minute) and under Settings > Options > Credits; the model picker shows what a typical
 message costs with each model (`/v1/models` with `costs: 1`). Statuses: `credit` (402: not enough
 for this message, the draft is kept), `account_disabled` (403),
 `bad_voucher`, `used`, `slow_down` (too many wrong codes). The paid-call

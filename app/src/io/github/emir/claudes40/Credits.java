@@ -308,6 +308,46 @@ final class Credits implements CommandListener, Runnable {
         return k;
     }
 
+    private static boolean fetching;
+    private static long triedAt;
+
+    /**
+     * For the home screen: asks for the balance (free, /v1/balance) on a
+     * worker thread while it is unknown, at most once a minute.
+     */
+    static void maybeFetchBalance(final ClaudeS40MIDlet midlet) {
+        Settings s = midlet.settings;
+        if (!s.credits || s.testMode || s.token.length() < 16 || !s.connectionVerified()
+                || midlet.session().balance().length() > 0) {
+            return;
+        }
+        synchronized (Credits.class) {
+            long now = System.currentTimeMillis();
+            if (fetching || (now - triedAt < 60000 && now >= triedAt)) {
+                return;
+            }
+            fetching = true;
+            triedAt = now;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    Settings s = midlet.settings;
+                    Net.Result r = Net.request(s.url + "/v1/balance", "POST", s.token,
+                            S40Message.format(new String[0], new String[0], ""), midlet.userAgent(), null);
+                    if (r.ok() && r.msg != null && "ok".equals(r.msg.field("status")) && r.msg.flag("credits")) {
+                        midlet.session().setBalance(r.msg.field("balance"));
+                        midlet.balanceChanged();
+                    }
+                } finally {
+                    synchronized (Credits.class) {
+                        fetching = false;
+                    }
+                }
+            }
+        }).start();
+    }
+
     /** Opens the right pairing for this server: a credit code or the owner's approval. */
     static void pair(ClaudeS40MIDlet midlet, Setup setup, Display display, Displayable back) {
         if (midlet.settings.credits) {
