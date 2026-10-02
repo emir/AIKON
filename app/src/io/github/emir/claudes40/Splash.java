@@ -7,8 +7,8 @@ import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * Start-up screen: the blue tile pops in and the AK monogram is built
- * stroke by stroke, the title fades in, the jingle plays once. About 2.4 s; any key skips. Full screen, all sizes
+ * Start-up screen: the AIKON wordmark is wiped in and twinkles, loading
+ * dots below, the jingle plays once. About 2.4 s; any key skips. Full screen, all sizes
  * derived from getWidth()/getHeight().
  */
 final class Splash extends Canvas {
@@ -84,40 +84,26 @@ final class Splash extends Canvas {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        int size = Math.min(w, h) * 42 / 100;
-        int cx = w / 2;
-        int cy = h * 40 / 100;
-
-        // pop-in with a little overshoot, then gentle breathing
-        int scale;
-        if (frame < 8) {
-            scale = frame * 115 / 8;
-        } else if (frame < 12) {
-            scale = 115 - (frame - 8) * 15 / 4;
-        } else {
-            scale = 100 + ((frame / 3) % 2 == 0 ? 0 : 3);
+        // the wordmark is wiped in from the left, then two twinkles
+        int ww = Math.min(w * 72 / 100, h * 3 / 4);
+        int wh = Wordmark.height(ww);
+        int x0 = (w - ww) / 2;
+        int y0 = h * 42 / 100 - wh / 2;
+        int t = Math.min(256, frame * 256 / 12);
+        int shown = ww * (256 * 256 - (256 - t) * (256 - t)) / (256 * 256); // eases out
+        if (shown > 0) {
+            g.setClip(x0, 0, shown, h);
+            g.drawImage(Wordmark.get(ww, Theme.accent), x0, y0, Graphics.TOP | Graphics.LEFT);
+            g.setClip(0, 0, w, h);
         }
-        // the monogram is built stroke by stroke from frame 6: A, bar, stem, K
-        int parts = frame < 6 ? 0 : Math.min(Logo.ALL, (frame - 6) / 3 + 1);
-        Logo.draw(g, cx, cy, size, scale, parts);
-
-        // twinkles around the mark
-        if (frame > 10) {
-            int r = size * 60 / 100;
+        if (frame > 12) {
             int tw = (frame % 6 < 3) ? 4 : 2;
-            Logo.sparkle(g, cx + r, cy - r / 2, tw + size / 30, Theme.accent);
-            Logo.sparkle(g, cx - r, cy + r / 3, (6 - tw) + size / 40, Theme.accent);
+            Logo.sparkle(g, x0 + ww + wh / 4, y0 - wh / 4, tw + wh / 8, Theme.accent);
+            Logo.sparkle(g, x0 - wh / 5, y0 + wh + wh / 5, (6 - tw) + wh / 10, Theme.accent);
         }
+        int cx = w / 2;
 
-        // title fades in from the background colour
-        int t = frame < 12 ? 0 : Math.min(256, (frame - 12) * 32);
-        g.setFont(Theme.bold);
-        g.setColor(Theme.mix(Theme.bg, Theme.ink, t));
-        int ty = cy + size / 2 + size / 5;
-        g.drawString("AIKON", cx, ty, Graphics.TOP | Graphics.HCENTER);
-        g.setFont(Theme.small);
-
-        // loading dots and disclaimer
+        // loading dots
         int dots = (frame / 3) % 4;
         int dy = h - Theme.small.getHeight() * 3;
         for (int i = 0; i < 3; i++) {

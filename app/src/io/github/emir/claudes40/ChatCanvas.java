@@ -1297,37 +1297,15 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         return true;
     }
 
+    /** Only the wordmark, a little above the middle (the header names the model, the status line the key). */
     private void paintEmpty(Graphics g, int w, int top, int vh) {
-        int cx = w / 2;
-        Vector title = new Vector();
-        Text.wrap(L.s("Merhaba! Ne sormak istersin?", "Hi! What would you like to ask?"), Theme.bold, w - 4 * PAD, title);
-        Vector tips = new Vector();
-        String ai = session.ai();
-        Text.wrap(L.s("Yanıtlayan: " + ai + "\nYazmak için orta tuş", "Answering: " + ai + "\nCentre key to write"),
-                Theme.small, w - 4 * PAD, tips);
-        int textH = title.size() * Theme.bold.getHeight() + 6 + tips.size() * Theme.small.getHeight();
-        int size = Math.min(Math.min(w, vh) * 34 / 100, vh - textH - 12 - 2 * PAD);
-        boolean logo = size >= 16;
-        int groupH = textH + (logo ? size + 12 : 0);
-        int y = top + Math.max(PAD, (vh - groupH) * 2 / 5);
-        int bottom = top + vh;
-        if (logo) {
-            Logo.draw(g, cx, y + size / 2, size, 100, Logo.ALL);
-            y += size + 12;
+        int ww = Math.min(w * 60 / 100, vh * 3 / 2);
+        if (ww < 24) {
+            return;
         }
-        g.setFont(Theme.bold);
-        g.setColor(Theme.ink);
-        for (int i = 0; i < title.size() && y + Theme.bold.getHeight() <= bottom; i++) {
-            g.drawString((String) title.elementAt(i), cx, y, Graphics.TOP | Graphics.HCENTER);
-            y += Theme.bold.getHeight();
-        }
-        y += 6;
-        g.setFont(Theme.small);
-        g.setColor(Theme.muted);
-        for (int i = 0; i < tips.size() && y + Theme.small.getHeight() <= bottom; i++) {
-            g.drawString((String) tips.elementAt(i), cx, y, Graphics.TOP | Graphics.HCENTER);
-            y += Theme.small.getHeight();
-        }
+        int wh = Wordmark.height(ww);
+        g.drawImage(Wordmark.get(ww, Theme.accent), (w - ww) / 2, top + Math.max(0, (vh - wh) * 2 / 5),
+                Graphics.TOP | Graphics.LEFT);
     }
 
     private void paintHeader(Graphics g, int w) {
