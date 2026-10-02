@@ -27,6 +27,13 @@ type meterFields interface {
 	fields(ctx context.Context, device string) []kv
 }
 
+// meterCosts: a meter may tell what a typical message costs with a model
+// for this device ("" = nothing is charged); /v1/models sends it to phones
+// that ask with "costs: 1".
+type meterCosts interface {
+	messageCost(ctx context.Context, device, model string) string
+}
+
 func addMeterFields(ctx context.Context, m meter, device string, f []kv) []kv {
 	if mf, ok := m.(meterFields); ok {
 		return append(f, mf.fields(ctx, device)...)

@@ -188,7 +188,7 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
 | `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `image: <id>` (a photo from `/v1/image`; 0.6.0), optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), optional `model: <id>` (from `/v1/models`; this and the following messages of the conversation go to that model; server 0.7.0), text = message |
 | `POST /v1/more` | Bearer token | `request: <id>`, `offset: <next>` → the next part of a stored reply (never calls a model) |
-| `POST /v1/models` | Bearer token | the models the phone may choose, default first, one line each: `id TAB name TAB search (0/1) TAB photos (0/1) TAB provider` (provider name since 0.7.1: Claude, OpenAI, Grok); field `default: <id>`; never calls a model (server 0.7.0) |
+| `POST /v1/models` | Bearer token | the models the phone may choose, default first, one line each: `id TAB name TAB search (0/1) TAB photos (0/1) TAB provider` (provider name since 0.7.1: Claude, OpenAI, Grok); with `costs: 1` (0.12.1+ phones) a sixth field: what a typical message costs with that model on this device, empty when nothing is charged (a meter extension, server 0.9.1); field `default: <id>`; never calls a model (server 0.7.0) |
 | `POST /v1/conversations` | Bearer token | pinned, then newest conversations (20 in all), one line each: `id TAB updated-ms TAB messages TAB title`; with `pins: 1` (0.7+ phones) each line starts with `pinned TAB` (0/1); with `models: 1` the conversation's model id comes before the title (`... messages TAB model TAB title`, empty for conversations from before server 0.7.0) |
 | `POST /v1/history` | Bearer token | `conversation: <id>` → newest messages (≤ 6000 bytes), oldest first, each `u N` / `a N` (N = UTF-16 length), newline, text, newline; `older: 1` if earlier ones were left out; with `images: 1` (0.9+ phones) a user message sent with a photo is `u N i`; with `models: 1` a reply is `a N m=<model id>` (server 0.7.0; marks are space-separated, unknown ones are ignored) |
 | `POST /v1/image` | Bearer token | body = a JPEG or PNG (≤ 1 MiB) → `ok` + `image` (32 hex), `width`, `height`, `bytes`; `bad_image`, `too_large`, `limit`; never calls Claude (0.6.0) |
@@ -221,7 +221,8 @@ open-source server has no such extension; it only offers the hooks
 A voucher is 16 digits, the last a Luhn check digit (the phone refuses a
 mistyped code before sending it). Chat and voice answers carry `balance`
 (credits, at most one decimal); the phone shows it on the home screen and
-under Settings > Options > Credits. Statuses: `credit` (402: not enough
+under Settings > Options > Credits; the model picker shows what a typical
+message costs with each model (`/v1/models` with `costs: 1`). Statuses: `credit` (402: not enough
 for this message, the draft is kept), `account_disabled` (403),
 `bad_voucher`, `used`, `slow_down` (too many wrong codes). The paid-call
 rules above stay: a failed or uncertain call is never charged, a replay is

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"net/http"
+	"strings"
 	"sync"
 	"testing"
 )
@@ -159,6 +160,8 @@ type fieldMeter struct{ fakeMeter }
 
 func (f *fieldMeter) fields(ctx context.Context, device string) []kv { return []kv{{"balance", 42}} }
 
+func (f *fieldMeter) messageCost(ctx context.Context, device, model string) string { return "~7" }
+
 func TestExtensions(t *testing.T) {
 	saved := [3]int{len(extraRoutes), len(extraAdminRoutes), len(extraHealth)}
 	t.Cleanup(func() {
@@ -199,5 +202,17 @@ func TestExtensions(t *testing.T) {
 	tok, _ := e.pair("p")
 	if r := e.chat(tok, rid(), "", "x"); r.msg.get("balance") != "42" || r.msg.get("remaining") != "7" {
 		t.Fatalf("meter fields: %q", r.raw)
+	}
+
+	// model costs only for phones that ask
+	if r := e.do("POST", "/v1/models", tok, "S40/1\n\n"); strings.Count(strings.Split(r.msg.text, "\n")[0], "\t") != 4 {
+		t.Fatalf("models without costs: %q", r.raw)
+	}
+	if r := e.do("POST", "/v1/models", tok, "S40/1\ncosts: 1\n\n"); !strings.HasSuffix(strings.Split(r.msg.text, "\n")[0], "\tClaude\t~7") {
+		t.Fatalf("models with costs: %q", r.raw)
+	}
+	e.srv.chat.meter = &dailyMeter{st: e.srv.st, reqLimit: 10, tokLimit: 1e5}
+	if r := e.do("POST", "/v1/models", tok, "S40/1\ncosts: 1\n\n"); !strings.HasSuffix(strings.Split(r.msg.text, "\n")[0], "\tClaude\t") {
+		t.Fatalf("models, meter without costs: %q", r.raw)
 	}
 }

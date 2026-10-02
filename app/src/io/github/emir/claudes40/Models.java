@@ -27,8 +27,8 @@ import javax.microedition.rms.RecordStoreException;
 final class Models implements CommandListener, Runnable {
 
     private static final String STORE = "cs40models";
-    /** 2: with each model's provider (format 1 lists are fetched again). */
-    private static final int FORMAT = 2;
+    /** 3: with each model's provider and cost (older lists are fetched again). */
+    private static final int FORMAT = 3;
 
     /** Picker for a new chat, or for switching the current one. */
     static final int FOR_NEW = 0;
@@ -40,6 +40,8 @@ final class Models implements CommandListener, Runnable {
     private static String[] names = new String[0];
     /** Provider name of each model ("Claude", "OpenAI"...; "" from a 0.7.0 server). */
     private static String[] providers = new String[0];
+    /** Credits a typical message costs with each model ("" = not charged; server extension, 0.12.1). */
+    private static String[] costs = new String[0];
     private static String defaultId = "";
     /** Chosen last for a new chat; "" = the server's default. */
     private static String last = "";
@@ -90,14 +92,17 @@ final class Models implements CommandListener, Runnable {
             String[] i2 = new String[n];
             String[] n2 = new String[n];
             String[] p2 = new String[n];
+            String[] c2 = new String[n];
             for (int i = 0; i < n; i++) {
                 i2[i] = in.readUTF();
                 n2[i] = in.readUTF();
                 p2[i] = in.readUTF();
+                c2[i] = in.readUTF();
             }
             ids = i2;
             names = n2;
             providers = p2;
+            costs = c2;
             defaultId = def;
             last = l;
         } catch (RecordStoreException e) {
@@ -122,6 +127,7 @@ final class Models implements CommandListener, Runnable {
                 out.writeUTF(ids[i]);
                 out.writeUTF(names[i]);
                 out.writeUTF(providers[i]);
+                out.writeUTF(costs[i]);
             }
             out.close();
             byte[] b = bo.toByteArray();
@@ -145,6 +151,7 @@ final class Models implements CommandListener, Runnable {
         ids = new String[0];
         names = new String[0];
         providers = new String[0];
+        costs = new String[0];
         defaultId = "";
         last = "";
         loaded = true;
@@ -167,13 +174,14 @@ final class Models implements CommandListener, Runnable {
 
     /**
      * Fetches the list (worker thread only). Lines: id TAB name TAB search
-     * TAB photos TAB provider (the provider since server 0.7.1). Returns
-     * null, or why it failed.
+     * TAB photos TAB provider (the provider since server 0.7.1), with
+     * "costs: 1" TAB cost (servers that charge credits; others send no
+     * sixth field). Returns null, or why it failed.
      */
     private static String fetch(ClaudeS40MIDlet midlet) {
         Settings s = midlet.settings;
         Net.Result r = Net.request(s.url + "/v1/models", "POST", s.token,
-                S40Message.format(new String[0], new String[0], ""), midlet.userAgent(), null);
+                S40Message.format(new String[] { "costs" }, new String[] { "1" }, ""), midlet.userAgent(), null);
         S40Message m = r.msg;
         if (!r.ok()) {
             return Net.explain(r);
@@ -189,6 +197,7 @@ final class Models implements CommandListener, Runnable {
         Vector vi = new Vector();
         Vector vn = new Vector();
         Vector vp = new Vector();
+        Vector vc = new Vector();
         String t = m.text;
         int pos = 0;
         while (pos < t.length()) {
@@ -202,7 +211,9 @@ final class Models implements CommandListener, Runnable {
                 vn.addElement(line.substring(t1 + 1, t2));
                 int t3 = line.indexOf('\t', t2 + 1);
                 int t4 = t3 < 0 ? -1 : line.indexOf('\t', t3 + 1);
-                vp.addElement(t4 < 0 ? "" : line.substring(t4 + 1).trim());
+                int t5 = t4 < 0 ? -1 : line.indexOf('\t', t4 + 1);
+                vp.addElement(t4 < 0 ? "" : line.substring(t4 + 1, t5 < 0 ? line.length() : t5).trim());
+                vc.addElement(t5 < 0 ? "" : line.substring(t5 + 1).trim());
             }
         }
         if (vi.size() == 0) {
@@ -212,9 +223,11 @@ final class Models implements CommandListener, Runnable {
             ids = new String[vi.size()];
             names = new String[vn.size()];
             providers = new String[vp.size()];
+            costs = new String[vc.size()];
             vi.copyInto(ids);
             vn.copyInto(names);
             vp.copyInto(providers);
+            vc.copyInto(costs);
             defaultId = m.field("default").length() > 0 ? m.field("default") : ids[0];
             loaded = true;
             save();
@@ -295,12 +308,14 @@ final class Models implements CommandListener, Runnable {
         String[] i2;
         String[] n2;
         String[] p2;
+        String[] c2;
         String mark;
         synchronized (Models.class) {
             load();
             i2 = ids;
             n2 = names;
             p2 = providers;
+            c2 = costs;
             mark = purpose == FOR_SWITCH ? L.s(" (şu an)", " (now)")
                     : current.equals(last) ? L.s(" (son seçim)", " (last used)") : L.s(" (varsayılan)", " (default)");
         }
@@ -348,7 +363,7 @@ final class Models implements CommandListener, Runnable {
                     continue;
                 }
                 boolean now = i2[i].equals(current);
-                list.append(n2[i] + (now ? mark : ""), null);
+                list.append(n2[i] + (c2[i].length() > 0 ? " · ~" + c2[i] + L.s(" kr", " cr") : "") + (now ? mark : ""), null);
                 v.addElement(i2[i]);
                 if (now) {
                     sel = list.size() - 1;

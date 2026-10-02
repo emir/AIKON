@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.9.0"
+	version      = "0.9.1"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -652,13 +652,29 @@ func (s *server) moreHandler(w http.ResponseWriter, r *http.Request) {
 // per line: id TAB name TAB search (0/1) TAB photos (0/1) TAB provider
 // (Claude, OpenAI, Grok: 0.10.2+ phones pick the provider first; older ones
 // read only the first two fields). Never calls a model.
+//
+// With "costs: 1" (0.12.1+ phones) a sixth field follows: what a typical
+// message costs with that model ("" when the meter charges nothing).
+// Older phones read everything after the fourth tab as the provider, so
+// they never get it.
 func (s *server) modelsHandler(w http.ResponseWriter, r *http.Request) {
-	if _, _, ok := s.authedS40(w, r); !ok {
+	device, m, ok := s.authedS40(w, r)
+	if !ok {
 		return
 	}
+	mc, _ := s.chat.meter.(meterCosts)
+	costs := m.get("costs") == "1"
 	var b strings.Builder
 	for _, e := range s.chat.models.list {
-		fmt.Fprintf(&b, "%s\t%s\t%d\t1\t%s\n", e.id, e.label, b2i(e.search && s.chat.search), providerNames[e.provider])
+		fmt.Fprintf(&b, "%s\t%s\t%d\t1\t%s", e.id, e.label, b2i(e.search && s.chat.search), providerNames[e.provider])
+		if costs {
+			c := ""
+			if mc != nil {
+				c = mc.messageCost(r.Context(), device, e.id)
+			}
+			b.WriteString("\t" + c)
+		}
+		b.WriteString("\n")
 	}
 	writeS40(w, 200, []kv{{"status", "ok"}, {"count", len(s.chat.models.list)}, {"default", s.chat.models.def().id}}, b.String())
 }
