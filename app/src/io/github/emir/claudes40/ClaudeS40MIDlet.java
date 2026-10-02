@@ -398,12 +398,13 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     /**
      * Settings > Screen > Full screen: the menu and the chat (with reading
      * mode) draw over the phone's status bar. Their own top bar stays; the
-     * softkeys are still the phone's Commands. Lists and forms cannot be
-     * full screen in MIDP.
+     * softkeys are still the phone's Commands. The drawn lists (RowList)
+     * follow it too; forms and text boxes cannot be full screen in MIDP.
      */
     private void applyFullScreen() {
         chat.setFullScreenMode(settings.fullScreen);
         home.setFullScreenMode(settings.fullScreen);
+        RowList.fullScreen = settings.fullScreen;
     }
 
     /**

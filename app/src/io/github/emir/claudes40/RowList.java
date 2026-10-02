@@ -41,8 +41,22 @@ final class RowList extends Canvas {
         int flags;
     }
 
+    /** Settings > Screen > Full screen, like the home and chat screens (set by the MIDlet). */
+    static boolean fullScreen = true;
+
+    private boolean full;
+
     RowList(String title) {
         this.title = title;
+        full = fullScreen;
+        setFullScreenMode(full);
+    }
+
+    protected void showNotify() {
+        if (full != fullScreen) { // the setting changed since
+            full = fullScreen;
+            setFullScreenMode(full);
+        }
     }
 
     synchronized void title(String t) {
