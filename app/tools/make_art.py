@@ -7,10 +7,10 @@ blue rounded square) with Pillow.
   make_art.py logo OUT.png [SIZE]   large logo for README / social posts
 
 Supersampled 8x and downscaled for smooth edges. Deterministic output: the
-PNG is written here, not by Pillow, with stored (level 0) zlib data, since
-Pillow's builds compress with different zlib code on different platforms
-(same pixels, other bytes: the JAR's checksum changed between a Mac and
-GitHub's Linux). The JAR compresses the file anyway.
+PNG is written here with Python's own zlib (level 9), not by Pillow, whose
+builds compress with different zlib code on different platforms (same
+pixels, other bytes: the JAR's checksum differed between a Mac and GitHub's
+Linux). zlib 1.2.12 (macOS) and 1.3 (Ubuntu 24.04) give the same bytes.
 """
 import struct
 import sys
@@ -48,7 +48,7 @@ def render(w, h, radius_frac, bg=(0, 0, 0, 0), ss=8):
 
 
 def write_png(img, out):
-    """An RGBA PNG with no ancillary chunks and uncompressed image data."""
+    """An RGBA PNG with no ancillary chunks, image data compressed by zlib."""
     img = img.convert("RGBA")
     w, h = img.size
     px = img.tobytes()
@@ -59,7 +59,7 @@ def write_png(img, out):
 
     with open(out, "wb") as f:
         f.write(b"\x89PNG\r\n\x1a\n" + chunk(b"IHDR", struct.pack(">IIBBBBB", w, h, 8, 6, 0, 0, 0))
-                + chunk(b"IDAT", zlib.compress(raw, 0)) + chunk(b"IEND", b""))
+                + chunk(b"IDAT", zlib.compress(raw, 9)) + chunk(b"IEND", b""))
 
 
 def main():
