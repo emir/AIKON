@@ -251,7 +251,7 @@ final class RowList extends Canvas {
 
     static void paintBar(Graphics g, int w, String title) {
         int hh = barH();
-        g.setColor(Theme.bg);
+        g.setColor(Theme.chrome);
         g.fillRect(0, 0, w, hh);
         g.setColor(Theme.border);
         g.drawLine(0, hh - 1, w, hh - 1);

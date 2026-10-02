@@ -13,6 +13,8 @@ final class Theme {
     // current palette (set by apply())
     static int bg;
     static int surface;
+    /** Top and bottom bars: a step away from the page, so they read as frames. */
+    static int chrome;
     static int border;
     static int ink;
     static int muted;
@@ -50,6 +52,7 @@ final class Theme {
         if (dark) {
             bg = 0x141417;
             surface = 0x25252B;
+            chrome = 0x1E1E23;
             border = 0x34343C;
             ink = 0xECE8E1;
             muted = 0x9A958C;
@@ -65,6 +68,7 @@ final class Theme {
         } else {
             bg = 0xFAF6EF;
             surface = 0xFFFFFF;
+            chrome = 0xF0EAE0;
             border = 0xE4DCCD;
             ink = 0x26252C;
             muted = 0x7C766B;

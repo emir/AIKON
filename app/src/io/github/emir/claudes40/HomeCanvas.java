@@ -138,8 +138,10 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        // header: mark + title + status line, on the page colour above a hairline
+        // header: mark + title + status line, on the bar colour above a hairline
         int headH = Math.max(f.getHeight() + sm.getHeight() + 10, 40);
+        g.setColor(Theme.chrome);
+        g.fillRect(0, 0, w, headH);
         g.setColor(Theme.border);
         g.drawLine(0, headH - 1, w, headH - 1);
         int ls = headH - 12;
@@ -192,7 +194,11 @@ final class HomeCanvas extends Canvas implements CommandListener {
             y += rowH;
         }
 
-        // footer
+        // footer: the version on the bar colour
+        g.setColor(Theme.chrome);
+        g.fillRect(0, h - footH, w, footH);
+        g.setColor(Theme.border);
+        g.drawLine(0, h - footH, w, h - footH);
         g.setFont(sm);
         g.setColor(Theme.muted);
         g.drawString(Text.fit(L.s("Sürüm ", "Version ") + midlet.attr("MIDlet-Version"), sm,

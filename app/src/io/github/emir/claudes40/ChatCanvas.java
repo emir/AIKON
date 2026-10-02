@@ -1368,7 +1368,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private void paintHeader(Graphics g, int w) {
         int bh = barH();
         boolean test = midlet.settings.testMode;
-        g.setColor(Theme.bg);
+        g.setColor(Theme.chrome);
         g.fillRect(0, 0, w, bh);
         g.setColor(Theme.border);
         g.drawLine(0, bh - 1, w, bh - 1);
@@ -1402,8 +1402,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private void paintStatus(Graphics g, int w, int h, int vh) {
         // a quiet input field: what the centre key does, or the status
         int sh = statusH();
-        g.setColor(Theme.bg);
+        g.setColor(Theme.chrome);
         g.fillRect(0, h - sh, w, sh);
+        g.setColor(Theme.border);
+        g.drawLine(0, h - sh, w, h - sh);
         int ph = sh - 6;
         int py = h - sh + 2;
         g.setColor(Theme.surface);
@@ -1455,6 +1457,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.fillRect(0, 0, w, h);
 
         // header: who/when (or what is going on) left, page right, a progress hairline under it
+        g.setColor(Theme.chrome);
+        g.fillRect(0, 0, w, head - 2);
         int[] p = pages();
         String right = p[0] + "/" + p[1];
         g.setFont(sm);
