@@ -3,8 +3,6 @@ package io.github.emir.claudes40;
 import java.util.Vector;
 
 import javax.microedition.io.ConnectionNotFoundException;
-import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.ChoiceGroup;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
@@ -154,8 +152,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command resetYesCmd;
     private Command resetNoCmd;
     private Command updateYesCmd;
-    private Alert updateConfirm;
-    private Alert resetConfirm;
+    private TextPage updateConfirm;
+    private TextPage resetConfirm;
 
     private static final int ACT_READ = 0;
     private static final int ACT_SHORTEN = 1;
@@ -302,13 +300,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     /**
-     * Setup complete: a short note that closes by itself (no "Dismiss"
-     * needed), then the chat, whose own screen says how to write.
+     * Setup complete: the chat, with a short note over it that goes by
+     * itself; the chat's own screen says how to write.
      */
     void setupDone(String message) {
-        Alert a = new Alert(null, message, null, AlertType.CONFIRMATION);
-        a.setTimeout(1800);
-        display.setCurrent(a, chat);
+        display.setCurrent(chat);
+        chat.toast(message);
     }
 
     void setupFinished(String message) {
@@ -592,11 +589,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         if (v.length() == 0) {
             return;
         }
-        updateConfirm = new Alert(L.s("Güncelle", "Update"), L.s("AIKON " + v + " indirilecek. Telefon kurulumu soracak "
+        updateConfirm = TextPage.message(L.s("Güncelle", "Update"), L.s("AIKON " + v + " indirilecek. Telefon kurulumu soracak "
                 + "ve AIKON kapanacak; ayarların ve eşleşmen korunur.",
                 "AIKON " + v + " will be downloaded. The phone asks to install it and AIKON closes; your settings "
-                + "and pairing are kept."), null, AlertType.CONFIRMATION);
-        updateConfirm.setTimeout(Alert.FOREVER);
+                + "and pairing are kept."));
         updateConfirm.addCommand(updateYesCmd);
         updateConfirm.addCommand(resetNoCmd);
         updateConfirm.setCommandListener(this);
@@ -967,16 +963,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     void info(String text, Displayable next) {
-        Alert a = new Alert("AIKON", text, null, AlertType.INFO);
-        a.setTimeout(Alert.FOREVER);
-        display.setCurrent(a, next);
+        TextPage.notice(display, "AIKON", text, next);
     }
 
     /** The explanation behind a one-line note, titled with the note itself. */
     void showNote(String title, String text, Displayable next) {
-        Alert a = new Alert(title, text, null, AlertType.INFO);
-        a.setTimeout(Alert.FOREVER);
-        display.setCurrent(a, next);
+        TextPage.notice(display, title, text, next);
     }
 
     /** True if chat can be used; otherwise explains what is missing. */
@@ -1046,12 +1038,11 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             } else if (c == dataCmd) {
                 showDataUsage();
             } else if (c == resetSetupCmd) {
-                resetConfirm = new Alert(L.s("Kurulumu sıfırla", "Reset setup"), L.s(
+                resetConfirm = TextPage.message(L.s("Kurulumu sıfırla", "Reset setup"), L.s(
                         "Sunucu adresi, eşleştirme ve notların bu telefondan ve yedek dosyasından silinsin mi? "
                                 + "Sonra kurulum sihirbazı açılır.",
                         "Delete the server address, pairing and your notes from this phone and from the backup "
-                                + "file? The setup wizard opens next."), null, AlertType.WARNING);
-                resetConfirm.setTimeout(Alert.FOREVER);
+                                + "file? The setup wizard opens next."));
                 resetConfirm.addCommand(resetYesCmd);
                 resetConfirm.addCommand(resetNoCmd);
                 resetConfirm.setCommandListener(this);

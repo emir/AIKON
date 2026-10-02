@@ -3,6 +3,10 @@ package io.github.emir.claudes40;
 import java.util.Vector;
 
 import javax.microedition.lcdui.Canvas;
+import javax.microedition.lcdui.Command;
+import javax.microedition.lcdui.CommandListener;
+import javax.microedition.lcdui.Display;
+import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Graphics;
 
@@ -29,6 +33,26 @@ final class TextPage extends Canvas {
         boolean big;
         int value = -1; // a progress bar when >= 0
         int max;
+    }
+
+    /** A page with one text: a question for Yes/No commands, or a message. */
+    static TextPage message(String title, String text) {
+        TextPage p = new TextPage(title);
+        p.append(null, text);
+        return p;
+    }
+
+    /** A message with "Tamam" (OK) that returns to next; in place of an Alert. */
+    static void notice(final Display display, String title, String text, final Displayable next) {
+        TextPage p = message(title, text);
+        final Command ok = new Command(L.s("Tamam", "OK"), Command.OK, 1);
+        p.addCommand(ok);
+        p.setCommandListener(new CommandListener() {
+            public void commandAction(Command c, Displayable d) {
+                display.setCurrent(next);
+            }
+        });
+        display.setCurrent(p);
     }
 
     TextPage(String title) {

@@ -28,6 +28,7 @@ final class RowList extends Canvas {
     private String title;
     private final Vector rows = new Vector();
     private int selected = -1;
+    private int items;
     private int scroll;
     private CommandListener listener;
     private Command selectCommand;
@@ -37,6 +38,8 @@ final class RowList extends Canvas {
         String title;
         String sub;
         String note;
+        boolean section;
+        int item; // the row's place among the selectable rows
         int icon = -1;
         int flags;
     }
@@ -86,6 +89,7 @@ final class RowList extends Canvas {
 
     synchronized void deleteAll() {
         rows.removeAllElements();
+        items = 0;
         selected = -1;
         scroll = 0;
         repaint();
@@ -99,9 +103,19 @@ final class RowList extends Canvas {
         repaint();
     }
 
+    /** A small heading over the rows that follow (not selectable). */
+    synchronized void section(String text) {
+        Row r = new Row();
+        r.note = text;
+        r.section = true;
+        rows.addElement(r);
+        repaint();
+    }
+
     /** Adds a row; icon is an Icons id or -1. Returns its index. */
     synchronized int add(String title, String sub, int icon, int flags) {
         Row r = new Row();
+        r.item = items++;
         r.title = title;
         r.sub = sub != null && sub.length() > 0 ? sub : null;
         r.icon = icon;
@@ -121,6 +135,11 @@ final class RowList extends Canvas {
     /** The selected row's index, or -1 (nothing selectable). */
     synchronized int getSelectedIndex() {
         return selected;
+    }
+
+    /** The selected row's place among the selectable rows (notes and headings not counted), or -1. */
+    synchronized int getSelectedItem() {
+        return selected < 0 ? -1 : ((Row) rows.elementAt(selected)).item;
     }
 
     synchronized void setSelectedIndex(int i, boolean on) {
@@ -193,6 +212,9 @@ final class RowList extends Canvas {
     private int rowH(Row r, int w) {
         Font f = Theme.font;
         Font sm = Theme.small;
+        if (r.section) {
+            return sm.getHeight() + 10;
+        }
         if (r.title == null) {
             Vector lines = new Vector();
             Text.wrap(r.note, sm, w - 4 * MARGIN, lines);
@@ -244,6 +266,12 @@ final class RowList extends Canvas {
                 continue;
             }
             Row r = (Row) rows.elementAt(i);
+            if (r.section) {
+                g.setFont(sm);
+                g.setColor(Theme.muted);
+                g.drawString(Text.fit(r.note, sm, w - 2 * MARGIN - 8), MARGIN + 6, y + 8, Graphics.TOP | Graphics.LEFT);
+                continue;
+            }
             if (r.title == null) {
                 Vector lines = new Vector();
                 Text.wrap(r.note, sm, w - 4 * MARGIN, lines);

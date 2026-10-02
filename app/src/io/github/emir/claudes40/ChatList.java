@@ -2,8 +2,6 @@ package io.github.emir.claudes40;
 
 import java.util.Vector;
 
-import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -40,7 +38,7 @@ final class ChatList implements CommandListener, Runnable {
     private final Command yesCmd = new Command(L.s("Sil", "Delete"), Command.OK, 1);
     private final Command noCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
     private TextBox searchBox;
-    private Alert confirm;
+    private TextPage confirm;
 
     /** Conversation ids and pinned flags (Boolean) in list order; empty while loading or on error. */
     private final Vector ids = new Vector();
@@ -184,9 +182,18 @@ final class ChatList implements CommandListener, Runnable {
                     : L.s("Henüz sohbet yok. Sohbetler sunucuda 30 gün kalır, sabitlenenler kaldırılana kadar.",
                             "No chats yet. The server keeps chats for 30 days, pinned ones until unpinned."));
         }
+        boolean anyPinned = false;
+        for (int i = 0; i < pinned.size(); i++) {
+            anyPinned |= ((Boolean) pinned.elementAt(i)).booleanValue();
+        }
+        boolean lastPinned = false;
         for (int i = 0; i < titles.size(); i++) {
             String[] t = (String[]) titles.elementAt(i);
             boolean p = ((Boolean) pinned.elementAt(i)).booleanValue();
+            if (anyPinned && !search && (i == 0 || p != lastPinned)) {
+                list.section(p ? L.s("Sabitlenenler", "Pinned") : L.s("Son sohbetler", "Recent"));
+            }
+            lastPinned = p;
             list.add(t[0], t[1], p ? Icons.PIN : Icons.CHAT, p ? RowList.ACCENT : 0);
         }
         if (actionError != null) {
@@ -242,7 +249,7 @@ final class ChatList implements CommandListener, Runnable {
 
     /** {id, "1"/"0" pinned} of the selected row, or null. */
     private synchronized String[] selected() {
-        int i = list.getSelectedIndex();
+        int i = list.getSelectedItem();
         if (loading || i < 0 || i >= ids.size()) {
             return null;
         }
@@ -305,9 +312,8 @@ final class ChatList implements CommandListener, Runnable {
             synchronized (this) {
                 jobId = sel[0];
             }
-            confirm = new Alert(L.s("Sohbeti sil", "Delete chat"), L.s("Bu sohbet sunucudan silinsin mi? Geri alınamaz.",
-                    "Delete this chat from the server? This cannot be undone."), null, AlertType.WARNING);
-            confirm.setTimeout(Alert.FOREVER);
+            confirm = TextPage.message(L.s("Sohbeti sil", "Delete chat"), L.s("Bu sohbet sunucudan silinsin mi? Geri alınamaz.",
+                    "Delete this chat from the server? This cannot be undone."));
             confirm.addCommand(yesCmd);
             confirm.addCommand(noCmd);
             confirm.setCommandListener(this);

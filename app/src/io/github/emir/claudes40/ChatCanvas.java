@@ -344,7 +344,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     /** A short note over the bottom of the screen for TOAST_MS. */
-    private void toast(String text) {
+    void toast(String text) {
         synchronized (this) {
             toast = text;
             toastUntil = System.currentTimeMillis() + TOAST_MS;

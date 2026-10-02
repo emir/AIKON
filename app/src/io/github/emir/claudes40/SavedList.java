@@ -3,8 +3,6 @@ package io.github.emir.claudes40;
 import java.io.IOException;
 import java.util.Vector;
 
-import javax.microedition.lcdui.Alert;
-import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
@@ -29,7 +27,7 @@ final class SavedList implements CommandListener, Runnable {
     private final Command yesCmd = new Command(L.s("Sil", "Delete"), Command.OK, 1);
     private final Command noCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
     private TextPage viewer;
-    private Alert confirm;
+    private TextPage confirm;
 
     /** File names in list order. */
     private final Vector files = new Vector();
@@ -227,9 +225,8 @@ final class SavedList implements CommandListener, Runnable {
             synchronized (this) {
                 jobFile = f;
             }
-            confirm = new Alert(L.s("Sil", "Delete"), L.s("Bu kayıt telefondan silinsin mi?\n", "Delete this file from the phone?\n")
-                    + label(f), null, AlertType.WARNING);
-            confirm.setTimeout(Alert.FOREVER);
+            confirm = TextPage.message(L.s("Sil", "Delete"), L.s("Bu kayıt telefondan silinsin mi?\n", "Delete this file from the phone?\n")
+                    + label(f));
             confirm.addCommand(yesCmd);
             confirm.addCommand(noCmd);
             confirm.setCommandListener(this);
