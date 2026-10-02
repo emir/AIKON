@@ -206,12 +206,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         formBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         pairCmd = new Command(L.s("Cihazı eşleştir", "Pair this phone"), Command.SCREEN, 2);
         creditsCmd = new Command(L.s("Kredi", "Credits"), Command.SCREEN, 2);
-        wizardCmd = new Command(L.s("Kurulum sihirbazı", "Setup wizard"), Command.SCREEN, 3);
+        wizardCmd = new Command(L.s("Kurulum sihirbazı", "Setup wizard"), Command.SCREEN, 4);
         jingleCmd = new Command(L.s("Melodiyi çal", "Play the jingle"), Command.SCREEN, 2);
         splashCmd = new Command(L.s("Açılışı izle", "Replay the intro"), Command.SCREEN, 3);
         promptsBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
         listBackCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-        dataCmd = new Command(L.s("Veri kullanımı", "Data usage"), Command.SCREEN, 4);
+        dataCmd = new Command(L.s("Veri kullanımı", "Data usage"), Command.SCREEN, 3);
         resetSetupCmd = new Command(L.s("Kurulumu sıfırla", "Reset setup"), Command.SCREEN, 5);
         resetYesCmd = new Command(L.s("Sıfırla", "Reset"), Command.OK, 1);
         resetNoCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
@@ -813,7 +813,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             v.addElement(new Integer(ACT_CALENDAR)); // Claude prepared an entry: offer it first
         }
         if (reply) {
-            int[] rewording = { ACT_READ, ACT_SHORTEN, ACT_SIMPLER, ACT_TO_TR, ACT_TO_EN, ACT_ASK };
+            int[] rewording = { ACT_ASK, ACT_SHORTEN, ACT_SIMPLER, ACT_TO_TR, ACT_TO_EN, ACT_READ };
             for (int i = 0; i < rewording.length; i++) {
                 v.addElement(new Integer(rewording[i]));
             }
@@ -1147,15 +1147,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     L.s("Son sohbeti telefonda sakla", "Keep last chat on phone") }, null);
         claudeChoice.setSelectedIndex(0, settings.webSearch);
         claudeChoice.setSelectedIndex(1, settings.saveChat);
-        settingsForm.append(langChoice);
-        settingsForm.append(themeChoice);
-        settingsForm.append(sizeChoice);
-        settingsForm.append(feedbackChoice);
-        settingsForm.append(lightChoice);
-        settingsForm.append(claudeChoice);
         notesField = new TextField(L.s("Yapay zekâ için notların", "Your notes for the AI"), settings.instructions,
                 Settings.MAX_INSTRUCTIONS, TextField.ANY);
+        // most changed first; server and test mode last
+        settingsForm.append(sizeChoice);
+        settingsForm.append(themeChoice);
+        settingsForm.append(claudeChoice);
         settingsForm.append(notesField);
+        settingsForm.append(feedbackChoice);
+        settingsForm.append(lightChoice);
+        settingsForm.append(langChoice);
         settingsForm.append(urlField);
         settingsForm.append(tokenField);
         settingsForm.append(new StringItem(L.s("Bağlantı testi", "Connection test"), settings.connectionVerified()
@@ -1167,8 +1168,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             settingsForm.addCommand(creditsCmd);
         }
         settingsForm.addCommand(pairCmd);
-        settingsForm.addCommand(wizardCmd);
         settingsForm.addCommand(dataCmd);
+        settingsForm.addCommand(wizardCmd);
         settingsForm.addCommand(resetSetupCmd);
         settingsForm.addCommand(formBackCmd);
         settingsForm.setCommandListener(this);

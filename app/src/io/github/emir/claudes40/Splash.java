@@ -88,7 +88,7 @@ final class Splash extends Canvas {
         int ww = Math.min(w * 72 / 100, h * 3 / 4);
         int wh = Wordmark.height(ww);
         int x0 = (w - ww) / 2;
-        int y0 = h * 42 / 100 - wh / 2;
+        int y0 = (h - wh) / 2;
         int t = Math.min(256, frame * 256 / 12);
         int shown = ww * (256 * 256 - (256 - t) * (256 - t)) / (256 * 256); // eases out
         if (shown > 0) {

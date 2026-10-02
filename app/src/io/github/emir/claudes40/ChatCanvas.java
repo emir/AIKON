@@ -57,24 +57,25 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private final ChatSession session;
 
     final Command writeCmd = new Command(L.s("Yaz", "Write"), Command.SCREEN, 1);
-    final Command dictateCmd = new Command(L.s("Sesle yaz", "Dictate"), Command.SCREEN, 1);
-    final Command photoCmd = new Command(L.s("Fotoğraf ekle", "Add a photo"), Command.SCREEN, 1);
+    final Command dictateCmd = new Command(L.s("Sesle yaz", "Dictate"), Command.SCREEN, 2);
+    final Command photoCmd = new Command(L.s("Fotoğraf ekle", "Add a photo"), Command.SCREEN, 2);
     final Command moreCmd = new Command(L.s("Devamını göster", "Show the rest"), Command.SCREEN, 1);
-    final Command readCmd = new Command(L.s("Okuma modu", "Reading mode"), Command.SCREEN, 2);
-    final Command promptsCmd = new Command(L.s("Hızlı sorular", "Quick prompts"), Command.SCREEN, 2);
-    final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.SCREEN, 3);
+    final Command readCmd = new Command(L.s("Okuma modu", "Reading mode"), Command.SCREEN, 5);
+    final Command promptsCmd = new Command(L.s("Hızlı sorular", "Quick prompts"), Command.SCREEN, 4);
+    final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.SCREEN, 1);
     final Command chatsCmd = new Command(L.s("Sohbetler", "Chats"), Command.SCREEN, 4);
-    final Command newCmd = new Command(L.s("Yeni sohbet", "New chat"), Command.SCREEN, 4);
-    final Command modelCmd = new Command(L.s("Model", "Model"), Command.SCREEN, 4);
-    final Command deleteCmd = new Command(L.s("Sohbeti sil", "Delete chat"), Command.SCREEN, 5);
+    final Command newCmd = new Command(L.s("Yeni sohbet", "New chat"), Command.SCREEN, 3);
+    final Command modelCmd = new Command(L.s("Model", "Model"), Command.SCREEN, 3);
+    final Command deleteCmd = new Command(L.s("Sohbeti sil", "Delete chat"), Command.SCREEN, 7);
     final Command keysCmd = new Command(L.s("Kısayollar", "Shortcuts"), Command.SCREEN, 6);
     final Command actionsCmd = new Command(L.s("Mesaj işlemleri", "Message actions"), Command.SCREEN, 1);
     final Command backCmd = new Command(L.s("Menü", "Menu"), Command.BACK, 1);
     final Command closeCmd = new Command(L.s("Kapat", "Close"), Command.BACK, 1);
 
     /** Commands in the order they are added (the phone lists them in this order). */
-    private final Command[] all = { actionsCmd, writeCmd, dictateCmd, photoCmd, moreCmd, readCmd, promptsCmd, retryCmd, chatsCmd, newCmd, modelCmd, deleteCmd,
-        keysCmd, backCmd, closeCmd };
+    // Options order: priority, then this order (most used first, deleting last)
+    private final Command[] all = { actionsCmd, writeCmd, moreCmd, retryCmd, dictateCmd, photoCmd, newCmd, modelCmd, promptsCmd,
+        chatsCmd, readCmd, keysCmd, deleteCmd, backCmd, closeCmd };
     private final boolean[] shown = new boolean[all.length];
 
     /** One laid-out message. */
@@ -1297,15 +1298,39 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         return true;
     }
 
-    /** Only the wordmark, a little above the middle (the header names the model, the status line the key). */
+    /** The wordmark with two twinkles, a greeting and who answers. */
     private void paintEmpty(Graphics g, int w, int top, int vh) {
-        int ww = Math.min(w * 60 / 100, vh * 3 / 2);
-        if (ww < 24) {
-            return;
+        int cx = w / 2;
+        Vector title = new Vector();
+        Text.wrap(L.s("Merhaba! Ne sormak istersin?", "Hi! What would you like to ask?"), Theme.bold, w - 4 * PAD, title);
+        Vector tips = new Vector();
+        Text.wrap(L.s("Yanıtlayan: " + session.ai(), "Answering: " + session.ai()), Theme.small, w - 4 * PAD, tips);
+        int textH = title.size() * Theme.bold.getHeight() + 4 + tips.size() * Theme.small.getHeight();
+        int ww = Math.min(w * 55 / 100, (vh - textH - 2 * PAD) * 3);
+        int wh = ww >= 24 ? Wordmark.height(ww) : 0;
+        int gap = wh > 0 ? Math.max(10, wh * 2 / 3) : 0;
+        int y = top + Math.max(PAD, (vh - wh - gap - textH) * 2 / 5);
+        int bottom = top + vh;
+        if (wh > 0) {
+            int x0 = cx - ww / 2;
+            g.drawImage(Wordmark.get(ww, Theme.accent), x0, y, Graphics.TOP | Graphics.LEFT);
+            Logo.sparkle(g, x0 + ww + wh / 4, y - wh / 5, 3 + wh / 8, Theme.accent);
+            Logo.sparkle(g, x0 - wh / 5, y + wh + wh / 6, 1 + wh / 10, Theme.accent);
+            y += wh + gap;
         }
-        int wh = Wordmark.height(ww);
-        g.drawImage(Wordmark.get(ww, Theme.accent), (w - ww) / 2, top + Math.max(0, (vh - wh) * 2 / 5),
-                Graphics.TOP | Graphics.LEFT);
+        g.setFont(Theme.bold);
+        g.setColor(Theme.ink);
+        for (int i = 0; i < title.size() && y + Theme.bold.getHeight() <= bottom; i++) {
+            g.drawString((String) title.elementAt(i), cx, y, Graphics.TOP | Graphics.HCENTER);
+            y += Theme.bold.getHeight();
+        }
+        y += 4;
+        g.setFont(Theme.small);
+        g.setColor(Theme.muted);
+        for (int i = 0; i < tips.size() && y + Theme.small.getHeight() <= bottom; i++) {
+            g.drawString((String) tips.elementAt(i), cx, y, Graphics.TOP | Graphics.HCENTER);
+            y += Theme.small.getHeight();
+        }
     }
 
     private void paintHeader(Graphics g, int w) {

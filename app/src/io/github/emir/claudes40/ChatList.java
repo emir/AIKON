@@ -35,9 +35,9 @@ final class ChatList implements CommandListener, Runnable {
     private final Command openCmd = new Command(L.s("Aç", "Open"), Command.OK, 1);
     private final Command searchCmd = new Command(L.s("Sohbetlerde ara", "Search chats"), Command.SCREEN, 2);
     private final Command pinCmd = new Command(L.s("Sabitle / kaldır", "Pin / unpin"), Command.SCREEN, 3);
-    private final Command deleteCmd = new Command(L.s("Sil", "Delete"), Command.SCREEN, 4);
+    private final Command deleteCmd = new Command(L.s("Sil", "Delete"), Command.SCREEN, 5);
     private final Command allCmd = new Command(L.s("Tüm sohbetler", "All chats"), Command.SCREEN, 2);
-    private final Command refreshCmd = new Command(L.s("Yenile", "Refresh"), Command.SCREEN, 5);
+    private final Command refreshCmd = new Command(L.s("Yenile", "Refresh"), Command.SCREEN, 4);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command findCmd = new Command(L.s("Ara", "Search"), Command.OK, 1);
     private final Command yesCmd = new Command(L.s("Sil", "Delete"), Command.OK, 1);
