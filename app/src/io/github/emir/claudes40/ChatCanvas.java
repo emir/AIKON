@@ -1146,22 +1146,16 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 g.setColor(fill);
                 g.fillRoundRect(x, y, b.bw, b.h, ARC, ARC);
             } else if (b.uid == sel && sel != 0) {
-                // a selected reply: a soft panel with the accent bar, as in the lists
+                // a selected reply: a soft panel, as in the lists
                 fill = Theme.selection;
                 g.setColor(fill);
-                g.fillRoundRect(x, y, b.bw, b.h, 12, 12);
-                g.setColor(Theme.accent);
-                g.fillRoundRect(x, y, 4, b.h, 4, 4);
+                g.fillRoundRect(x, y, b.bw, b.h, 10, 10);
             }
             int ty = y + BUBBLE_PAD;
             int mx = x + BUBBLE_PAD;
-            if (b.kind == ChatSession.KIND_CLAUDE) {
-                Logo.draw(g, mx + 4, ty + sm.getHeight() / 2, 10, 100, Logo.ALL);
-                mx += 12;
-            }
             g.setFont(sm);
             g.setColor(mine ? Theme.mix(Theme.accentInk, fill, 80)
-                    : b.kind == ChatSession.KIND_TEST ? Theme.testBar : Theme.accent);
+                    : b.kind == ChatSession.KIND_TEST ? Theme.testBar : Theme.muted);
             g.drawString(Text.fit(b.meta, sm, x + b.bw - BUBBLE_PAD - mx), mx, ty, Graphics.TOP | Graphics.LEFT);
             g.setFont(f);
             g.setColor(text);
@@ -1302,16 +1296,16 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     /**
-     * The wordmark with two twinkles, a greeting and who answers, centred
+     * The wordmark in a quiet tone, the model and the key to write, centred
      * between the header and the status line, but below the first used
      * pixels (one-line notes at the top).
      */
     private void paintEmpty(Graphics g, int w, int top, int vh, int used) {
         int cx = w / 2;
         Vector title = new Vector();
-        Text.wrap(L.s("Merhaba! Ne sormak istersin?", "Hi! What would you like to ask?"), Theme.bold, w - 4 * PAD, title);
+        Text.wrap(session.ai(), Theme.bold, w - 4 * PAD, title);
         Vector tips = new Vector();
-        Text.wrap(L.s("Yanıtlayan: " + session.ai(), "Answering: " + session.ai()), Theme.small, w - 4 * PAD, tips);
+        Text.wrap(L.s("Yazmak için orta tuş", "Centre key to write"), Theme.small, w - 4 * PAD, tips);
         int textH = title.size() * Theme.bold.getHeight() + 4 + tips.size() * Theme.small.getHeight();
         int ww = Math.min(w * 55 / 100, (vh - used - textH - 2 * PAD) * 3);
         int wh = ww >= 24 ? Wordmark.height(ww) : 0;
@@ -1320,9 +1314,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         int bottom = top + vh;
         if (wh > 0) {
             int x0 = cx - ww / 2;
-            g.drawImage(Wordmark.get(ww, Theme.accent), x0, y, Graphics.TOP | Graphics.LEFT);
-            Logo.sparkle(g, x0 + ww + wh / 4, y - wh / 5, 3 + wh / 8, Theme.accent);
-            Logo.sparkle(g, x0 - wh / 5, y + wh + wh / 6, 1 + wh / 10, Theme.accent);
+            g.drawImage(Wordmark.get(ww, Theme.mix(Theme.bg, Theme.ink, 48)), x0, y, Graphics.TOP | Graphics.LEFT);
             y += wh + gap;
         }
         g.setFont(Theme.bold);
@@ -1343,8 +1335,10 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private void paintHeader(Graphics g, int w) {
         int bh = barH();
         boolean test = midlet.settings.testMode;
-        g.setColor(test ? Theme.testBar : Theme.bar);
+        g.setColor(Theme.bg);
         g.fillRect(0, 0, w, bh);
+        g.setColor(Theme.border);
+        g.drawLine(0, bh - 1, w, bh - 1);
         Logo.draw(g, PAD + bh / 2 - 2, bh / 2, bh - 6, 100, Logo.ALL);
         int right = w - PAD;
         String rem = session.remaining();
@@ -1353,53 +1347,43 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
             String pill = test ? "TEST" : rem + L.s(" hak", " left");
             int pw = Theme.small.stringWidth(pill) + 10;
             int ph = Theme.small.getHeight() + 2;
-            g.setColor(test ? Theme.barInk : Theme.accent);
+            g.setColor(test ? Theme.testBar : Theme.selection);
             g.fillRoundRect(w - PAD - pw, (bh - ph) / 2, pw, ph, ph, ph);
-            g.setColor(test ? Theme.testBar : Theme.accentInk);
+            g.setColor(test ? 0xFFFFFF : Theme.accent);
             g.drawString(pill, w - PAD - pw / 2, (bh - ph) / 2 + 1, Graphics.TOP | Graphics.HCENTER);
             right -= pw + 4;
         }
         // the chat's model, with a chevron: Options > Model changes it
         g.setFont(Theme.bold);
-        g.setColor(Theme.barInk);
+        g.setColor(Theme.ink);
         int tx = PAD + bh + 2;
         int cw = 9;
         String name = Text.fit(session.ai(), Theme.bold, right - tx - cw - 4);
         g.drawString(name, tx, 4, Graphics.TOP | Graphics.LEFT);
         int cx = tx + Theme.bold.stringWidth(name) + 4;
         int cy = bh / 2;
-        g.setColor(Theme.mix(Theme.barInk, test ? Theme.testBar : Theme.bar, 120));
+        g.setColor(Theme.muted);
         g.fillTriangle(cx, cy - 2, cx + cw - 1, cy - 2, cx + cw / 2, cy + 3);
     }
 
     private void paintStatus(Graphics g, int w, int h, int vh) {
-        // an input pill: what the centre key does, or the status; a send mark at the right
+        // a quiet input field: what the centre key does, or the status
         int sh = statusH();
         g.setColor(Theme.bg);
         g.fillRect(0, h - sh, w, sh);
         int ph = sh - 6;
         int py = h - sh + 2;
-        g.setColor(Theme.border);
-        g.fillRoundRect(PAD - 1, py - 1, w - 2 * PAD + 2, ph + 2, ph + 2, ph + 2);
         g.setColor(Theme.surface);
-        g.fillRoundRect(PAD, py, w - 2 * PAD, ph, ph, ph);
-        int d = ph - 6;
-        int dx = w - PAD - 3 - d;
-        g.setColor(Theme.accent);
-        g.fillArc(dx, py + 3, d, d, 0, 360);
-        int ax = dx + d / 2;
-        int ay = py + 3 + d / 2;
-        int a = Math.max(3, d / 4);
-        g.setColor(Theme.accentInk);
-        g.fillTriangle(ax, ay - a - 1, ax - a - 1, ay, ax + a + 1, ay);
-        g.fillRect(ax - 1, ay, 2, a + 1);
+        g.fillRoundRect(PAD, py, w - 2 * PAD, ph, 8, 8);
+        g.setColor(Theme.border);
+        g.drawRoundRect(PAD, py, w - 2 * PAD - 1, ph - 1, 8, 8);
         String st = session.status();
         String hint = hint(vh);
         boolean ready = st.length() == 0 && hint == READY;
         g.setFont(Theme.small);
         g.setColor(st.length() > 0 ? Theme.accent : Theme.muted);
-        String t = st.length() > 0 ? st : ready ? L.s("Bir şey sor...", "Ask anything...") : hint;
-        g.drawString(Text.fit(t, Theme.small, dx - 2 * PAD - 8), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
+        String t = st.length() > 0 ? st : ready ? L.s("Mesaj yaz", "Write a message") : hint;
+        g.drawString(Text.fit(t, Theme.small, w - 4 * PAD), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
                 Graphics.TOP | Graphics.LEFT);
     }
 

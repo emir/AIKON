@@ -7,8 +7,8 @@ import javax.microedition.lcdui.Canvas;
 import javax.microedition.lcdui.Graphics;
 
 /**
- * Start-up screen: the AIKON wordmark is wiped in and twinkles, loading
- * dots below, the jingle plays once. About 2.4 s; any key skips. Full screen, all sizes
+ * Start-up screen: the AIKON wordmark is wiped in, a hairline under it
+ * fills up, the jingle plays once. About 2.4 s; any key skips. Full screen, all sizes
  * derived from getWidth()/getHeight().
  */
 final class Splash extends Canvas {
@@ -84,7 +84,7 @@ final class Splash extends Canvas {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        // the wordmark is wiped in from the left, then two twinkles
+        // the wordmark is wiped in from the left; a hairline under it fills up
         int ww = Math.min(w * 72 / 100, h * 3 / 4);
         int wh = Wordmark.height(ww);
         int x0 = (w - ww) / 2;
@@ -96,19 +96,12 @@ final class Splash extends Canvas {
             g.drawImage(Wordmark.get(ww, Theme.accent), x0, y0, Graphics.TOP | Graphics.LEFT);
             g.setClip(0, 0, w, h);
         }
-        if (frame > 12) {
-            int tw = (frame % 6 < 3) ? 4 : 2;
-            Logo.sparkle(g, x0 + ww + wh / 4, y0 - wh / 4, tw + wh / 8, Theme.accent);
-            Logo.sparkle(g, x0 - wh / 5, y0 + wh + wh / 5, (6 - tw) + wh / 10, Theme.accent);
-        }
-        int cx = w / 2;
-
-        // loading dots
-        int dots = (frame / 3) % 4;
-        int dy = h - Theme.small.getHeight() * 3;
-        for (int i = 0; i < 3; i++) {
-            g.setColor(i < dots ? Theme.accent : Theme.border);
-            g.fillArc(cx - 14 + i * 12, dy, 6, 6, 0, 360);
-        }
+        int ly = y0 + wh + Math.max(10, wh / 2);
+        int lw = ww / 3;
+        int lx = (w - lw) / 2;
+        g.setColor(Theme.border);
+        g.fillRect(lx, ly, lw, 2);
+        g.setColor(Theme.accent);
+        g.fillRect(lx, ly, lw * Math.min(frame, FRAMES) / FRAMES, 2);
     }
 }

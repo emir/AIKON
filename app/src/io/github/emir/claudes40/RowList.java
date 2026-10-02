@@ -180,10 +180,12 @@ final class RowList extends Canvas {
 
     static void paintBar(Graphics g, int w, String title) {
         int hh = barH();
-        g.setColor(Theme.bar);
+        g.setColor(Theme.bg);
         g.fillRect(0, 0, w, hh);
+        g.setColor(Theme.border);
+        g.drawLine(0, hh - 1, w, hh - 1);
         g.setFont(Theme.bold);
-        g.setColor(Theme.barInk);
+        g.setColor(Theme.ink);
         g.drawString(Text.fit(title == null ? "" : title, Theme.bold, w - 2 * MARGIN - 4), MARGIN + 4,
                 (hh - Theme.bold.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
     }
@@ -255,9 +257,7 @@ final class RowList extends Canvas {
             boolean sel = i == selected;
             if (sel) {
                 g.setColor(Theme.selection);
-                g.fillRoundRect(MARGIN / 2, y + 1, w - MARGIN, rh - 2, 12, 12);
-                g.setColor(Theme.accent);
-                g.fillRoundRect(MARGIN / 2, y + 1, 4, rh - 2, 4, 4);
+                g.fillRoundRect(MARGIN / 2, y + 1, w - MARGIN, rh - 2, 10, 10);
             }
             int x = MARGIN + 6;
             if (icons) {

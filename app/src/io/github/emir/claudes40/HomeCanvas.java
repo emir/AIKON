@@ -120,18 +120,18 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        // header: spark + title + status line
+        // header: mark + title + status line, on the page colour above a hairline
         int headH = Math.max(f.getHeight() + sm.getHeight() + 10, 40);
-        g.setColor(Theme.bar);
-        g.fillRect(0, 0, w, headH);
+        g.setColor(Theme.border);
+        g.drawLine(0, headH - 1, w, headH - 1);
         int ls = headH - 12;
         Logo.draw(g, MARGIN + ls / 2 + 2, headH / 2, ls, 100, Logo.ALL);
         int tx = MARGIN + ls + 10;
-        g.setColor(Theme.barInk);
+        g.setColor(Theme.ink);
         g.setFont(f);
         g.drawString("AIKON", tx, 5, Graphics.TOP | Graphics.LEFT);
         g.setFont(sm);
-        g.setColor(Theme.mix(Theme.barInk, Theme.bar, 90));
+        g.setColor(Theme.muted);
         g.drawString(Text.fit(midlet.homeStatus(), sm, w - tx - MARGIN), tx, 5 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
 
         // rows
@@ -155,9 +155,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
             boolean sel = i == selected;
             if (sel) {
                 g.setColor(Theme.selection);
-                g.fillRoundRect(MARGIN / 2, y + 1, w - MARGIN, rowH - 2, 12, 12);
-                g.setColor(Theme.accent);
-                g.fillRoundRect(MARGIN / 2, y + 1, 4, rowH - 2, 4, 4);
+                g.fillRoundRect(MARGIN / 2, y + 1, w - MARGIN, rowH - 2, 10, 10);
             }
             int ic = compact ? rowH - 6 : rowH - 12; // the icons need about 20 px
             icon(g, ORDER[i], MARGIN + 4 + ic / 2, y + rowH / 2, ic, sel);

@@ -27,7 +27,7 @@ final class Icons {
     static final int BOOK = 12;
     static final int CALENDAR = 13;
     static final int SHORT = 14;
-    static final int SPARK = 15;
+    static final int BULB = 15;
     static final int RESEND = 16;
     static final int SEARCH = 17;
 
@@ -81,8 +81,9 @@ final class Icons {
             RECT, 3, 5, 21, 21, 3, LINE, 2, 3, 10, 21, 10, LINE, 2, 8, 3, 8, 7, LINE, 2, 16, 3, 16, 7 },
         { // shorter: lines getting shorter
             LINE, 2, 4, 6, 20, 6, LINE, 2, 4, 12, 16, 12, LINE, 2, 4, 18, 11, 18 },
-        { // sparkle: simpler
-            LINE, 9, 12, 3, 14, 10, 21, 12, 14, 14, 12, 21, 10, 14, 3, 12, 10, 10, 12, 3 },
+        { // light bulb: explain more simply
+            ARC, 12, 9, 6, -50, 230, LINE, 2, 8, 14, 9, 17, LINE, 2, 16, 14, 15, 17,
+            LINE, 2, 9, 17, 15, 17, LINE, 2, 10, 21, 14, 21 },
         { // circular arrow: send again
             ARC, 12, 12, 8, 60, 360, LINE, 3, 15, 1, 16, 5, 20, 7 },
         { // magnifier: search

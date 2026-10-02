@@ -145,7 +145,7 @@ final class TextPage extends Canvas {
             Item it = (Item) items.elementAt(i);
             if (it.label != null && it.label.length() > 0) {
                 g.setFont(sm);
-                g.setColor(Theme.accent);
+                g.setColor(Theme.muted);
                 Vector ls = new Vector();
                 Text.wrap(it.label, sm, tw, ls);
                 for (int k = 0; k < ls.size(); k++) {

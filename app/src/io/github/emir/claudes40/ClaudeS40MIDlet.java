@@ -857,7 +857,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         case ACT_SHORTEN:
             return Icons.SHORT;
         case ACT_SIMPLER:
-            return Icons.SPARK;
+            return Icons.BULB;
         case ACT_TO_TR:
         case ACT_TO_EN:
             return Icons.GLOBE;

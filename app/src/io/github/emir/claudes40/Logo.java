@@ -108,17 +108,4 @@ final class Logo {
         g.fillArc(x, y + h - d - 1, d, d, 0, 360);
         g.fillArc(x + w - d - 1, y + h - d - 1, d, d, 0, 360);
     }
-
-    /** Small four-point sparkle, used as a decoration. */
-    static void sparkle(Graphics g, int cx, int cy, int r, int color) {
-        if (r < 1) {
-            return;
-        }
-        int t = Math.max(1, r / 4);
-        g.setColor(color);
-        g.fillTriangle(cx, cy - r, cx - t, cy, cx + t, cy);
-        g.fillTriangle(cx, cy + r, cx - t, cy, cx + t, cy);
-        g.fillTriangle(cx - r, cy, cx, cy - t, cx, cy + t);
-        g.fillTriangle(cx + r, cy, cx, cy - t, cx, cy + t);
-    }
 }
