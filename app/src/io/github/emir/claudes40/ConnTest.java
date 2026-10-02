@@ -34,6 +34,8 @@ final class ConnTest implements CommandListener, Runnable {
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command nextCmd = new Command(L.s("İleri", "Next"), Command.OK, 1);
     private boolean running;
+    /** Started by the wizard of a build that names its server: goes on by itself once it passed. */
+    private boolean auto;
     /** Commands shown now (they change with the state). */
     private Command[] shown = new Command[0];
     /** Technical details of the last run, for "Ayrıntılar". */
@@ -127,6 +129,13 @@ final class ConnTest implements CommandListener, Runnable {
         details.append(label).append(": ").append(text).append("\n\n");
     }
 
+    /** Tests at once; on success the wizard goes on (Setup.connected), on failure the checklist stays. */
+    void runAuto(Display d) {
+        auto = true;
+        d.setCurrent(form);
+        commandAction(startCmd, form);
+    }
+
     public void run() {
         try {
             test();
@@ -135,6 +144,12 @@ final class ConnTest implements CommandListener, Runnable {
                 running = false;
             }
             commands();
+        }
+        if (auto) {
+            auto = false;
+            if (setup != null && midlet.settings.connectionVerified()) {
+                setup.connected();
+            }
         }
     }
 
@@ -159,6 +174,7 @@ final class ConnTest implements CommandListener, Runnable {
             return;
         }
         S40Message hm = h.msg;
+        Updates.fromHealth(base, hm); // the newest app and the shop, known at once
         detail(L.s("Sunucu", "Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
                 + (hm.flag("mock") ? L.s(", TEST MODU (sahte yanıtlar)", ", TEST MODE (fake replies)") : ""));
         detail(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));

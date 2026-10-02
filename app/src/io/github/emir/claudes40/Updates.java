@@ -57,6 +57,33 @@ final class Updates implements Runnable {
         new Thread(new Updates(midlet)).start();
     }
 
+    /** Takes app-version, app-url and shop-url from a /health answer of `base` (connection test). */
+    static void fromHealth(String base, S40Message m) {
+        synchronized (Updates.class) {
+            load();
+            take(base, m);
+            save();
+        }
+    }
+
+    /** Called with the lock held; true if the offered version changed. */
+    private static boolean take(String base, S40Message m) {
+        String v = m.field("app-version");
+        String u = m.field("app-url");
+        if (!Net.isHttps(u)) {
+            v = "";
+            u = "";
+        }
+        String sh = m.field("shop-url");
+        boolean changed = !v.equals(latest);
+        server = base;
+        latest = v;
+        url = u;
+        shop = Net.isHttps(sh) ? sh : "";
+        checkedAt = System.currentTimeMillis();
+        return changed;
+    }
+
     public void run() {
         Settings s = midlet.settings;
         String base = s.url;
@@ -65,19 +92,7 @@ final class Updates implements Runnable {
         synchronized (Updates.class) {
             running = false;
             if (r.ok() && r.msg != null && "ok".equals(r.msg.field("status"))) {
-                String v = r.msg.field("app-version");
-                String u = r.msg.field("app-url");
-                String sh = r.msg.field("shop-url");
-                shop = Net.isHttps(sh) ? sh : "";
-                if (!Net.isHttps(u)) {
-                    v = "";
-                    u = "";
-                }
-                changed = !v.equals(latest);
-                server = base;
-                latest = v;
-                url = u;
-                checkedAt = System.currentTimeMillis();
+                changed = take(base, r.msg);
                 save();
             }
         }

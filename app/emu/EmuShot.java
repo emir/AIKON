@@ -103,6 +103,12 @@ public class EmuShot {
         }
         Thread.sleep(1200);
         save("setup_1_language");
+        // a build that names its server would test the connection next (network): the harness
+        // turns that two-step flow off and shows the address step instead
+        Field preset = Class.forName("io.github.emir.claudes40.Setup", true, midlet.getClass().getClassLoader())
+                .getDeclaredField("preset");
+        preset.setAccessible(true);
+        preset.setBoolean(null, false);
         select(tr ? 1 : 2);                   // centre key on the language: applies it, goes on
         save("setup_2_server");
         // set the language again for the rest of the run (harness)

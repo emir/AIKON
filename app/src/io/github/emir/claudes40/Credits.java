@@ -55,8 +55,9 @@ final class Credits implements CommandListener, Runnable {
     /** Pairing with a code (setup step or Settings > Pair this phone). */
     void showPair() {
         mode = PAIR;
+        String shop = midlet.shopLine();
         codeForm(setup != null ? Setup.title(Setup.STEPS - 1) : L.s("Kredi kodu", "Credit code"),
-                L.s("16 haneli kredi kodunu gir.", "Type the 16-digit credit code."));
+                L.s("16 haneli kredi kodunu gir.", "Type the 16-digit credit code.") + (shop.length() > 0 ? "\n\n" + shop : ""));
     }
 
     void showTopup() {
@@ -101,7 +102,7 @@ final class Credits implements CommandListener, Runnable {
             Help.show(midlet.display(), form.getTitle(), helpText(), form);
         } else if (c == backCmd) {
             if (setup != null) {
-                setup.show();
+                setup.pairingBack();
             } else if (mode == TOPUP) {
                 new Credits(midlet, null, back).showBalance();
             } else {

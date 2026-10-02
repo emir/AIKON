@@ -20,6 +20,12 @@ import javax.microedition.lcdui.TextField;
  * skipping sets setupDone. Each step shows one short line; the longer
  * explanation is behind "Bilgi" / "Info" (Help). Nothing here is sent anywhere except by the
  * existing connection test and pairing.
+ *
+ * A build that names its server (ClaudeS40-Gateway, e.g. the download from
+ * the server's site) still on that address shows two steps only: the
+ * language, then the pairing (the credit code form on a server that sells
+ * credits). The address step is skipped and the connection test runs by
+ * itself in between; only a failed test stays on screen.
  */
 final class Setup implements CommandListener {
 
@@ -27,6 +33,8 @@ final class Setup implements CommandListener {
 
     private final ClaudeS40MIDlet midlet;
     private int step;
+    /** The two-step flow of a build that names its server (see above). */
+    static boolean preset;
     private Form form;
     /** Step 1: the languages; the centre key picks one and goes on. */
     private RowList langList;
@@ -43,12 +51,18 @@ final class Setup implements CommandListener {
         this.midlet = midlet;
     }
 
-    /** "Kurulum 2/4" / "Setup 2/4" for step index 0..3. */
+    /** "Kurulum 2/4" / "Setup 2/4" for step index 0..3 ("1/2", "2/2" in the two-step flow). */
     static String title(int step) {
+        if (preset) {
+            return L.s("Kurulum ", "Setup ") + (step == 0 ? 1 : 2) + "/2";
+        }
         return L.s("Kurulum ", "Setup ") + (step + 1) + "/" + STEPS;
     }
 
     void start() {
+        Settings s = midlet.settings;
+        String gw = midlet.attr("ClaudeS40-Gateway").trim();
+        preset = Net.isHttps(gw) && gw.equals(s.url);
         step = 0;
         show();
     }
@@ -65,7 +79,16 @@ final class Setup implements CommandListener {
         helpCmd = Help.command();
         Settings s = midlet.settings;
         if (step == 2) {
-            new ConnTest(midlet, this).show(midlet.display());
+            if (preset) {
+                new ConnTest(midlet, this).runAuto(midlet.display());
+            } else {
+                new ConnTest(midlet, this).show(midlet.display());
+            }
+            return;
+        }
+        if (step == 3 && preset && s.credits && s.token.length() < 16) {
+            // straight to the credit code (Back returns to the language)
+            Credits.pair(midlet, this, midlet.display(), null);
             return;
         }
         if (step == 0) {
@@ -132,6 +155,14 @@ final class Setup implements CommandListener {
 
     /** The longer explanation of the current step. */
     private String helpText() {
+        if (step == 0 && preset) {
+            return L.s("Hoş geldin! İki adım: dil, sonra kredi kodu. Sunucu adresi bu sürümde hazır; bağlantı "
+                    + "arada kendiliğinden denenir.\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu "
+                    + "(sahte yanıtlar, ağ yok).",
+                    "Welcome! Two steps: the language, then your credit code. This build knows its server; the "
+                    + "connection is checked in between by itself.\n\nJust trying it out? Skip setup, then Settings > "
+                    + "Test mode (fake replies, no network).");
+        }
         if (step == 0) {
             return L.s("Hoş geldin! Telefonu dört adımda sunucuya bağlayalım. Dili seçip orta tuşa bas."
                     + "\n\nKurulum dört adım: dil, sunucu adresi, bağlantı testi, eşleştirme. Her adımda "
@@ -205,6 +236,15 @@ final class Setup implements CommandListener {
         if (step < STEPS - 1) {
             step++;
         }
+        if (preset && step == 1) {
+            step = 2; // the address is in the build
+        }
+        show();
+    }
+
+    /** The automatic connection test passed: on to the pairing. */
+    void connected() {
+        step = 3;
         show();
     }
 
@@ -212,7 +252,19 @@ final class Setup implements CommandListener {
         if (step > 0) {
             step--;
         }
+        if (preset) {
+            step = 0; // the hidden steps are not shown going back either
+        }
         show();
+    }
+
+    /** Back from the pairing or credit code screen. */
+    void pairingBack() {
+        if (preset && midlet.settings.credits) {
+            back();
+        } else {
+            show();
+        }
     }
 
     /** Pairing done, or already paired. */

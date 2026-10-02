@@ -1372,7 +1372,6 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.fillRect(0, 0, w, bh);
         g.setColor(Theme.border);
         g.drawLine(0, bh - 1, w, bh - 1);
-        Logo.draw(g, PAD + bh / 2 - 2, bh / 2, bh - 6, 100, Logo.ALL);
         int right = w - PAD;
         String rem = session.remaining();
         if (test || rem.length() > 0) {
@@ -1389,7 +1388,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         // the chat's model, with a chevron: Options > Model changes it
         g.setFont(Theme.bold);
         g.setColor(Theme.ink);
-        int tx = PAD + bh + 2;
+        int tx = PAD + 4;
         int cw = 9;
         String name = Text.fit(session.ai(), Theme.bold, right - tx - cw - 4);
         g.drawString(name, tx, 4, Graphics.TOP | Graphics.LEFT);
@@ -1417,7 +1416,14 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         boolean ready = st.length() == 0 && hint == READY;
         g.setFont(Theme.small);
         g.setColor(st.length() > 0 ? Theme.accent : Theme.muted);
-        String t = st.length() > 0 ? st : ready ? L.s("Mesaj yaz", "Write a message") : hint;
+        String draft = ready ? session.draft().trim() : "";
+        if (draft.length() > 0) {
+            int nl = draft.indexOf('\n');
+            draft = nl < 0 ? draft : draft.substring(0, nl);
+            g.setColor(Theme.ink); // the unsent text itself, with a quiet label
+        }
+        String t = st.length() > 0 ? st : draft.length() > 0 ? L.s("Taslak: ", "Draft: ") + draft
+                : ready ? L.s("Mesaj yaz", "Write a message") : hint;
         g.drawString(Text.fit(t, Theme.small, w - 4 * PAD), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
                 Graphics.TOP | Graphics.LEFT);
     }
