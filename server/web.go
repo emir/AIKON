@@ -249,33 +249,72 @@ func (w *webSide) appVersion() string {
 
 var versionRE = regexp.MustCompile(`^[0-9]{1,3}(\.[0-9]{1,3}){1,2}$`)
 
+// phoneLang: Turkish when the phone's browser asks for it first, else English.
+func phoneLang(r *http.Request) string {
+	first, _, _ := strings.Cut(r.Header.Get("Accept-Language"), ",")
+	first, _, _ = strings.Cut(strings.TrimSpace(first), ";")
+	if strings.HasPrefix(strings.ToLower(first), "tr") {
+		return "tr"
+	}
+	return "en"
+}
+
+// site: the first public host (where the fingerprint is published), or "".
+func (w *webSide) site() string {
+	best := ""
+	for h := range w.hosts {
+		if best == "" || len(h) < len(best) || len(h) == len(best) && h < best {
+			best = h // the shortest name: example.com rather than www.example.com
+		}
+	}
+	return best
+}
+
+func phoneT(lang, tr, en string) string {
+	if lang == "tr" {
+		return tr
+	}
+	return en
+}
+
 // phonePage: https://PHONE_HOST/ in the phone's browser (the root is saved).
 func (s *server) phonePage(w http.ResponseWriter, r *http.Request) {
 	if s.web == nil || s.web.download == "" {
 		writeS40(w, 404, []kv{{"status", "not_found"}}, "")
 		return
 	}
+	lang := phoneLang(r)
 	host := html.EscapeString(s.web.phoneHostFor(r))
+	w.Header().Set("Vary", "Accept-Language")
 	writeHTML(w, 200, "AIKON", "<h1>AIKON</h1>"+
-		"<p><a href=\"https://"+host+"/app/AIKON.jad\">AIKON'u indir / Download AIKON</a></p>"+
-		"<p>Yükleme sorusuna Evet deyin. / Answer Yes when the phone asks to install.</p>")
+		"<p><a href=\"https://"+host+"/app/AIKON.jad\">"+phoneT(lang, "AIKON'u indir", "Download AIKON")+"</a></p>"+
+		"<p>"+phoneT(lang, "Telefon kurmak isteyip istemediğinizi sorunca Evet deyin.",
+		"Answer Yes when the phone asks to install it.")+"</p>")
 }
 
 // httpHandler: the plain-HTTP listener (landing page and ca.cer only).
 func (s *server) httpHandler() http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
+		lang := phoneLang(r)
 		host := html.EscapeString(s.web.phoneHostFor(r))
+		where := phoneT(lang, "sunucunun sahibinin yayınladığıyla", "the one the server's owner publishes")
+		if site := s.web.site(); site != "" {
+			where = html.EscapeString(site) + phoneT(lang, "'dakiyle", "")
+			if lang == "en" {
+				where = "the one on " + where
+			}
+		}
 		fp := ""
 		if s.web.caSHA1 != "" {
 			fp = "<p>SHA-1: " + s.web.caSHA1 + "</p>"
 		}
+		w.Header().Set("Vary", "Accept-Language")
 		writeHTML(w, 200, "AIKON", "<h1>AIKON</h1>"+
-			"<p>1. <a href=\"http://"+host+"/ca.cer\">Sertifika / Certificate</a></p>"+
-			"<p>Yetkili (authority) sertifikası olarak kaydedin; parmak izini sunucunun sahibinin "+
-			"yayınladığıyla karşılaştırın. / Save it as an authority certificate after comparing the "+
-			"fingerprint with the one the server's owner publishes.</p>"+fp+
-			"<p>2. <a href=\"https://"+host+"/app/AIKON.jad\">AIKON</a></p>")
+			"<p>1. <a href=\"http://"+host+"/ca.cer\">"+phoneT(lang, "Sertifikayı kaydedin", "Save the certificate")+"</a></p>"+
+			"<p>"+phoneT(lang, "\"Yetkili\" sertifikası olarak kaydedin. Parmak izi "+where+" aynı olmalı:",
+			"Save it as an authority certificate. Its fingerprint must match "+where+":")+"</p>"+fp+
+			"<p>2. <a href=\"https://"+host+"/app/AIKON.jad\">"+phoneT(lang, "AIKON'u indirin", "Download AIKON")+"</a></p>")
 	})
 	mux.HandleFunc("GET /ca.cer", func(w http.ResponseWriter, r *http.Request) {
 		b, err := os.ReadFile(filepath.Join(s.web.download, "ca.cer"))

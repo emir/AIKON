@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.9.2"
+	version      = "0.9.3"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512

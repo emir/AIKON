@@ -175,6 +175,18 @@ func TestPlainHTTPLanding(t *testing.T) {
 		!strings.Contains(w.Body.String(), "https://m.example.test/app/AIKON.jad") || !strings.Contains(w.Body.String(), "SHA-1: ") {
 		t.Fatalf("landing: %q", w.Body.String())
 	}
+	if b := w.Body.String(); !strings.Contains(b, "Save the certificate") || !strings.Contains(b, "the one on example.test") ||
+		strings.Contains(b, "Sertifika") {
+		t.Fatalf("english landing: %q", b)
+	}
+	r := httptest.NewRequest("GET", "http://m.example.test/", nil)
+	r.Header.Set("Accept-Language", "tr-TR,tr;q=0.9,en;q=0.5")
+	tw := httptest.NewRecorder()
+	h.ServeHTTP(tw, r)
+	if b := tw.Body.String(); !strings.Contains(b, "Sertifikayı kaydedin") || !strings.Contains(b, "example.test'dakiyle") ||
+		!strings.Contains(b, "AIKON'u indirin") || strings.Contains(b, "Save the") || tw.Header().Get("Vary") != "Accept-Language" {
+		t.Fatalf("turkish landing: %q", b)
+	}
 	if w := do("m.example.test", "/ca.cer"); w.Code != 200 || w.Header().Get("Content-Type") != "application/x-x509-ca-cert" {
 		t.Fatalf("ca: %d", w.Code)
 	}
