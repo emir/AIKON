@@ -6,6 +6,7 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/anthropics/anthropic-sdk-go/option"
 )
@@ -74,6 +75,7 @@ func TestModelPerConversation(t *testing.T) {
 	if r.msg.get("model") != "grok-y" {
 		t.Fatalf("%q", r.raw)
 	}
+	time.Sleep(2 * time.Millisecond) // conv is updated after conv2 below: never in the same millisecond
 
 	// unknown model: nothing is called or counted
 	before := grok.calls()
