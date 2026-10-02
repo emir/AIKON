@@ -31,9 +31,8 @@ final class Wordmark {
     private static final int[] O_OUTER = { 6875, 1250, 1290, 1220 };
     private static final int[] O_INNER = { 6875, 1265, 655, 645 };
 
-    private static Image cached;
-    private static int cachedW;
-    private static int cachedColor;
+    /** A few sizes (header, empty chat, splash), keyed by width and colour. */
+    private static final java.util.Hashtable cache = new java.util.Hashtable();
 
     private Wordmark() {
     }
@@ -43,16 +42,19 @@ final class Wordmark {
         return Math.max(1, width * H / W);
     }
 
-    /** The wordmark, width pixels wide, in an RGB colour; the last one is cached. */
+    /** The wordmark, width pixels wide, in an RGB colour; cached. */
     static synchronized Image get(int width, int color) {
         width = Math.max(8, width);
-        if (cached == null || cachedW != width || cachedColor != color) {
-            cached = null; // let the old one go before the new one is made
-            cached = render(width, color);
-            cachedW = width;
-            cachedColor = color;
+        Long key = new Long(((long) width << 32) | (color & 0xFFFFFFL));
+        Image img = (Image) cache.get(key);
+        if (img == null) {
+            if (cache.size() >= 4) {
+                cache.clear(); // a theme or text size change leaves old ones behind
+            }
+            img = render(width, color);
+            cache.put(key, img);
         }
-        return cached;
+        return img;
     }
 
     private static final int SUB = 4; // sample rows per pixel row

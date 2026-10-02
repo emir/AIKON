@@ -138,21 +138,21 @@ final class HomeCanvas extends Canvas implements CommandListener {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
 
-        // header: mark + title + status line, on the bar colour above a hairline
+        // header: wordmark + status line, on the bar colour above a hairline
         int headH = Math.max(f.getHeight() + sm.getHeight() + 10, 40);
         g.setColor(Theme.chrome);
         g.fillRect(0, 0, w, headH);
         g.setColor(Theme.border);
         g.drawLine(0, headH - 1, w, headH - 1);
-        int ls = headH - 12;
-        Logo.draw(g, MARGIN + ls / 2 + 2, headH / 2, ls, 100, Logo.ALL);
-        int tx = MARGIN + ls + 10;
-        g.setColor(Theme.ink);
-        g.setFont(f);
-        g.drawString("AIKON", tx, 5, Graphics.TOP | Graphics.LEFT);
+        // the AIKON wordmark (as tall as a bold line), the status line under it
+        int tx = MARGIN + 4;
+        int wh = f.getHeight() - 2;
+        int ww = wh * 1051 / 244;
+        int gap = (headH - wh - sm.getHeight() - 3) / 2;
+        g.drawImage(Wordmark.get(ww, Theme.accent), tx, gap, Graphics.TOP | Graphics.LEFT);
         g.setFont(sm);
         g.setColor(Theme.muted);
-        g.drawString(Text.fit(midlet.homeStatus(), sm, w - tx - MARGIN), tx, 5 + f.getHeight(), Graphics.TOP | Graphics.LEFT);
+        g.drawString(Text.fit(midlet.homeStatus(), sm, w - tx - MARGIN), tx, gap + wh + 3, Graphics.TOP | Graphics.LEFT);
 
         // rows
         int rowH = Math.max(f.getHeight() + sm.getHeight() + 6, 30);
