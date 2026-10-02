@@ -1,7 +1,7 @@
 # AIKON (formerly Claude S40) – development notes (public)
 
 AI chat client (Claude, OpenAI, Gemini, Grok) for Nokia Series 40
-and Symbian S60 phones (Java ME) + its Go server. Named Claude S40 until 0.11.0; the repository is github.com/emir/aikon
+and Symbian S60 phones (Java ME) + its Go server. Named Claude S40 until 0.11.0; the repository is github.com/emir/AIKON
 (was emir/claude-s40); Java package, RMS stores and server/service names
 keep the old name.
 Maintainer: Emir Karşıyakalı (github.com/emir). This repository is the only

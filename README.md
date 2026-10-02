@@ -3,7 +3,7 @@
 > **Formerly Claude S40.** The project was called *Claude S40* up to phone
 > app 0.10.x / server 0.7.x, while it only talked to Claude. Since it also
 > speaks to OpenAI, Gemini and Grok it is called **AIKON** (Nokia spelled
-> backwards). The repository moved from `emir/claude-s40` to `emir/aikon`
+> backwards). The repository moved from `emir/claude-s40` to `emir/AIKON`
 > (GitHub redirects the old address); the Java package and server names
 > keep the old name.
 
@@ -136,7 +136,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 ## Get it
 
 ```
-git clone https://github.com/emir/aikon.git
+git clone https://github.com/emir/AIKON.git
 cd aikon
 ```
 

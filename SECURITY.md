@@ -19,5 +19,5 @@
 ## Reporting
 
 Please report vulnerabilities privately through GitHub's "Report a
-vulnerability" on https://github.com/emir/aikon/security instead of a
+vulnerability" on https://github.com/emir/AIKON/security instead of a
 public issue.
