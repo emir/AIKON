@@ -4,9 +4,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Font;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.StringItem;
 
 /**
  * Pairing, so no long access code has to be typed on the keypad:
@@ -31,9 +28,9 @@ final class Pairing implements CommandListener, Runnable {
     private final ClaudeS40MIDlet midlet;
     /** The wizard this pairing is a step of, or null. */
     private final Setup setup;
-    private final Form form;
-    private final StringItem codeItem = new StringItem(L.s("Eşleştirme kodu", "Pairing code"), "-");
-    private final StringItem statusItem = new StringItem(L.s("Durum", "Status"), "");
+    private final TextPage form;
+    private final int codeItem;
+    private final int statusItem;
     private final Command cancelCmd = new Command(L.s("İptal", "Cancel"), Command.BACK, 1);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
@@ -43,11 +40,11 @@ final class Pairing implements CommandListener, Runnable {
     Pairing(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
         this.setup = setup;
-        form = new Form(setup != null ? Setup.title(Setup.STEPS - 1) : L.s("Cihazı eşleştir", "Pair this phone"));
-        codeItem.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE));
-        form.append(codeItem);
-        form.append(statusItem);
-        form.append(new StringItem(null, L.s("Bu kodu sunucunun sahibine ilet.", "Give this code to the server's owner.")));
+        form = new TextPage(setup != null ? Setup.title(Setup.STEPS - 1) : L.s("Cihazı eşleştir", "Pair this phone"));
+        codeItem = form.append(L.s("Eşleştirme kodu", "Pairing code"), "-");
+        form.setBig(codeItem);
+        statusItem = form.append(L.s("Durum", "Status"), "");
+        form.append(null, L.s("Bu kodu sunucunun sahibine ilet.", "Give this code to the server's owner."));
         form.addCommand(cancelCmd);
         form.addCommand(helpCmd);
         form.setCommandListener(this);
@@ -80,7 +77,7 @@ final class Pairing implements CommandListener, Runnable {
     }
 
     private void status(String s) {
-        statusItem.setText(s);
+        form.setText(statusItem, s);
     }
 
     private void finish(String s) {
@@ -113,7 +110,7 @@ final class Pairing implements CommandListener, Runnable {
         }
         String pair = r.msg.field("pair");
         String code = r.msg.field("code");
-        codeItem.setText(code.length() == 6 ? code.substring(0, 3) + " " + code.substring(3) : code);
+        form.setText(codeItem, code.length() == 6 ? code.substring(0, 3) + " " + code.substring(3) : code);
         status(L.s("Onay bekleniyor...", "Waiting for approval..."));
 
         long deadline = System.currentTimeMillis() + MAX_MS;
@@ -144,7 +141,7 @@ final class Pairing implements CommandListener, Runnable {
                 String token = c.msg.field("token");
                 s.token = token;
                 String err = s.save();
-                codeItem.setText("OK");
+                form.setText(codeItem, "OK");
                 finish(err != null ? err
                         : L.s("Eşleştirildi (", "Paired (") + c.msg.field("device")
                                 + L.s("). Erişim kodu kaydedildi; sohbet kullanılabilir.", "). Access code saved; chat is ready."),

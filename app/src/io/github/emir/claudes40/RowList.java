@@ -64,6 +64,15 @@ final class RowList extends Canvas {
         repaint();
     }
 
+    /** The list's own title bar (no native title over it). */
+    public void setTitle(String t) {
+        title(t);
+    }
+
+    public synchronized String getTitle() {
+        return title;
+    }
+
     public void setCommandListener(CommandListener l) {
         listener = l;
         super.setCommandListener(l);
@@ -164,8 +173,19 @@ final class RowList extends Canvas {
         repaint();
     }
 
-    private static int headH() {
+    /** Height of the title bar of the drawn lists and pages. */
+    static int barH() {
         return Math.max(Theme.bold.getHeight() + 10, 26);
+    }
+
+    static void paintBar(Graphics g, int w, String title) {
+        int hh = barH();
+        g.setColor(Theme.bar);
+        g.fillRect(0, 0, w, hh);
+        g.setFont(Theme.bold);
+        g.setColor(Theme.barInk);
+        g.drawString(Text.fit(title == null ? "" : title, Theme.bold, w - 2 * MARGIN - 4), MARGIN + 4,
+                (hh - Theme.bold.getHeight()) / 2, Graphics.TOP | Graphics.LEFT);
     }
 
     private int rowH(Row r, int w) {
@@ -195,7 +215,7 @@ final class RowList extends Canvas {
             ys[i + 1] = ys[i] + rowH(r, w);
             icons |= r.icon >= 0;
         }
-        int top = headH() + 4;
+        int top = barH() + 4;
         int area = h - top - 4;
         if (selected >= 0) {
             int first = 0;
@@ -275,13 +295,6 @@ final class RowList extends Canvas {
             g.fillRoundRect(w - 3, by, 2, bh, 2, 2);
         }
 
-        // title bar
-        int hh = headH();
-        g.setColor(Theme.bar);
-        g.fillRect(0, 0, w, hh);
-        g.setFont(Theme.bold);
-        g.setColor(Theme.barInk);
-        g.drawString(Text.fit(title, Theme.bold, w - 2 * MARGIN - 4), MARGIN + 4, (hh - Theme.bold.getHeight()) / 2,
-                Graphics.TOP | Graphics.LEFT);
+        paintBar(g, w, title);
     }
 }

@@ -8,8 +8,6 @@ import javax.microedition.lcdui.AlertType;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.StringItem;
 
 /**
  * "Kaydedilenler" / "Saved": replies saved on the phone as .txt files
@@ -30,7 +28,7 @@ final class SavedList implements CommandListener, Runnable {
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command yesCmd = new Command(L.s("Sil", "Delete"), Command.OK, 1);
     private final Command noCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
-    private Form viewer;
+    private TextPage viewer;
     private Alert confirm;
 
     /** File names in list order. */
@@ -175,8 +173,8 @@ final class SavedList implements CommandListener, Runnable {
     }
 
     private void showText(String file, String text) {
-        viewer = new Form(label(file));
-        viewer.append(new StringItem(null, text));
+        viewer = new TextPage(label(file));
+        viewer.append(null, text);
         viewer.addCommand(backCmd);
         viewer.addCommand(deleteCmd);
         viewer.setCommandListener(this);

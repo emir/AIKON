@@ -119,7 +119,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private ChoiceGroup claudeChoice;
     private ChatList chatList;
     private ConnTest connTest;
-    private Form about;
+    private TextPage about;
 
     private Command sendCmd;
     private Command composerBackCmd;
@@ -134,7 +134,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command splashCmd;
     private Command promptsBackCmd;
     private Command wizardCmd;
-    private Form shortcuts;
+    private TextPage shortcuts;
     private Displayable shortcutsBack;
     private ChoiceGroup lightChoice;
     /** Message actions (ChatCanvas selection): list, what each row does, the message. */
@@ -145,7 +145,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private Command listBackCmd;
     private TextField notesField;
     private Command dataCmd;
-    private Form dataForm;
+    private TextPage dataForm;
     private Command resetCmd;
     /** "Bilgi" / "Info" on Settings, Data usage and About (Help). */
     private Command helpCmd;
@@ -743,8 +743,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     /** Every key of the chat and reading screens; "Geri" returns to `back`. */
     void showShortcuts(Displayable back) {
         if (shortcuts == null) {
-            shortcuts = new Form(L.s("Kısayollar", "Shortcuts"));
-            shortcuts.append(new StringItem(L.s("Sohbet", "Chat"), L.s(
+            shortcuts = new TextPage(L.s("Kısayollar", "Shortcuts"));
+            shortcuts.append(L.s("Sohbet", "Chat"), L.s(
                     "Orta tuş veya 5: yaz\n"
                     + "Yukarı / aşağı: bir satır\n"
                     + "2 / 8, sol / sağ: bir sayfa\n"
@@ -762,8 +762,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "0: the rest of a reply\n"
                     + "7: reading mode\n"
                     + "9: text size\n"
-                    + "After an error, centre key: retry\n")));
-            shortcuts.append(new StringItem(L.s("Okuma modu", "Reading mode"), L.s(
+                    + "After an error, centre key: retry\n"));
+            shortcuts.append(L.s("Okuma modu", "Reading mode"), L.s(
                     "Bir yanıtı tam ekran, sayfa sayfa gösterir.\n"
                     + "Orta tuş, 8 veya sağ: sonraki sayfa\n"
                     + "2 veya sol: önceki sayfa\n"
@@ -781,26 +781,26 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                     + "* / #: top / end\n"
                     + "0: the rest of a reply\n"
                     + "9: text size\n"
-                    + "7 or Close: back to the chat\n")));
-            shortcuts.append(new StringItem(L.s("Ana menü", "Main menu"), L.s(
-                    "1-9: satırı doğrudan açar\n", "1-9: opens that row directly\n")));
+                    + "7 or Close: back to the chat\n"));
+            shortcuts.append(L.s("Ana menü", "Main menu"), L.s(
+                    "1-9: satırı doğrudan açar\n", "1-9: opens that row directly\n"));
             if (Keys.qwerty || back.getWidth() > back.getHeight()) { // S60 QWERTY phones only (E63: landscape)
-                shortcuts.append(new StringItem(L.s("QWERTY klavye", "QWERTY keyboard"), L.s(
+                shortcuts.append(L.s("QWERTY klavye", "QWERTY keyboard"), L.s(
                         "Rakamlar harf tuşlarında: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\n"
                         + "Enter: orta tuş gibi\n"
                         + "Ana menüde N yalnızca Çıkış'a gider (kapatmaz)\n",
                         "Digits sit on letter keys: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\n"
                         + "Enter: same as the centre key\n"
-                        + "On the main menu, N only moves to Exit (does not quit)\n")));
+                        + "On the main menu, N only moves to Exit (does not quit)\n"));
             }
-            shortcuts.append(new StringItem(null, L.s(
+            shortcuts.append(null, L.s(
                     "Kısalt, çevir gibi işlemler hiçbir şeyi kendiliğinden göndermez: yazma kutusu hazır metinle "
                             + "açılır, Gönder'e sen basarsın.",
                     "Actions like shorten or translate never send by themselves: the editor opens with the text "
-                            + "ready and you press Send.")));
-            shortcuts.append(new StringItem(null, L.s(
+                            + "ready and you press Send."));
+            shortcuts.append(null, L.s(
                     "Yanıtın devamını almak ücretsizdir: sunucudaki yanıt gelir, model tekrar çağrılmaz.",
-                    "Loading the rest of a reply is free: it comes from the server, the model is not asked again.")));
+                    "Loading the rest of a reply is free: it comes from the server, the model is not asked again."));
             shortcuts.addCommand(formBackCmd);
             shortcuts.setCommandListener(this);
         }
@@ -1281,11 +1281,10 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     /** Mobile data used by the app (DataUsage); "Sıfırla" starts the totals again. */
     private void showDataUsage() {
-        dataForm = new Form(L.s("Veri kullanımı", "Data usage"));
+        dataForm = new TextPage(L.s("Veri kullanımı", "Data usage"));
         long[] t = DataUsage.total();
-        dataForm.append(new StringItem(L.s("Bugün", "Today"), DataUsage.describe(DataUsage.today())));
-        dataForm.append(new StringItem(L.s("Toplam, başlangıç ", "Total since ") + Text.local(t[3], false),
-                DataUsage.describe(t)));
+        dataForm.append(L.s("Bugün", "Today"), DataUsage.describe(DataUsage.today()));
+        dataForm.append(L.s("Toplam, başlangıç ", "Total since ") + Text.local(t[3], false), DataUsage.describe(t));
         dataForm.addCommand(formBackCmd);
         dataForm.addCommand(helpCmd);
         dataForm.addCommand(resetCmd);
@@ -1364,23 +1363,22 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     private void showAbout() {
-        about = new Form(L.s("Hakkında", "About"));
-        about.append(new StringItem(attr("MIDlet-Name"),
-                L.s("Sürüm ", "Version ") + attr("MIDlet-Version") + L.s(" (derleme ", " (build ")
-                        + attr("ClaudeS40-Build") + ")"));
+        about = new TextPage(L.s("Hakkında", "About"));
+        about.append(attr("MIDlet-Name"), L.s("Sürüm ", "Version ") + attr("MIDlet-Version") + L.s(" (derleme ", " (build ")
+                        + attr("ClaudeS40-Build") + ")");
         if (updateVersion().length() > 0) {
-            about.append(new StringItem(L.s("Yeni sürüm", "New version"), updateVersion()
-                    + L.s(" · ana ekranda Güncelle", " · Update on the home screen")));
+            about.append(L.s("Yeni sürüm", "New version"), updateVersion()
+                    + L.s(" · ana ekranda Güncelle", " · Update on the home screen"));
         }
-        about.append(new StringItem(null, L.s("Nokia S40 ve S60 telefonlar için yapay zekâ sohbeti.",
-                "AI chat for Nokia S40 and S60 phones.")));
-        about.append(new StringItem(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR));
-        about.append(new StringItem(null, "github.com/emir/AIKON"));
-        about.append(new StringItem(L.s("Platform", "Platform"), prop("microedition.platform")));
-        about.append(new StringItem(L.s("Ses kaydı", "Voice recording"), (hasRecording() ? L.s("var", "yes")
-                : L.s("yok", "no")) + " (" + prop("audio.encodings") + ")"));
-        about.append(new StringItem(L.s("Kamera", "Camera"), (hasCamera() ? L.s("var", "yes") : L.s("yok", "no"))
-                + " (" + prop("video.snapshot.encodings") + ")"));
+        about.append(null, L.s("Nokia S40 ve S60 telefonlar için yapay zekâ sohbeti.",
+                "AI chat for Nokia S40 and S60 phones."));
+        about.append(null, L.s("Geliştiren: ", "Made by: ") + AUTHOR);
+        about.append(null, "github.com/emir/AIKON");
+        about.append(L.s("Platform", "Platform"), prop("microedition.platform"));
+        about.append(L.s("Ses kaydı", "Voice recording"), (hasRecording() ? L.s("var", "yes")
+                : L.s("yok", "no")) + " (" + prop("audio.encodings") + ")");
+        about.append(L.s("Kamera", "Camera"), (hasCamera() ? L.s("var", "yes") : L.s("yok", "no"))
+                + " (" + prop("video.snapshot.encodings") + ")");
         about.addCommand(helpCmd);
         about.addCommand(jingleCmd);
         about.addCommand(splashCmd);

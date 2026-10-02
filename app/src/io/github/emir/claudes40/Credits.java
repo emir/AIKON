@@ -4,7 +4,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Font;
 import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.StringItem;
 import javax.microedition.lcdui.TextField;
@@ -33,7 +32,9 @@ final class Credits implements CommandListener, Runnable {
     private final Setup setup;
     private final Displayable back;
     private int mode;
-    private Form form;
+    /** The code form (a TextField) or the balance page. */
+    private Displayable form;
+    private TextPage page;
     private TextField codeField;
     private StringItem statusItem;
     private String code = "";
@@ -65,10 +66,10 @@ final class Credits implements CommandListener, Runnable {
 
     void showBalance() {
         mode = BALANCE;
-        form = new Form(L.s("Kredi", "Credits"));
-        statusItem = new StringItem(L.s("Bakiye", "Balance"), L.s("Yükleniyor...", "Loading..."));
-        statusItem.setFont(Font.getFont(Font.FACE_SYSTEM, Font.STYLE_BOLD, Font.SIZE_LARGE));
-        form.append(statusItem);
+        page = new TextPage(L.s("Kredi", "Credits"));
+        form = page;
+        page.append(L.s("Bakiye", "Balance"), L.s("Yükleniyor...", "Loading..."));
+        page.setBig(0);
         form.addCommand(backCmd);
         form.addCommand(topupCmd);
         form.addCommand(refreshCmd);
@@ -79,11 +80,12 @@ final class Credits implements CommandListener, Runnable {
     }
 
     private void codeForm(String title, String line) {
-        form = new Form(title);
+        Form f = new Form(title);
+        form = f;
         codeField = new TextField(L.s("Kredi kodu", "Credit code"), "", 16, TextField.NUMERIC);
         statusItem = new StringItem(null, line);
-        form.append(codeField);
-        form.append(statusItem);
+        f.append(codeField);
+        f.append(statusItem);
         form.addCommand(sendCmd);
         form.addCommand(backCmd);
         form.addCommand(helpCmd);
@@ -167,7 +169,11 @@ final class Credits implements CommandListener, Runnable {
     }
 
     private void status(String s) {
-        statusItem.setText(s);
+        if (page != null) {
+            page.setText(0, s);
+        } else {
+            statusItem.setText(s);
+        }
     }
 
     public void run() {
@@ -249,8 +255,8 @@ final class Credits implements CommandListener, Runnable {
         midlet.session().setBalance(bal);
         status(bal + L.s(" kredi", " credits"));
         // keep the balance item, list the newest charges below it
-        while (form.size() > 1) {
-            form.delete(1);
+        while (page.size() > 1) {
+            page.delete(1);
         }
         String t = r.msg.text;
         int start = 0;
@@ -272,7 +278,7 @@ final class Credits implements CommandListener, Runnable {
                 // shown without a date
             }
             String what = kind(f[1]) + (f[3].length() > 0 ? " · " + Models.name(f[3]) : "");
-            form.append(new StringItem(Text.local(ts, true), what + ": " + f[2]));
+            page.append(Text.local(ts, true), what + ": " + f[2]);
         }
     }
 

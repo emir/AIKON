@@ -6,9 +6,6 @@ import java.util.TimerTask;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.Gauge;
-import javax.microedition.lcdui.StringItem;
 
 /**
  * Voice message: records up to 30 seconds (Rec), sends the clip to the
@@ -37,9 +34,9 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     private final ClaudeS40MIDlet midlet;
     /** Opened from the editor (Cancel goes back there) or from the chat. */
     private final boolean fromComposer;
-    private final Form form;
-    private final StringItem status;
-    private final Gauge gauge;
+    private final TextPage form;
+    private final int status;
+    private final int gauge;
     private final Command doneCmd = new Command(L.s("Bitir", "Done"), Command.OK, 1);
     private final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.OK, 1);
     private final Command resendCmd = new Command(L.s("Yeniden gönder", "Send again"), Command.SCREEN, 2);
@@ -60,11 +57,10 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     Dictation(ClaudeS40MIDlet midlet, boolean fromComposer) {
         this.midlet = midlet;
         this.fromComposer = fromComposer;
-        form = new Form(L.s("Sesle yaz", "Dictate"));
-        status = new StringItem(null, "");
-        gauge = new Gauge("", false, MAX_SECONDS, 0);
-        form.append(status);
-        form.append(gauge);
+        form = new TextPage(L.s("Sesle yaz", "Dictate"));
+        status = form.append(null, "");
+        gauge = form.append("", "");
+        form.setProgress(gauge, 0, MAX_SECONDS);
         form.addCommand(helpCmd);
         form.setCommandListener(this);
     }
@@ -81,8 +77,8 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         audio = null;
         requestId = null;
         seconds = 0;
-        gauge.setValue(0);
-        gauge.setLabel("0 / " + MAX_SECONDS + L.s(" sn", " s"));
+        form.setProgress(gauge, 0, MAX_SECONDS);
+        form.setLabel(gauge, "0 / " + MAX_SECONDS + L.s(" sn", " s"));
         show(L.s("Mikrofon açılıyor...", "Opening the microphone..."), new Command[] { cancelCmd });
         job = JOB_START;
         new Thread(this).start();
@@ -107,8 +103,8 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                 return;
             }
             seconds++;
-            gauge.setValue(Math.min(seconds, MAX_SECONDS));
-            gauge.setLabel(seconds + " / " + MAX_SECONDS + L.s(" sn", " s"));
+            form.setProgress(gauge, Math.min(seconds, MAX_SECONDS), MAX_SECONDS);
+            form.setLabel(gauge, seconds + " / " + MAX_SECONDS + L.s(" sn", " s"));
             stop = seconds >= MAX_SECONDS;
         }
         if (stop) {
@@ -336,7 +332,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     private Command[] shownCmds = new Command[0];
 
     private void show(String text, Command[] cmds) {
-        status.setText(text);
+        form.setText(status, text);
         for (int i = 0; i < shownCmds.length; i++) {
             form.removeCommand(shownCmds[i]);
         }
@@ -350,7 +346,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 if (!closed && job == JOB_SEND) {
-                    status.setText(L.s("Yazıya dökülüyor...", "Turning speech into text..."));
+                    form.setText(status, L.s("Yazıya dökülüyor...", "Turning speech into text..."));
                 }
             }
         }

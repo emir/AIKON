@@ -3,9 +3,7 @@ package io.github.emir.claudes40;
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
 import javax.microedition.lcdui.List;
-import javax.microedition.lcdui.StringItem;
 
 /**
  * Adds a photo to the next message: take it with the camera (Cam) or pick
@@ -23,8 +21,8 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
     private final ClaudeS40MIDlet midlet;
     private final boolean fromComposer;
     private RowList source;
-    private final Form form;
-    private final StringItem status;
+    private final TextPage form;
+    private final int status;
     private final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.OK, 1);
     private final Command otherCmd = new Command(L.s("Başka fotoğraf", "Another photo"), Command.SCREEN, 2);
     private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
@@ -39,9 +37,8 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
     Photo(ClaudeS40MIDlet midlet, boolean fromComposer) {
         this.midlet = midlet;
         this.fromComposer = fromComposer;
-        form = new Form(L.s("Fotoğraf ekle", "Add a photo"));
-        status = new StringItem(null, "");
-        form.append(status);
+        form = new TextPage(L.s("Fotoğraf ekle", "Add a photo"));
+        status = form.append(null, "");
         form.addCommand(helpCmd);
         form.setCommandListener(this);
     }
@@ -170,7 +167,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 if (!closed) {
-                    status.setText(L.s("Sunucu fotoğrafı hazırlıyor...", "The server is preparing the photo..."));
+                    form.setText(status, L.s("Sunucu fotoğrafı hazırlıyor...", "The server is preparing the photo..."));
                 }
             }
         }
@@ -201,7 +198,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
 
     /** Called with the lock held. */
     private void show(String text, Command[] cmds) {
-        status.setText(text);
+        form.setText(status, text);
         for (int i = 0; i < shownCmds.length; i++) {
             form.removeCommand(shownCmds[i]);
         }

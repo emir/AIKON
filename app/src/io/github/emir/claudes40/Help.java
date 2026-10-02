@@ -4,8 +4,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.StringItem;
 
 /**
  * Explanations on request. Screens show one short line; the longer text
@@ -31,14 +29,14 @@ final class Help implements CommandListener {
     /** Shows `text` (paragraphs separated by blank lines) titled `title`; Back returns to `back`. */
     static void show(Display display, String title, String text, Displayable back) {
         Help h = new Help(display, back);
-        Form f = new Form(title);
+        TextPage f = new TextPage(title);
         int start = 0;
         while (start < text.length()) {
             int end = text.indexOf("\n\n", start);
             if (end < 0) {
                 end = text.length();
             }
-            f.append(new StringItem(null, text.substring(start, end) + "\n"));
+            f.append(null, text.substring(start, end));
             start = end + 2;
         }
         f.addCommand(h.backCmd);

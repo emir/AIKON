@@ -4,8 +4,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.StringItem;
 
 /**
  * Connection test: GET /health, then POST /echo with a fixed Turkish probe.
@@ -29,7 +27,7 @@ final class ConnTest implements CommandListener, Runnable {
     private final ClaudeS40MIDlet midlet;
     /** The wizard this test is a step of, or null. */
     private final Setup setup;
-    private final Form form;
+    private final TextPage form;
     private final Command startCmd = new Command(L.s("Başlat", "Start"), Command.OK, 1);
     private final Command againCmd = new Command(L.s("Yeniden test et", "Test again"), Command.SCREEN, 2);
     private final Command detailsCmd = new Command(L.s("Ayrıntılar", "Details"), Command.HELP, 8);
@@ -44,7 +42,7 @@ final class ConnTest implements CommandListener, Runnable {
     ConnTest(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
         this.setup = setup;
-        form = new Form(setup != null ? Setup.title(2) : L.s("Bağlantı testi", "Connection test"));
+        form = new TextPage(setup != null ? Setup.title(2) : L.s("Bağlantı testi", "Connection test"));
         form.addCommand(backCmd);
         form.setCommandListener(this);
         intro();
@@ -74,7 +72,7 @@ final class ConnTest implements CommandListener, Runnable {
     private void intro() {
         form.deleteAll();
         String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)");
-        form.append(new StringItem(L.s("Sunucu", "Server"), url + "\n"));
+        form.append(L.s("Sunucu", "Server"), url);
         if (midlet.settings.connectionVerified()) {
             line(L.s("Bu adres daha önce doğrulandı.", "This address was verified before."));
         } else {
@@ -109,7 +107,7 @@ final class ConnTest implements CommandListener, Runnable {
             }
             form.deleteAll();
             String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)");
-            form.append(new StringItem(L.s("Sunucu", "Server"), url + "\n"));
+            form.append(L.s("Sunucu", "Server"), url);
             line(L.s("Deneniyor...", "Testing..."));
             commands();
             new Thread(this).start();
@@ -117,12 +115,12 @@ final class ConnTest implements CommandListener, Runnable {
     }
 
     private void line(String text) {
-        form.append(new StringItem(null, text + "\n"));
+        form.append(null, text);
     }
 
     /** One checklist row: what was checked and whether it worked. */
     private void check(String what, boolean ok) {
-        form.append(new StringItem(what, (ok ? L.s("tamam", "OK") : L.s("olmadı", "failed")) + "\n"));
+        form.append(what, (ok ? L.s("tamam", "OK") : L.s("olmadı", "failed")));
     }
 
     private void detail(String label, String text) {
@@ -219,7 +217,7 @@ final class ConnTest implements CommandListener, Runnable {
     }
 
     private void result(boolean ok, String text) {
-        form.append(new StringItem(ok ? L.s("Sonuç", "Result") : L.s("Olmadı", "Failed"), text + "\n"));
+        form.append(ok ? L.s("Sonuç", "Result") : L.s("Olmadı", "Failed"), text);
     }
 
     private void fail(String why) {
