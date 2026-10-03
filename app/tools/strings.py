@@ -13,9 +13,10 @@ literals joined with +; the code is written in English), and the entries of
 PROMPTS_EN / TITLES_EN. A
 language file has one line per key: the key, a TAB, the translation;
 backslash-n is a line break, backslash-t a tab, backslash-backslash a
-backslash; lines starting with # are comments. check fails on a malformed
-line or when the {0}, {1} placeholders of a translation differ from its key's;
-a key that is no longer in the sources is reported, not an error.
+backslash; lines starting with # are comments. check (run by every build)
+fails on a malformed line, when the {0}, {1} placeholders of a translation
+differ from its key's, when a file lacks a key of the sources (every
+language has every text) or keeps one the sources no longer have.
 """
 import glob
 import os
@@ -211,10 +212,14 @@ def main():
         for path in sorted(glob.glob(os.path.join(sys.argv[3], "*.txt"))):
             table, errors = read_lang(path)
             bad += errors
-            have = sum(1 for k in ks if k in table)
-            stale = len([k for k in table if k not in set(ks)])
-            print(f"lang {os.path.basename(path)}: {have}/{len(ks)} strings"
-                  + (f", {stale} no longer used" if stale else ""))
+            name = os.path.basename(path)
+            missing = [k for k in ks if k not in table]
+            stale = [k for k in table if k not in set(ks)]
+            print(f"lang {name}: {len(ks) - len(missing)}/{len(ks)} strings"
+                  + (f", {len(stale)} no longer used" if stale else ""))
+            # every language has every text: a new English text needs its line in each file
+            bad += [f"{path}: missing: {file_escape(k)}" for k in missing]
+            bad += [f"{path}: no longer in the code, remove: {file_escape(k)}" for k in stale]
         for e in bad:
             print("ERROR " + e)
         sys.exit(1 if bad else 0)

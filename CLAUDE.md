@@ -36,8 +36,9 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
   String.format); the code is written in English: every user-visible
   string goes through `L.t("Save")` (`L.f("{0} credits", n)` for values);
   every other language, Turkish too, is app/lang/xx.txt (English key TAB
-  translation; `make -C app langs`), so a new or changed English text needs
-  its line in every language file, at least lang/tr.txt; sizes from
+  translation; `make -C app langs`): a new or changed English text needs its
+  line in EVERY language file (the build fails otherwise), and a removed
+  one is removed from all of them; sizes from
   getWidth()/getHeight(), softkeys as Commands, arrows via getGameAction();
   networking only on worker threads; HTTPS only.
   Optional JSR 75 (files, calendar/to-do) only inside Files/Pim, called
