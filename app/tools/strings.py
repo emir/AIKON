@@ -2,12 +2,12 @@
 """UI strings for the language files (app/lang/xx.txt).
 
   tools/strings.py keys SRC_DIR            print every English UI text (one key per line, escaped)
-  tools/strings.py check SRC_DIR LANG_DIR  check the language files; print what each one covers
+  tools/strings.py check SRC_DIR LANG_DIR [SERVER_LANG_DIR]
+                                         check the language files; print what each one covers;
+                                         with SERVER_LANG_DIR also that it holds the same files
+  tools/strings.py sync LANG_DIR SERVER_LANG_DIR  copy the language files to the server (it
+                                         embeds them and sends them to phones: /v1/lang)
   tools/strings.py missing SRC_DIR FILE    print the keys FILE does not translate yet
-  tools/strings.py pack SRC_DIR LANG_DIR OUT  the files for the JAR: OUT/keys.bin (the Java
-                                         String.hashCode of each English key, 4 bytes big-endian)
-                                         and OUT/xx.txt (the translations in the same order, one
-                                         per line; an empty line = not translated)
 
 Keys are the first arguments of L.t / L.f that are string literals (or
 literals joined with +; the code is written in English), and the entries of
@@ -17,11 +17,14 @@ backslash-n is a line break, backslash-t a tab, backslash-backslash a
 backslash; lines starting with # are comments. check (run by every build)
 fails on a malformed line, when the {0}, {1} placeholders of a translation
 differ from its key's, when a file lacks a key of the sources (every
-language has every text) or keeps one the sources no longer have.
+language has every text) or keeps one the sources no longer have, and when
+two keys share a Java String.hashCode (the phone looks texts up by it).
 """
+import filecmp
 import glob
 import os
 import re
+import shutil
 import sys
 
 LIT = re.compile(r'"((?:[^"\\]|\\.)*)"')
@@ -197,6 +200,17 @@ def read_lang(path):
 
 def main():
     mode = sys.argv[1]
+    if mode == "sync":
+        src, dst = sys.argv[2], sys.argv[3]
+        os.makedirs(dst, exist_ok=True)
+        names = {os.path.basename(p) for p in glob.glob(os.path.join(src, "*.txt"))}
+        for old in glob.glob(os.path.join(dst, "*.txt")):
+            if os.path.basename(old) not in names:
+                os.remove(old)
+        for n in sorted(names):
+            shutil.copyfile(os.path.join(src, n), os.path.join(dst, n))
+        print(f"{dst}: {len(names)} language files")
+        return
     ks = keys(sys.argv[2])
     if mode == "keys":
         for k in ks:
@@ -206,24 +220,6 @@ def main():
         for k in ks:
             if k not in table:
                 print(file_escape(k))
-    elif mode == "pack":
-        out = sys.argv[4]
-        os.makedirs(out, exist_ok=True)
-        # the phone looks a key up by its hash: no two keys may share one
-        hashes = [java_hash(k) for k in ks]
-        seen = {}
-        for k, h in zip(ks, hashes):
-            if h in seen:
-                sys.exit(f"keys {file_escape(seen[h])!r} and {file_escape(k)!r} have the same hash; reword one")
-            seen[h] = k
-        with open(os.path.join(out, "keys.bin"), "wb") as f:
-            f.write(b"".join(h.to_bytes(4, "big") for h in hashes))
-        for path in sorted(glob.glob(os.path.join(sys.argv[3], "*.txt"))):
-            table, errors = read_lang(path)
-            if errors:
-                sys.exit("\n".join(errors))
-            with open(os.path.join(out, os.path.basename(path)), "w", encoding="utf-8", newline="\n") as f:
-                f.write("".join(file_escape(table.get(k, "")) + "\n" for k in ks))
     elif mode == "check":
         bad = []
         for path in sorted(glob.glob(os.path.join(sys.argv[3], "*.txt"))):
@@ -237,6 +233,20 @@ def main():
             # every language has every text: a new English text needs its line in each file
             bad += [f"{path}: missing: {file_escape(k)}" for k in missing]
             bad += [f"{path}: no longer in the code, remove: {file_escape(k)}" for k in stale]
+        # the phone looks a text up by its hash: no two keys may share one
+        seen = {}
+        for k in ks:
+            h = java_hash(k)
+            if h in seen:
+                bad.append(f"keys {file_escape(seen[h])!r} and {file_escape(k)!r} have the same hash; reword one")
+            seen[h] = k
+        if len(sys.argv) > 4:
+            server = sys.argv[4]
+            ours = sorted(os.path.basename(p) for p in glob.glob(os.path.join(sys.argv[3], "*.txt")))
+            theirs = sorted(os.path.basename(p) for p in glob.glob(os.path.join(server, "*.txt")))
+            if ours != theirs or any(not filecmp.cmp(os.path.join(sys.argv[3], n), os.path.join(server, n),
+                                                     shallow=False) for n in ours):
+                bad.append(f"{server} differs from {sys.argv[3]}: run make -C app langs")
         for e in bad:
             print("ERROR " + e)
         sys.exit(1 if bad else 0)

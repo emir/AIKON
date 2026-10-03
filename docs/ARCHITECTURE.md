@@ -60,13 +60,17 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 
 - UI languages: the code is written in English (`L.t("Save")`, `L.f` with
   `{0}` for values); Turkish, Spanish, Portuguese, French, German, Russian
-  and Indonesian come from `app/lang/xx.txt` (one line per English text:
-  the text, a TAB, the translation), packed at build time into
-  `/lang/keys.bin` (the `String.hashCode` of each English text; the build
-  fails if two share one) plus one file of translations per language
-  (`tools/strings.py`; `make -C app langs` shows what each file covers). A
-  missing translation shows the English text, and English is the language
-  for any phone language we do not have. "Same as phone" picks the language
+  and Indonesian are written in `app/lang/xx.txt` (one line per English
+  text: the text, a TAB, the translation; `tools/strings.py`, the build fails
+  if two texts share a `String.hashCode`). The JAR carries English only
+  (phone 0.18.0): `make -C app langs` copies the files to `server/lang`, the
+  server embeds them and sends a language on `GET /v1/lang`; the phone keeps
+  one language in RMS (`LangPack`). Picking a language in Settings fetches
+  it while the list waits (the old one stays on failure); "Same as phone"
+  fetches in the background once the server is verified (until then, and
+  for a text the server lacks, English), and a kept language is fetched
+  again after an app update, a server change or a week. English is the
+  language for any phone language we do not have. "Same as phone" picks the language
   from `microedition.locale`. Voice messages send the language to the
   server only for Turkish and English; others are detected there.
 
@@ -214,6 +218,7 @@ rewrite non-200 responses). Responses are `Cache-Control: no-store`.
 |---|---|---|
 | `GET /health` | – | server, version, mock flag, the TLS version/cipher of *this* connection; with downloads (server 0.9.2) `app-version` (MIDlet-Version of the offered JAD) and `app-url` (the JAD over https) |
 | `POST /echo` | – | ≤ 512 bytes strict UTF-8, echoed; `probe: match` for the Turkish test string |
+| `GET /v1/lang?c=xx&p=N` | – | UI language `xx` (tr, es, pt, fr, de, ru, id), part `N` of `parts` (each ≤ 6000 bytes; the phone keeps 8192 of a response): lines `hash TAB translation`, the hash = Java `String.hashCode` of the English text as 8 hex digits, the translation with `\n` `\t` `\\` escapes; `version` (8 hex) is the same in every part of one edition; `unknown_language` (404), `bad_part` (400) (server 0.10.0) |
 | `POST /v1/pair/start` | – | → `pair` (128-bit secret), `code` (6 digits, shown on the phone), `expires` |
 | `POST /v1/pair/claim` | – | body `pair: <id>` → `pending` / `ok` + `device`, `token` (once) / `expired` |
 | `POST /v1/chat` | Bearer token | `request: <id>`, `conversation: <id or empty>`, optional `image: <id>` (a photo from `/v1/image`; 0.6.0), optional `search: 0` (no web search for this message), `instructions: <the user's notes>` (≤ 300 characters, added to the system prompt), `calendar: 1` + `local-time: YYYY-MM-DD HH:MM` (the phone can add calendar entries; 0.4.0), optional `model: <id>` (from `/v1/models`; this and the following messages of the conversation go to that model; server 0.7.0), text = message |

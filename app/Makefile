@@ -6,7 +6,7 @@
 #   make emu       optional FreeJ2ME screenshots (FREEJ2ME=path/to/classes;
 #                  EMU_W/EMU_H screen size, EMU_LANG=en|tr)
 #   make promo     share images/sounds from the emulator screenshots
-#   make langs     what each language file (lang/xx.txt) covers
+#   make langs     copy lang/ to the server (../server/lang); what each file covers
 #   make clean
 #
 # Needs: a JDK 11+ (only runs the build tools), Python 3 (+ Pillow for the
@@ -39,6 +39,8 @@ BUILD ?= build
 DIST  ?= dist
 # untracked, per installation: GATEWAY_URL=https://your-server (see docs/SETUP.md)
 LOCAL ?= app.local.properties
+# the server sends the languages to phones (/v1/lang); its copy must match lang/
+SERVER_LANG := ../server/lang
 FILE_BASE := $(shell sed -n 's/^FILE_BASE=//p' app.properties)
 
 SRCS := $(shell find src -name '*.java' | sort)
@@ -56,8 +58,7 @@ build: deps
 	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(BUILD)/mapping.txt $(BUILD)/zopfli $(BUILD)/deflated $(STUBS) $(DIST)
 	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(BUILD)/zopfli $(BUILD)/deflated $(STUBS)
 	$(PYTHON) tools/make_art.py icon $(BUILD)/res/icon.png
-	$(PYTHON) tools/strings.py check src lang
-	$(PYTHON) tools/strings.py pack src lang $(BUILD)/res/lang
+	$(PYTHON) tools/strings.py check src lang $(SERVER_LANG)
 	$(JAVA) -jar $(ECJ) -source $(SOURCE_LEVEL) -target $(TARGET_LEVEL) \
 		-bootclasspath $(CLDC):$(MIDP) -encoding UTF-8 -g:none \
 		-failOnWarning -d $(STUBS) $(STUB_SRCS)
@@ -96,7 +97,7 @@ emu:
 	@test -n "$(FREEJ2ME)" -a -d "$(FREEJ2ME)/org/recompile/mobile" || { echo "set FREEJ2ME=/path/to/freej2me/classes" >&2; exit 1; }
 	rm -rf $(BUILD)/emu && mkdir -p $(BUILD)/emu/classes
 	$(JAVAC) --release 8 -nowarn -cp $(FREEJ2ME) -d $(BUILD)/emu/classes emu/EmuShot.java
-	cd $(BUILD)/emu && $(JAVA) -Djava.awt.headless=true -cp $(abspath $(FREEJ2ME)):classes EmuShot \
+	cd $(BUILD)/emu && $(JAVA) -Djava.awt.headless=true -Demu.lang=$(abspath lang) -cp $(abspath $(FREEJ2ME)):classes EmuShot \
 		$(abspath $(DIST)/$(FILE_BASE).jar) $(abspath $(BUILD)/mapping.txt) shots $(EMU_W) $(EMU_H) $(EMU_LANG) 2>&1 | tee emu.log
 
 promo:
@@ -104,7 +105,8 @@ promo:
 	$(PYTHON) tools/promo.py $(BUILD)/emu/shots $(BUILD)/promo
 
 langs:
-	$(PYTHON) tools/strings.py check src lang
+	$(PYTHON) tools/strings.py sync lang $(SERVER_LANG)
+	$(PYTHON) tools/strings.py check src lang $(SERVER_LANG)
 
 clean:
 	rm -rf $(BUILD) $(DIST)

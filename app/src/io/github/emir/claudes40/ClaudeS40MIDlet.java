@@ -298,6 +298,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             session.setDraft(Resume.draft);
         }
         Updates.maybeCheck(this);
+        LangPack.maybeFetch(this);
         Credits.maybeFetchBalance(this);
         String conv = Resume.conversation;
         if (conv.length() > 0 && !conv.equals(session.conversation()) && !settings.testMode) {
@@ -635,6 +636,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     // ------------------------------------------------------------ navigation
 
     void showMenu() {
+        if (!L.present() && LangPack.has(L.code())) {
+            rebuildUi(); // the language came while another screen was shown
+        }
         if (Theme.wantsDark(settings) != Theme.dark) {
             applyLook(); // automatic look: evening or morning came
         }
@@ -643,6 +647,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         Models.maybeFetch(this);
         home.setUpdate(updateVersion().length() > 0);
         Updates.maybeCheck(this);
+        LangPack.maybeFetch(this);
         Credits.maybeFetchBalance(this);
     }
 
@@ -659,6 +664,23 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     /** From the balance request (worker thread). */
     void balanceChanged() {
         home.repaint();
+    }
+
+    /**
+     * A language came in the background (LangPack.maybeFetch, worker
+     * thread): when the screens still wait for it in English and the menu
+     * is shown, the screens switch to it; otherwise it is used from the next
+     * language change or start.
+     */
+    void languageArrived(final String code) {
+        display.callSerially(new Runnable() {
+            public void run() {
+                if (code.equals(L.code()) && !L.present() && display.getCurrent() == home) {
+                    rebuildUi();
+                    showMenu();
+                }
+            }
+        });
     }
 
     /** The model list came (Models.maybeFetch): the chat and the menu name the model. */
@@ -1090,14 +1112,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         } else if (d == languageList && d != null) {
             if (c == List.SELECT_COMMAND) {
                 int lg = languageList.getSelectedIndex();
+                if (languageWait) {
+                    return; // a language is on its way
+                }
                 if (lg >= 0 && lg != settings.lang) {
-                    settings.lang = lg;
-                    String err = settings.save();
-                    rebuildUi();
-                    showSettings(); // its rows and commands in the new language
-                    fillSettings(S_LANG);
-                    if (err != null) {
-                        info(err, settingsForm);
+                    String code = L.codeOf(lg);
+                    if (code != null && !code.equals("en") && !LangPack.has(code)) {
+                        fetchLanguage(lg, code);
+                    } else {
+                        setLanguage(lg);
+                        LangPack.maybeFetch(this); // "Same as phone", or a kept one that is old
                     }
                     return;
                 }
@@ -1342,6 +1366,59 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     }
 
     private RowList languageList;
+
+    /** A language is being fetched for the language list. */
+    private boolean languageWait;
+
+    private void setLanguage(int lg) {
+        settings.lang = lg;
+        String err = settings.save();
+        rebuildUi();
+        showSettings(); // its rows and commands in the new language
+        fillSettings(S_LANG);
+        if (err != null) {
+            info(err, settingsForm);
+        }
+    }
+
+    /**
+     * A language not kept on the phone: fetched from the server while the
+     * list waits; used once it has come, else the list says why and the
+     * language stays as it was.
+     */
+    private void fetchLanguage(final int lg, final String code) {
+        languageWait = true;
+        languageList.setBusy(true);
+        languageList.note(L.t("Downloading the language..."));
+        new Thread(new Runnable() {
+            public void run() {
+                final String err = LangPack.fetch(ClaudeS40MIDlet.this, code);
+                display.callSerially(new Runnable() {
+                    public void run() {
+                        languageWait = false;
+                        Displayable now = display.getCurrent();
+                        if (err == null) {
+                            if (now == languageList || now == settingsForm) {
+                                setLanguage(lg);
+                            } else {
+                                // left the settings meanwhile: the menu switches now, other
+                                // screens are kept as they are until the next start
+                                settings.lang = lg;
+                                settings.save();
+                                if (now == home) {
+                                    rebuildUi();
+                                    showMenu();
+                                }
+                            }
+                        } else if (now == languageList) {
+                            showLanguages();
+                            languageList.note(L.t("Error: ") + err);
+                        }
+                    }
+                });
+            }
+        }).start();
+    }
 
     /** Settings > Language: every language in its own words; the centre key picks one at once. */
     private void showLanguages() {

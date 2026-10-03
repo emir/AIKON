@@ -1,16 +1,15 @@
 package io.github.emir.claudes40;
 
-import java.io.IOException;
-import java.io.InputStream;
 import java.util.Hashtable;
 
 /**
  * UI language, chosen at start-up (and again when Settings > Language
  * changes). The code is written in English: L.t("Save"), or L.f("{0}
  * credits", n) for texts with values. Every other language, Turkish too,
- * comes from app/lang/xx.txt (the English text, a TAB, the translation),
- * packed into the JAR by tools/strings.py. A text without a translation
- * stays English, so a half-done translation never breaks a screen.
+ * is written in app/lang/xx.txt (the English text, a TAB, the translation)
+ * and comes from the server (LangPack, 0.18.0): the JAR carries English
+ * only. Until a language has come, and for any text it lacks, the screens
+ * stay English, so a half-done translation never breaks a screen.
  *
  * "Same as phone" follows microedition.locale: a language we have by its
  * two letters, anything else English (the default).
@@ -23,7 +22,7 @@ final class L {
     /** Settings.lang of LANGS[i] is FIRST + i. */
     static final int FIRST = 3;
 
-    /** Two-letter codes of the languages in /lang besides Turkish (Settings.lang 1), and their own names. */
+    /** Two-letter codes of the languages besides Turkish (Settings.lang 1), and their own names. */
     static final String[] LANGS = { "es", "pt", "fr", "de", "ru", "id" };
     static final String[] NAMES = { "Español", "Português", "Français", "Deutsch", "Русский", "Bahasa Indonesia" };
 
@@ -49,10 +48,26 @@ final class L {
             }
         }
         code = c;
-        table = c.equals("en") ? null : load(c);
+        table = c.equals("en") ? null : LangPack.table(c);
     }
 
-    /** The language now in use, as two letters ("tr", "en", "es", ...). */
+    /** The language wanted is shown: English, or it has come from the server. */
+    static boolean present() {
+        return code.equals("en") || table != null;
+    }
+
+    /** The two letters of a Settings.lang value ("en", "tr", "es", ...); null for "Same as phone". */
+    static String codeOf(int lang) {
+        if (lang == TURKISH) {
+            return "tr";
+        }
+        if (lang >= FIRST && lang < FIRST + LANGS.length) {
+            return LANGS[lang - FIRST];
+        }
+        return lang == ENGLISH ? "en" : null;
+    }
+
+    /** The language wanted, as two letters ("tr", "en", "es", ...); English is shown until it has come. */
     static String code() {
         return code;
     }
@@ -97,68 +112,24 @@ final class L {
     }
 
     /**
-     * Reads /lang/keys.bin (the String.hashCode of each English text, 4
-     * bytes each) and /lang/xx.txt (their translations, line by line in the
-     * same order; an empty line is not translated). Both are made from
-     * app/lang by tools/strings.py pack, which fails on two keys with one
-     * hash. Null if a file is missing or unreadable (English then).
+     * Adds the lines of a part from the server (LangPack) to h: the
+     * String.hashCode of the English text as 8 hex digits, a TAB, the
+     * translation (backslash escapes). Malformed lines are skipped.
      */
-    private static Hashtable load(String c) {
-        byte[] keys = read("/lang/keys.bin");
-        byte[] raw = read("/lang/" + c + ".txt");
-        String vals;
-        try {
-            vals = raw != null ? new String(raw, "UTF-8") : null;
-        } catch (IOException e) {
-            vals = null;
-        }
-        if (keys == null || vals == null) {
-            return null;
-        }
-        Hashtable h = new Hashtable(800);
-        int ks = 0;
-        int vs = 0;
-        while (ks + 4 <= keys.length && vs < vals.length()) {
-            int hash = (keys[ks] & 0xFF) << 24 | (keys[ks + 1] & 0xFF) << 16
-                    | (keys[ks + 2] & 0xFF) << 8 | (keys[ks + 3] & 0xFF);
-            int ve = vals.indexOf('\n', vs);
-            if (ve < 0) {
-                ve = vals.length();
+    static void parse(String text, Hashtable h) {
+        int pos = 0;
+        while (pos < text.length()) {
+            int nl = text.indexOf('\n', pos);
+            int end = nl < 0 ? text.length() : nl;
+            if (end - pos > 9 && text.charAt(pos + 8) == '\t') {
+                try {
+                    int hash = (int) Long.parseLong(text.substring(pos, pos + 8), 16);
+                    h.put(new Integer(hash), unescape(text.substring(pos + 9, end)));
+                } catch (NumberFormatException e) {
+                    // skipped
+                }
             }
-            if (ve > vs) {
-                h.put(new Integer(hash), unescape(vals.substring(vs, ve)));
-            }
-            ks += 4;
-            vs = ve + 1;
-        }
-        return h;
-    }
-
-    /** A resource of the JAR, or null. */
-    private static byte[] read(String name) {
-        InputStream in = L.class.getResourceAsStream(name);
-        if (in == null) {
-            return null;
-        }
-        try {
-            byte[] buf = new byte[4096];
-            byte[] all = new byte[0];
-            int n;
-            while ((n = in.read(buf)) > 0) {
-                byte[] next = new byte[all.length + n];
-                System.arraycopy(all, 0, next, 0, all.length);
-                System.arraycopy(buf, 0, next, all.length, n);
-                all = next;
-            }
-            return all;
-        } catch (IOException e) {
-            return null;
-        } finally {
-            try {
-                in.close();
-            } catch (IOException e) {
-                // nothing to do
-            }
+            pos = end + 1;
         }
     }
 

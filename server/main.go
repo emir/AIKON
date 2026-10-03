@@ -38,7 +38,7 @@ import (
 
 const (
 	service      = "claude-s40-server"
-	version      = "0.9.3"
+	version      = "0.10.0"
 	echoProbe    = "Claude S40 UTF-8: ç ğ ı İ ö ş ü Ç Ğ Ö Ş Ü"
 	maxRequest   = 6144
 	maxEcho      = 512
@@ -404,7 +404,7 @@ func logged(h http.Handler) http.Handler {
 func knownPath(p string) bool {
 	switch p {
 	case "/health", "/echo", "/v1/chat", "/v1/more", "/v1/models", "/v1/conversations", "/v1/history", "/v1/delete",
-		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/image", "/v1/pair/start", "/v1/pair/claim",
+		"/v1/pin", "/v1/search", "/v1/transcribe", "/v1/image", "/v1/pair/start", "/v1/pair/claim", "/v1/lang",
 		"/admin/pair/approve", "/admin/devices", "/admin/devices/revoke", "/", "/ca.cer", "/app/AIKON.jad", "/app/AIKON.jar":
 		return true
 	}
@@ -427,6 +427,7 @@ func (s *server) publicMux() http.Handler {
 	mux.HandleFunc("POST /v1/image", s.imageHandler)
 	mux.HandleFunc("POST /v1/pair/start", s.pairStart)
 	mux.HandleFunc("POST /v1/pair/claim", s.pairClaim)
+	mux.HandleFunc("GET /v1/lang", s.langHandler)
 	mux.HandleFunc("GET /{$}", s.phonePage)
 	mux.HandleFunc("GET /app/{file}", s.appFile)
 	for _, add := range extraRoutes {

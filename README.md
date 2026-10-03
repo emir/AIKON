@@ -210,7 +210,8 @@ The app is written in English; every other language is one text file,
 one per line. The Spanish, Portuguese, French, German, Russian and
 Indonesian files are first drafts: corrections from native speakers are
 very welcome (a pull request that edits the file is enough). A new language
-is a new file plus its code and name in `L.java` (LANGS, NAMES); `make -C app langs` shows what each
+is a new file plus its code and name in `L.java` (LANGS, NAMES); `make -C app langs` copies the files
+to `server/lang` (the server sends them to phones, which carry only English) and shows what each
 file covers, and the build refuses a file that misses a text. Languages
 written right to left (Arabic, Hebrew) need layout work first, and scripts
 the phones' fonts lack (Japanese, Chinese) are out of reach on this

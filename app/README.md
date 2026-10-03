@@ -1,11 +1,14 @@
 # AIKON – phone app
 
 Java ME MIDlet for Nokia Series 40 and Symbian S60 (CLDC 1.1 / MIDP 2.0, class file 46.0).
-UI in eight languages: English (the code's), and from `lang/xx.txt` Turkish,
-Spanish, Portuguese, French, German, Russian, Indonesian; it follows the
-phone language (English for any other) and changes under Settings >
-Language. `make langs` shows what each file covers; the build fails when a
-file misses a text of the code or keeps one the code no longer has.
+UI in eight languages: English (the code's, the only one in the JAR), and
+Turkish, Spanish, Portuguese, French, German, Russian, Indonesian, written
+in `lang/xx.txt` and downloaded from the server when chosen (`LangPack`,
+server `GET /v1/lang`); it follows the phone language (English for any
+other) and changes under Settings > Language. `make langs` copies the files
+to `../server/lang` (the server embeds them) and shows what each covers; the
+build fails when a file misses a text of the code, keeps one the code no
+longer has, or the server's copy differs.
 
 Every screen except text entry is drawn by the app (Canvas): line icons and
 the AIKON wordmark rendered with smooth edges on the phone (`Icons`,
@@ -37,7 +40,7 @@ cp app.local.properties.example app.local.properties   # set GATEWAY_URL=https:/
 make            # downloads pinned tools to .deps/j2me (SHA-256 checked), builds, runs the package checks twice
 ```
 
-Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~200 KB with the languages), `dist/SHA256SUMS`.
+Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~150 KB; the languages come from the server), `dist/SHA256SUMS`.
 Version and build number live only in `app.properties`.
 
 Pipeline: ECJ compiles against the CLDC 1.1 + MIDP 2.0 API stubs, plus the

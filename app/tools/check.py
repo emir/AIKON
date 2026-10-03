@@ -342,7 +342,6 @@ def main():
           RECORDING in optional and all(c in optional for c in CAMERA))
     api.update(optional)
     classes = {}
-    lang_lines = {}
     for n in names:
         if n.endswith(".class"):
             c = parse_class(z.read(n))
@@ -354,27 +353,9 @@ def main():
             check("MIDlet icon is a PNG in the JAR", ok, f"{n} {w}x{h}")
             check("MIDlet icon is small (<= 64x64, <= 8 KiB)", w <= 64 and h <= 64 and len(data) <= 8192,
                   f"{w}x{h} {len(data)} B")
-        elif n == "lang/keys.bin":
-            # tools/strings.py pack: the hash of each English key, 4 bytes
-            data = z.read(n)
-            check("lang/keys.bin holds whole 4-byte hashes", len(data) % 4 == 0, len(data))
-            lang_lines[n] = len(data) // 4
-        elif re.fullmatch(r"lang/[a-z]{2}\.txt", n):
-            # UI language files (tools/strings.py pack): UTF-8 text, one line per string
-            data = z.read(n)
-            try:
-                lines = data.decode("utf-8").split("\n")
-                ok = not data.startswith(b"\xef\xbb\xbf")
-            except UnicodeDecodeError:
-                lines, ok = [], False
-            lang_lines[n] = len(lines) - 1     # each line ends with \n
-            check(f"{n} is UTF-8 text without a BOM", ok, n)
         elif n != "META-INF/MANIFEST.MF":
-            check("only classes, manifest, icon and language files in JAR", False, n)
-    if lang_lines:
-        keys = lang_lines.get("lang/keys.bin")
-        check("every language file has one line per key of lang/keys.bin",
-              keys is not None and all(v == keys for v in lang_lines.values()), lang_lines)
+            # no language files: the phone gets them from the server (/v1/lang)
+            check("only classes, manifest and icon in JAR", False, n)
     pkg = main_cls.rsplit("/", 1)[0] + "/"
     check("no platform/other packages packaged (short names map to the MIDlet's package)",
           all(c.startswith(pkg) or ("/" not in c and real.get(c, "").startswith(pkg)) for c in classes),

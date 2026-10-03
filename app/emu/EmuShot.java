@@ -38,6 +38,11 @@ import org.recompile.mobile.MobilePlatform;
  * "more" is added by reflection to show the "0 · the rest" row; 0 is never
  * pressed on it. Emulator success is NOT device compatibility.
  *
+ * Languages other than English come from the server on a phone; the
+ * harness keeps the one of the run from app/lang (system property
+ * emu.lang, the folder) through the app's own LangPack.save, in the
+ * server's format (server/lang.go), so the app reads it as it would.
+ *
  * The JAR has ProGuard's short names; MAPPING (build/mapping.txt) gives the
  * harness the real ones for its reflection.
  *
@@ -111,6 +116,9 @@ public class EmuShot {
         // a build that names its server would test the connection at once (network): the harness
         // forgets the address before the splash ends, so the wizard starts with the address step
         setting("url", "");
+        if (!"en".equals(code)) {
+            keepLanguage(code);
+        }
         if (tr) {
             setting("lang", new Integer(1));
             call("rebuildUi");
@@ -394,6 +402,43 @@ public class EmuShot {
             setField(session, "canRetry", Boolean.FALSE);
             bump(session);
         }
+    }
+
+    /** Harness: language `code` from app/lang kept on the "phone" as if the server had sent it. */
+    static void keepLanguage(String code) throws Exception {
+        StringBuffer pack = new StringBuffer();
+        BufferedReader r = new BufferedReader(new java.io.InputStreamReader(
+                new java.io.FileInputStream(new File(System.getProperty("emu.lang"), code + ".txt")), "UTF-8"));
+        String line;
+        while ((line = r.readLine()) != null) {
+            int tab = line.indexOf('\t');
+            if (line.length() == 0 || line.startsWith("#") || tab <= 0) {
+                continue;
+            }
+            pack.append(String.format("%08x", unescape(line.substring(0, tab)).hashCode()))
+                .append(line.substring(tab)).append('\n');
+        }
+        r.close();
+        Class lp = Class.forName(shortName("io.github.emir.claudes40.LangPack"), true, midlet.getClass().getClassLoader());
+        Method save = methodOf(lp, "save", String.class, String.class, String.class, String.class, String[].class);
+        save.setAccessible(true);
+        Object ok = save.invoke(null, code, "emu", "", "", new String[] { pack.toString() });
+        System.out.println("EMU: language " + code + " kept (harness): " + ok);
+    }
+
+    /** As app/lang files escape: \\n, \\t, \\x. */
+    static String unescape(String s) {
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < s.length(); i++) {
+            char c = s.charAt(i);
+            if (c == '\\' && i + 1 < s.length()) {
+                char n = s.charAt(++i);
+                b.append(n == 'n' ? '\n' : n == 't' ? '\t' : n);
+            } else {
+                b.append(c);
+            }
+        }
+        return b.toString();
     }
 
     /** ProGuard mapping: real class -> short class, short -> real, and per real class its members. */

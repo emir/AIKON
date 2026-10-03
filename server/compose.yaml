@@ -14,7 +14,7 @@
 services:
   server:
     build: .
-    image: claude-s40-server:0.9.3
+    image: claude-s40-server:0.10.0
     pull_policy: never
     environment:
       ENVIRONMENT: ${ENVIRONMENT:-production}

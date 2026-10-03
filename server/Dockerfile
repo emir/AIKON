@@ -27,6 +27,7 @@ WORKDIR /src
 COPY go.mod go.sum ./
 RUN go mod download
 COPY *.go ./
+COPY lang ./lang
 RUN go vet ./... && go test -count=1 ./... \
  && CGO_ENABLED=0 go build -trimpath -ldflags "-s -w -buildid=" -o /out/claude-s40-server . \
  && mkdir -p /out/data
