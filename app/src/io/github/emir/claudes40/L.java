@@ -62,7 +62,7 @@ final class L {
         if (table == null) {
             return english;
         }
-        String v = (String) table.get(english);
+        String v = (String) table.get(new Integer(english.hashCode()));
         return v != null ? v : english;
     }
 
@@ -97,40 +97,45 @@ final class L {
     }
 
     /**
-     * Reads /lang/keys.txt (the English texts) and /lang/xx.txt (their
-     * translations, line by line in the same order; an empty line is not
-     * translated). Both are made from app/lang by tools/strings.py pack.
-     * Null if a file is missing or unreadable (English then).
+     * Reads /lang/keys.bin (the String.hashCode of each English text, 4
+     * bytes each) and /lang/xx.txt (their translations, line by line in the
+     * same order; an empty line is not translated). Both are made from
+     * app/lang by tools/strings.py pack, which fails on two keys with one
+     * hash. Null if a file is missing or unreadable (English then).
      */
     private static Hashtable load(String c) {
-        String keys = read("/lang/keys.txt");
-        String vals = read("/lang/" + c + ".txt");
+        byte[] keys = read("/lang/keys.bin");
+        byte[] raw = read("/lang/" + c + ".txt");
+        String vals;
+        try {
+            vals = raw != null ? new String(raw, "UTF-8") : null;
+        } catch (IOException e) {
+            vals = null;
+        }
         if (keys == null || vals == null) {
             return null;
         }
         Hashtable h = new Hashtable(800);
         int ks = 0;
         int vs = 0;
-        while (ks < keys.length() && vs < vals.length()) {
-            int ke = keys.indexOf('\n', ks);
+        while (ks + 4 <= keys.length && vs < vals.length()) {
+            int hash = (keys[ks] & 0xFF) << 24 | (keys[ks + 1] & 0xFF) << 16
+                    | (keys[ks + 2] & 0xFF) << 8 | (keys[ks + 3] & 0xFF);
             int ve = vals.indexOf('\n', vs);
-            if (ke < 0) {
-                ke = keys.length();
-            }
             if (ve < 0) {
                 ve = vals.length();
             }
             if (ve > vs) {
-                h.put(unescape(keys.substring(ks, ke)), unescape(vals.substring(vs, ve)));
+                h.put(new Integer(hash), unescape(vals.substring(vs, ve)));
             }
-            ks = ke + 1;
+            ks += 4;
             vs = ve + 1;
         }
         return h;
     }
 
-    /** A UTF-8 resource of the JAR as text, or null. */
-    private static String read(String name) {
+    /** A resource of the JAR, or null. */
+    private static byte[] read(String name) {
         InputStream in = L.class.getResourceAsStream(name);
         if (in == null) {
             return null;
@@ -145,7 +150,7 @@ final class L {
                 System.arraycopy(buf, 0, next, all.length, n);
                 all = next;
             }
-            return new String(all, "UTF-8");
+            return all;
         } catch (IOException e) {
             return null;
         } finally {

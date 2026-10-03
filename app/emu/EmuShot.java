@@ -1,8 +1,11 @@
 import java.awt.image.BufferedImage;
+import java.io.BufferedReader;
 import java.io.File;
+import java.io.FileReader;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Vector;
 
@@ -35,7 +38,10 @@ import org.recompile.mobile.MobilePlatform;
  * "more" is added by reflection to show the "0 · the rest" row; 0 is never
  * pressed on it. Emulator success is NOT device compatibility.
  *
- * Usage: java -cp FREEJ2ME_CLASSES:. EmuShot JAR OUTDIR WIDTH HEIGHT [en|tr]
+ * The JAR has ProGuard's short names; MAPPING (build/mapping.txt) gives the
+ * harness the real ones for its reflection.
+ *
+ * Usage: java -cp FREEJ2ME_CLASSES:. EmuShot JAR MAPPING OUTDIR WIDTH HEIGHT [en|tr]
  */
 public class EmuShot {
 
@@ -78,11 +84,12 @@ public class EmuShot {
 
     static void run(String[] args) throws Exception {
         System.setProperty("java.awt.headless", "true");
-        out = new File(args[1]);
+        readMapping(args[1]);
+        out = new File(args[2]);
         new File(out, "splash").mkdirs();
-        int w = Integer.parseInt(args[2]);
-        int h = Integer.parseInt(args[3]);
-        String code = args.length > 4 ? args[4] : "en";
+        int w = Integer.parseInt(args[3]);
+        int h = Integer.parseInt(args[4]);
+        String code = args.length > 5 ? args[5] : "en";
         tr = "tr".equals(code);
         lang = tr ? 1 : 2;
         String[] files = { "es", "pt", "fr", "de", "ru", "id" }; // L.LANGS
@@ -220,7 +227,7 @@ public class EmuShot {
 
         // models (server 0.7.0): test mode cannot fetch /v1/models, so the
         // list it would return is put in by reflection (harness only)
-        Class models = Class.forName("io.github.emir.claudes40.Models", true, midlet.getClass().getClassLoader());
+        Class models = Class.forName(shortName("io.github.emir.claudes40.Models"), true, midlet.getClass().getClassLoader());
         setStatic(models, "ids", new String[] { "claude-opus-5-5", "claude-sonnet-5-5", "gpt-6.1-sol", "gpt-6-luna",
             "gemini-3.8-flash", "grok-y" });
         setStatic(models, "names", new String[] { "Claude Opus 5.5", "Claude Sonnet 5.5", "GPT-6.1 Sol", "GPT-6 Luna",
@@ -228,7 +235,7 @@ public class EmuShot {
         setStatic(models, "providers", new String[] { "Claude", "Claude", "OpenAI", "OpenAI", "Gemini", "Grok" });
         setStatic(models, "defaultId", "claude-opus-5-5");
         setStatic(models, "loaded", Boolean.TRUE);
-        Method newChat = midlet.getClass().getDeclaredMethod("startNewChat", Displayable.class);
+        Method newChat = methodOf(midlet.getClass(), "startNewChat", Displayable.class);
         newChat.setAccessible(true);
         newChat.invoke(midlet, current());
         settle();
@@ -268,16 +275,16 @@ public class EmuShot {
 
         // the credit code page (nothing is sent before a code is typed), on a server with a free
         // trial and a shop (example address, put into Updates by the harness; nothing is fetched)
-        Class up = Class.forName("io.github.emir.claudes40.Updates", true, midlet.getClass().getClassLoader());
+        Class up = Class.forName(shortName("io.github.emir.claudes40.Updates"), true, midlet.getClass().getClassLoader());
         staticField(up, "loaded", Boolean.TRUE);
         staticField(up, "server", field(field(midlet, "settings"), "url"));
         staticField(up, "shop", "https://example.com/buy");
         staticField(up, "trial", Boolean.TRUE);
-        Class cr = Class.forName("io.github.emir.claudes40.Credits", true, midlet.getClass().getClassLoader());
+        Class cr = Class.forName(shortName("io.github.emir.claudes40.Credits"), true, midlet.getClass().getClassLoader());
         Constructor cc = cr.getDeclaredConstructors()[0];
         cc.setAccessible(true);
         Object credits = cc.newInstance(midlet, null, field(midlet, "home"));
-        Method sp = cr.getDeclaredMethod("showPair");
+        Method sp = methodOf(cr, "showPair");
         sp.setAccessible(true);
         sp.invoke(credits);
         save("credit_code");
@@ -287,12 +294,12 @@ public class EmuShot {
         key(Mobile.KEY_NUM9);
         key(Mobile.KEY_NUM1);
         save("credit_code_typing");           // "4539 1___ ...", Delete on the right softkey
-        Method wt = cr.getDeclaredMethod("waiting", String.class);
+        Method wt = methodOf(cr, "waiting", String.class);
         wt.setAccessible(true);
         wt.invoke(credits, t("Sending...", "Gönderiliyor..."));
         Thread.sleep(300);
         save("credit_sending");               // the status with the spinner (harness only: nothing is sent)
-        Method stt = cr.getDeclaredMethod("status", String.class);
+        Method stt = methodOf(cr, "status", String.class);
         stt.setAccessible(true);
         stt.invoke(credits, "");
         command(t("Buy a code", "Kod satın al"));
@@ -329,7 +336,7 @@ public class EmuShot {
         // a server that sells credits: the Credits row (a balance set by the harness; nothing is fetched)
         setting("credits", Boolean.TRUE);
         Object session = field(midlet, "session");
-        Method bal = session.getClass().getDeclaredMethod("setBalance", String.class);
+        Method bal = methodOf(session.getClass(), "setBalance", String.class);
         bal.setAccessible(true);
         bal.invoke(session, "45");
         call("showMenu");
@@ -351,8 +358,8 @@ public class EmuShot {
     /** A label as the app shows it now (its L.t: English, or from a language file). */
     static String t(String en, String turkish) {
         try {
-            Class l = Class.forName("io.github.emir.claudes40.L", true, midlet.getClass().getClassLoader());
-            Method s = l.getDeclaredMethod("t", String.class);
+            Class l = Class.forName(shortName("io.github.emir.claudes40.L"), true, midlet.getClass().getClassLoader());
+            Method s = methodOf(l, "t", String.class);
             s.setAccessible(true);
             String v = (String) s.invoke(null, en);
             return tr && v.equals(en) ? turkish : v; // texts the harness types are not UI keys
@@ -364,7 +371,7 @@ public class EmuShot {
     /** Harness only: an error note after which "Retry" is offered (never pressed here). */
     static void addRetryError() throws Exception {
         Object session = field(midlet, "session");
-        Class entry = Class.forName("io.github.emir.claudes40.ChatSession$Entry", true, session.getClass().getClassLoader());
+        Class entry = Class.forName(shortName("io.github.emir.claudes40.ChatSession$Entry"), true, session.getClass().getClassLoader());
         Constructor c = entry.getDeclaredConstructor(new Class[] { int.class, String.class, String.class });
         c.setAccessible(true);
         Object e = c.newInstance(new Object[] { new Integer(4), t("[Harness] Could not connect", "[Test düzeneği] Bağlantı yok"),
@@ -389,14 +396,77 @@ public class EmuShot {
         }
     }
 
+    /** ProGuard mapping: real class -> short class, short -> real, and per real class its members. */
+    static final HashMap<String, String> shortClass = new HashMap<String, String>();
+    static final HashMap<String, String> realClass = new HashMap<String, String>();
+    static final HashMap<String, HashMap<String, String>> members = new HashMap<String, HashMap<String, String>>();
+
+    static void readMapping(String path) throws Exception {
+        BufferedReader r = new BufferedReader(new FileReader(path));
+        HashMap<String, String> cur = null;
+        String line;
+        while ((line = r.readLine()) != null) {
+            int arrow = line.indexOf(" -> ");
+            if (arrow < 0 || line.startsWith("#")) {
+                continue;
+            }
+            String to = line.substring(arrow + 4).trim();
+            if (!line.startsWith(" ")) {                    // "a.b.Real -> x:"
+                String from = line.substring(0, arrow).trim();
+                to = to.substring(0, to.length() - 1);
+                shortClass.put(from, to);
+                realClass.put(to, from);
+                cur = new HashMap<String, String>();
+                members.put(from, cur);
+                continue;
+            }
+            // "    int version -> b", "    void setBalance(java.lang.String) -> a" (maybe "1:2:" before)
+            String m = line.substring(0, arrow).trim().replaceFirst("^[0-9:]+", "");
+            m = m.substring(m.indexOf(' ') + 1);
+            cur.put(m, to);
+        }
+        r.close();
+    }
+
+    static String shortName(String real) {
+        String s = shortClass.get(real);
+        return s != null ? s : real;
+    }
+
+    static String realName(Class c) {
+        if (c.isArray()) {
+            return realName(c.getComponentType()) + "[]";
+        }
+        String r = realClass.get(c.getName());
+        return r != null ? r : c.getName();
+    }
+
+    static String member(Class c, String key, String name) {
+        HashMap<String, String> m = members.get(realName(c));
+        String s = m != null ? m.get(key) : null;
+        return s != null ? s : name;
+    }
+
+    static Field fieldOf(Class c, String name) throws Exception {
+        return c.getDeclaredField(member(c, name, name));
+    }
+
+    static Method methodOf(Class c, String name, Class... params) throws Exception {
+        StringBuffer key = new StringBuffer(name).append('(');
+        for (int i = 0; i < params.length; i++) {
+            key.append(i > 0 ? "," : "").append(realName(params[i]));
+        }
+        return c.getDeclaredMethod(member(c, key.append(')').toString(), name), params);
+    }
+
     static void setField(Object o, String name, Object value) throws Exception {
-        Field f = o.getClass().getDeclaredField(name);
+        Field f = fieldOf(o.getClass(), name);
         f.setAccessible(true);
         f.set(o, value);
     }
 
     static void bump(Object session) throws Exception {
-        Field v = session.getClass().getDeclaredField("version");
+        Field v = fieldOf(session.getClass(), "version");
         v.setAccessible(true);
         v.setInt(session, v.getInt(session) + 1);
     }
@@ -404,7 +474,7 @@ public class EmuShot {
     /** Harness only: a test-mode reply that says a further part exists (never fetched here). */
     static void addMoreEntry() throws Exception {
         Object session = field(midlet, "session");
-        Class entry = Class.forName("io.github.emir.claudes40.ChatSession$Entry", true, session.getClass().getClassLoader());
+        Class entry = Class.forName(shortName("io.github.emir.claudes40.ChatSession$Entry"), true, session.getClass().getClassLoader());
         Constructor c = entry.getDeclaredConstructor(new Class[] { int.class, String.class, boolean.class, long.class,
             int.class, String.class, String.class, String.class });
         c.setAccessible(true);
@@ -415,7 +485,7 @@ public class EmuShot {
         Vector entries = (Vector) field(session, "entries");
         synchronized (session) {
             entries.addElement(e);
-            Field v = session.getClass().getDeclaredField("version");
+            Field v = fieldOf(session.getClass(), "version");
             v.setAccessible(true);
             v.setInt(session, v.getInt(session) + 1);
         }
@@ -425,34 +495,34 @@ public class EmuShot {
     }
 
     static void setStatic(Class c, String name, Object value) throws Exception {
-        Field f = c.getDeclaredField(name);
+        Field f = fieldOf(c, name);
         f.setAccessible(true);
         f.set(null, value);
         System.out.println("EMU: " + c.getName() + "." + name + " set (harness)");
     }
 
     static Object field(Object o, String name) throws Exception {
-        Field f = o.getClass().getDeclaredField(name);
+        Field f = fieldOf(o.getClass(), name);
         f.setAccessible(true);
         return f.get(o);
     }
 
     static void staticField(Class c, String name, Object value) throws Exception {
-        Field f = c.getDeclaredField(name);
+        Field f = fieldOf(c, name);
         f.setAccessible(true);
         f.set(null, value);
     }
 
     static void setting(String name, Object value) throws Exception {
         Object s = field(midlet, "settings");
-        Field f = s.getClass().getDeclaredField(name);
+        Field f = fieldOf(s.getClass(), name);
         f.setAccessible(true);
         f.set(s, value);
         System.out.println("EMU: Settings." + name + " = " + value + " (harness)");
     }
 
     static void call(String name) throws Exception {
-        Method m = midlet.getClass().getDeclaredMethod(name);
+        Method m = methodOf(midlet.getClass(), name);
         m.setAccessible(true);
         m.invoke(midlet);
         settle();
@@ -481,10 +551,10 @@ public class EmuShot {
     static void select(int index) throws Exception {
         Displayable d = current();
         if (!(d instanceof javax.microedition.lcdui.List)) { // the app's RowList: select, then FIRE
-            Method set = d.getClass().getDeclaredMethod("setSelectedIndex", int.class, boolean.class);
+            Method set = methodOf(d.getClass(), "setSelectedIndex", int.class, boolean.class);
             set.setAccessible(true);
             set.invoke(d, index, true);
-            Method fire = d.getClass().getDeclaredMethod("fire");
+            Method fire = methodOf(d.getClass(), "fire");
             fire.setAccessible(true);
             fire.invoke(d);
             settle();
@@ -515,7 +585,7 @@ public class EmuShot {
         for (int i = 0; i < cmds.size(); i++) {
             have.append(" [").append(cmds.get(i).getLabel()).append(']');
         }
-        throw new IllegalStateException("command not found: " + label + " on " + d.getClass().getName() + ", has" + have);
+        throw new IllegalStateException("command not found: " + label + " on " + realName(d.getClass()) + ", has" + have);
     }
 
     static void save(String name) throws Exception {
@@ -523,6 +593,6 @@ public class EmuShot {
         BufferedImage lcd = Mobile.getPlatform().getLCD();
         File f = new File(out, String.format("%02d_%s.png", ++shot, name));
         ImageIO.write(lcd, "png", f);
-        System.out.println("EMU: saved " + f.getName() + " (" + current().getClass().getSimpleName() + ")");
+        System.out.println("EMU: saved " + f.getName() + " (" + realName(current().getClass()) + ")");
     }
 }

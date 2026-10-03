@@ -50,7 +50,7 @@ deps:
 	@tools/fetch_deps.sh $(DEPS)
 
 build: deps
-	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS) $(DIST)
+	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(BUILD)/mapping.txt $(STUBS) $(DIST)
 	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS)
 	$(PYTHON) tools/make_art.py icon $(BUILD)/res/icon.png
 	$(PYTHON) tools/strings.py check src lang
@@ -63,12 +63,13 @@ build: deps
 		-failOnWarning -d $(BUILD)/classes $(SRCS)
 	$(JAVA) -jar $(PROGUARD) @claude-s40.pro \
 		-injars $(BUILD)/classes -outjars $(BUILD)/preverified \
-		-libraryjars $(CLDC) -libraryjars $(MIDP) -libraryjars $(JSR75) -libraryjars $(STUBS)
+		-libraryjars $(CLDC) -libraryjars $(MIDP) -libraryjars $(JSR75) -libraryjars $(STUBS) \
+		-printmapping $(BUILD)/mapping.txt
 	$(PYTHON) tools/package.py app.properties $(BUILD)/preverified $(DIST) $(LOCAL) $(BUILD)/res
 
 check:
 	@test -f $(DIST)/SHA256SUMS || { echo "run 'make build' first" >&2; exit 1; }
-	$(PYTHON) tools/check.py app.properties $(DIST) $(CLDC) $(MIDP) $(JSR75) $(STUBS)
+	$(PYTHON) tools/check.py app.properties $(DIST) $(BUILD)/mapping.txt $(CLDC) $(MIDP) $(JSR75) $(STUBS)
 	@echo "reproducibility: clean rebuild into $(BUILD)/repro"
 	@rm -rf $(BUILD)/repro
 	@$(MAKE) --no-print-directory BUILD=$(BUILD)/repro/build DIST=$(BUILD)/repro/dist build >$(BUILD)/repro.log 2>&1 \
@@ -86,12 +87,12 @@ EMU_H ?= 320
 EMU_LANG ?= en
 
 emu:
-	@test -f $(DIST)/$(FILE_BASE).jar || { echo "run 'make build' first" >&2; exit 1; }
+	@test -f $(DIST)/$(FILE_BASE).jar -a -f $(BUILD)/mapping.txt || { echo "run 'make build' first" >&2; exit 1; }
 	@test -n "$(FREEJ2ME)" -a -d "$(FREEJ2ME)/org/recompile/mobile" || { echo "set FREEJ2ME=/path/to/freej2me/classes" >&2; exit 1; }
 	rm -rf $(BUILD)/emu && mkdir -p $(BUILD)/emu/classes
 	$(JAVAC) --release 8 -nowarn -cp $(FREEJ2ME) -d $(BUILD)/emu/classes emu/EmuShot.java
 	cd $(BUILD)/emu && $(JAVA) -Djava.awt.headless=true -cp $(abspath $(FREEJ2ME)):classes EmuShot \
-		$(abspath $(DIST)/$(FILE_BASE).jar) shots $(EMU_W) $(EMU_H) $(EMU_LANG) 2>&1 | tee emu.log
+		$(abspath $(DIST)/$(FILE_BASE).jar) $(abspath $(BUILD)/mapping.txt) shots $(EMU_W) $(EMU_H) $(EMU_LANG) 2>&1 | tee emu.log
 
 promo:
 	@test -d $(BUILD)/emu/shots || { echo "run 'make emu' first" >&2; exit 1; }

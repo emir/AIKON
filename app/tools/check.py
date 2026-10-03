@@ -2,7 +2,10 @@
 """
 Verify a MIDlet JAR/JAD pair against app.properties and the target platform.
 
-  check.py app.properties DIST_DIR CLDC_JAR MIDP_JAR [OPTIONAL_API_JAR_OR_DIR...]
+  check.py app.properties DIST_DIR MAPPING CLDC_JAR MIDP_JAR [OPTIONAL_API_JAR_OR_DIR...]
+
+MAPPING is ProGuard's -printmapping output (real name -> short name); the
+rules about Files/Pim/Rec/Cam use the real names.
 
 AIKON specifics: exact
 name/file checks, only MIDlet-Permissions-Opt = Connector.https, no plain http:// URL in the classes, and a secret scan of every packaged
@@ -14,6 +17,7 @@ load such a class.
 Exit 0 only if every check passes. Checks:
   zip integrity, manifest first, attribute agreement manifest/JAD/properties,
   MIDlet class present and a MIDlet subclass, configuration/profile,
+  every class is the MIDlet's package or a short-named class of it,
   Jar-URL/Jar-Size, class file version 46.0, Java ME preverification
   (StackMap where needed, no jsr/ret, no Java 6 StackMapTable), every
   referenced class and member resolves to the JAR or the CLDC 1.1/MIDP 2.0
@@ -244,9 +248,21 @@ def load_api(paths):
     return api
 
 
+def read_mapping(path):
+    """ProGuard mapping: short class name -> real class name (both with /)."""
+    real = {}
+    for line in open(path, encoding="utf-8"):
+        if line.startswith((" ", "#")) or "->" not in line:
+            continue
+        a, b = line.rstrip().rstrip(":").split(" -> ")
+        real[b.replace(".", "/")] = a.replace(".", "/")
+    return real
+
+
 def main():
-    props_path, dist, cldc, midp = sys.argv[1:5]
-    optional_api = sys.argv[5:]
+    props_path, dist, mapping, cldc, midp = sys.argv[1:6]
+    optional_api = sys.argv[6:]
+    real = read_mapping(mapping)
     p = read_props(props_path)
     results = []
 
@@ -338,7 +354,12 @@ def main():
             check("MIDlet icon is a PNG in the JAR", ok, f"{n} {w}x{h}")
             check("MIDlet icon is small (<= 64x64, <= 8 KiB)", w <= 64 and h <= 64 and len(data) <= 8192,
                   f"{w}x{h} {len(data)} B")
-        elif re.fullmatch(r"lang/(keys|[a-z]{2})\.txt", n):
+        elif n == "lang/keys.bin":
+            # tools/strings.py pack: the hash of each English key, 4 bytes
+            data = z.read(n)
+            check("lang/keys.bin holds whole 4-byte hashes", len(data) % 4 == 0, len(data))
+            lang_lines[n] = len(data) // 4
+        elif re.fullmatch(r"lang/[a-z]{2}\.txt", n):
             # UI language files (tools/strings.py pack): UTF-8 text, one line per string
             data = z.read(n)
             try:
@@ -346,17 +367,20 @@ def main():
                 ok = not data.startswith(b"\xef\xbb\xbf")
             except UnicodeDecodeError:
                 lines, ok = [], False
-            lang_lines[n] = len(lines)
+            lang_lines[n] = len(lines) - 1     # each line ends with \n
             check(f"{n} is UTF-8 text without a BOM", ok, n)
         elif n != "META-INF/MANIFEST.MF":
             check("only classes, manifest, icon and language files in JAR", False, n)
     if lang_lines:
-        keys = lang_lines.get("lang/keys.txt")
-        check("every language file has one line per key of lang/keys.txt",
+        keys = lang_lines.get("lang/keys.bin")
+        check("every language file has one line per key of lang/keys.bin",
               keys is not None and all(v == keys for v in lang_lines.values()), lang_lines)
     pkg = main_cls.rsplit("/", 1)[0] + "/"
-    check("no platform/other packages packaged",
-          all(c.startswith(pkg) for c in classes), sorted(classes))
+    check("no platform/other packages packaged (short names map to the MIDlet's package)",
+          all(c.startswith(pkg) or ("/" not in c and real.get(c, "").startswith(pkg)) for c in classes),
+          sorted(c for c in classes if not c.startswith(pkg) and not real.get(c, "").startswith(pkg)))
+    check("mapping matches the JAR (every class has its real name)",
+          all(c in real or c.startswith(pkg) for c in classes), mapping)
 
     http_consts = sorted({u for c in classes.values() for u in c["cp_utf"]
                           if "http://" in u})
@@ -462,7 +486,7 @@ def main():
             refd.update(types_in(r[3]))
         for _, desc, _ in c["methods"] + c["fields"]:
             refd.update(types_in(desc))
-        name = c["this"].rsplit("/", 1)[-1].split("$")[0]
+        name = real.get(c["this"], c["this"]).rsplit("/", 1)[-1].split("$")[0]
         if any(x.lstrip("[L").startswith(OPTIONAL_PACKAGES) for x in refd):
             users.add(name)
         if any(x.lstrip("[L").startswith(RECORDING) for x in refd):

@@ -62,7 +62,8 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   `{0}` for values); Turkish, Spanish, Portuguese, French, German, Russian
   and Indonesian come from `app/lang/xx.txt` (one line per English text:
   the text, a TAB, the translation), packed at build time into
-  `/lang/keys.txt` plus one file of translations per language
+  `/lang/keys.bin` (the `String.hashCode` of each English text; the build
+  fails if two share one) plus one file of translations per language
   (`tools/strings.py`; `make -C app langs` shows what each file covers). A
   missing translation shows the English text, and English is the language
   for any phone language we do not have. "Same as phone" picks the language

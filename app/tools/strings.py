@@ -4,9 +4,10 @@
   tools/strings.py keys SRC_DIR            print every English UI text (one key per line, escaped)
   tools/strings.py check SRC_DIR LANG_DIR  check the language files; print what each one covers
   tools/strings.py missing SRC_DIR FILE    print the keys FILE does not translate yet
-  tools/strings.py pack SRC_DIR LANG_DIR OUT  the files for the JAR: OUT/keys.txt (the English
-                                         keys, one per line) and OUT/xx.txt (the translations in
-                                         the same order; an empty line = not translated)
+  tools/strings.py pack SRC_DIR LANG_DIR OUT  the files for the JAR: OUT/keys.bin (the Java
+                                         String.hashCode of each English key, 4 bytes big-endian)
+                                         and OUT/xx.txt (the translations in the same order, one
+                                         per line; an empty line = not translated)
 
 Keys are the first arguments of L.t / L.f that are string literals (or
 literals joined with +; the code is written in English), and the entries of
@@ -167,6 +168,15 @@ def keys(src_dir):
     return out
 
 
+def java_hash(s):
+    """Java's String.hashCode (UTF-16 code units, 32-bit signed wrap), as unsigned."""
+    h = 0
+    b = s.encode("utf-16-be")
+    for i in range(0, len(b), 2):
+        h = (31 * h + (b[i] << 8 | b[i + 1])) & 0xFFFFFFFF
+    return h
+
+
 def read_lang(path):
     table, errors = {}, []
     for n, line in enumerate(open(path, encoding="utf-8").read().split("\n"), 1):
@@ -199,8 +209,15 @@ def main():
     elif mode == "pack":
         out = sys.argv[4]
         os.makedirs(out, exist_ok=True)
-        with open(os.path.join(out, "keys.txt"), "w", encoding="utf-8", newline="\n") as f:
-            f.write("".join(file_escape(k) + "\n" for k in ks))
+        # the phone looks a key up by its hash: no two keys may share one
+        hashes = [java_hash(k) for k in ks]
+        seen = {}
+        for k, h in zip(ks, hashes):
+            if h in seen:
+                sys.exit(f"keys {file_escape(seen[h])!r} and {file_escape(k)!r} have the same hash; reword one")
+            seen[h] = k
+        with open(os.path.join(out, "keys.bin"), "wb") as f:
+            f.write(b"".join(h.to_bytes(4, "big") for h in hashes))
         for path in sorted(glob.glob(os.path.join(sys.argv[3], "*.txt"))):
             table, errors = read_lang(path)
             if errors:
