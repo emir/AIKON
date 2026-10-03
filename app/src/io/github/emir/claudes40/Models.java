@@ -80,7 +80,8 @@ final class Models implements CommandListener, Runnable {
         return name(last).length() > 0 ? last : defaultId;
     }
 
-    private static synchronized void setLast(String id) {
+    /** The model new chats start with (also set by a free trial: its model). */
+    static synchronized void setLast(String id) {
         last = id;
         save();
     }

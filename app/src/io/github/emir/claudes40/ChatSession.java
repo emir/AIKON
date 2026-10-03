@@ -800,6 +800,12 @@ final class ChatSession implements Runnable, Net.Listener {
                     "Not enough credits for this message" + (balance.length() > 0 ? " (balance: " + balance + ")" : "")
                     + ". Add a code under main menu > Credits; your message is kept as a draft.")
                     + (shop.length() > 0 ? "\n\n" + shop : "");
+        } else if ("trial_model".equals(st)) {
+            status = L.s("Deneme: tek model", "Trial: one model");
+            msg = L.s("Ücretsiz deneme yalnızca bir modelle çalışır. Model menüsünden onu seç; kredi kodu yükleyince "
+                    + "tüm modeller açılır (Ana menü > Kredi). Mesajın taslakta duruyor.",
+                    "The free trial works with one model only. Pick it in the Model menu; a credit code opens every "
+                    + "model (main menu > Credits). Your message is kept as a draft.");
         } else if ("account_disabled".equals(st)) {
             status = L.s("Hesap kapalı", "Account closed");
             msg = L.s("Bu hesap kapatılmış. Sunucunun destek adresine yaz.",

@@ -25,6 +25,8 @@ final class Credits implements CommandListener, Runnable {
     static final int PAIR = 0;
     static final int TOPUP = 1;
     static final int BALANCE = 2;
+    /** Pairing with the server's free trial (no code). */
+    static final int TRIAL = 3;
 
     private final ClaudeS40MIDlet midlet;
     /** The wizard this pairing is a step of, or null. */
@@ -42,6 +44,7 @@ final class Credits implements CommandListener, Runnable {
     private boolean busy;
     private final Command enterCmd = new Command(L.s("Kodu yaz", "Type the code"), Command.OK, 1);
     private final Command okCmd = new Command(L.s("Tamam", "OK"), Command.OK, 1);
+    private final Command trialCmd = new Command(L.s("Ücretsiz dene", "Try for free"), Command.SCREEN, 2);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
     private final Command topupCmd = new Command(L.s("Kredi yükle", "Add credits"), Command.SCREEN, 2);
@@ -58,8 +61,15 @@ final class Credits implements CommandListener, Runnable {
     void showPair() {
         mode = PAIR;
         String shop = midlet.shopLine();
+        boolean trial = Updates.trial(midlet.settings.url);
         codeForm(setup != null ? Setup.title(Setup.STEPS) : L.s("Kredi kodu", "Credit code"),
-                L.s("Orta tuşla 16 haneli kredi kodunu yaz.", "Centre key: type the 16-digit credit code.") + (shop.length() > 0 ? "\n\n" + shop : ""));
+                L.s("Orta tuşla 16 haneli kredi kodunu yaz.", "Centre key: type the 16-digit credit code.")
+                + (trial ? L.s("\n\nKodun yok mu? Seçenekler > Ücretsiz dene: birkaç mesaj, tek modelle.",
+                        "\n\nNo code? Options > Try for free: a few messages with one model.") : "")
+                + (shop.length() > 0 ? "\n\n" + shop : ""));
+        if (trial) {
+            form.addCommand(trialCmd);
+        }
     }
 
     void showTopup() {
@@ -138,6 +148,9 @@ final class Credits implements CommandListener, Runnable {
                         : L.s("Bir rakam yanlış yazılmış olabilir; kodu kontrol et.", "A digit may be mistyped; check the code."));
                 return;
             }
+            if (mode == TRIAL) {
+                mode = PAIR; // a code typed after a trial that did not start
+            }
             status(L.s("Gönderiliyor...", "Sending..."));
             start();
             return;
@@ -160,6 +173,10 @@ final class Credits implements CommandListener, Runnable {
             start();
         } else if (c == enterCmd) {
             typeCode();
+        } else if (c == trialCmd) {
+            mode = TRIAL;
+            status(L.s("Deneme başlatılıyor...", "Starting the trial..."));
+            start();
         }
     }
 
@@ -230,7 +247,10 @@ final class Credits implements CommandListener, Runnable {
         Settings s = midlet.settings;
         String[] k = { "voucher" };
         String[] v = { code };
-        Net.Result r = mode == PAIR
+        Net.Result r = mode == TRIAL
+                ? Net.request(s.url + "/v1/pair/trial", "POST", null, S40Message.format(new String[0], new String[0], ""),
+                        midlet.userAgent(), null)
+                : mode == PAIR
                 ? Net.request(s.url + "/v1/pair/voucher", "POST", null, S40Message.format(k, v, ""), midlet.userAgent(), null)
                 : Net.request(s.url + "/v1/redeem", "POST", s.token, S40Message.format(k, v, ""), midlet.userAgent(), null);
         if (!r.ok() || r.msg == null) {
@@ -241,7 +261,7 @@ final class Credits implements CommandListener, Runnable {
         String bal = r.msg.field("balance");
         if ("ok".equals(st)) {
             midlet.session().setBalance(bal);
-            if (mode == PAIR) {
+            if (mode == PAIR || mode == TRIAL) {
                 s.token = r.msg.field("token");
                 s.credits = true;
                 String err = s.save();
@@ -250,12 +270,27 @@ final class Credits implements CommandListener, Runnable {
                     return;
                 }
             }
-            status((mode == PAIR ? L.s("Eşleştirildi. ", "Paired. ") : L.s("Yüklendi. ", "Added. "))
+            String model = r.msg.field("model");
+            if (mode == TRIAL && model.length() > 0) {
+                Models.setLast(model); // new chats start with the trial's model
+            }
+            status(mode == TRIAL ? L.s("Deneme başladı: " + bal + " kredi. Kod yükleyince tüm modeller açılır.",
+                    "Trial started: " + bal + " credits. A credit code opens every model.")
+                    : (mode == PAIR ? L.s("Eşleştirildi. ", "Paired. ") : L.s("Yüklendi. ", "Added. "))
                     + L.s("Bakiye: ", "Balance: ") + bal + L.s(" kredi", " credits"));
             form.removeCommand(enterCmd);
-            if (mode == PAIR && setup != null) {
+            form.removeCommand(trialCmd);
+            if ((mode == PAIR || mode == TRIAL) && setup != null) {
                 form.addCommand(finishCmd);
             }
+        } else if ("trial_closed".equals(st)) {
+            status(L.s("Bugünkü ücretsiz denemeler bitti. Yarın yeniden dene ya da kredi kodu al.",
+                    "Today's free trials are used up. Try again tomorrow, or get a credit code."));
+        } else if (mode == TRIAL && "slow_down".equals(st)) {
+            status(L.s("Bu ağdan bugün yeterince deneme açıldı. Yarın yeniden dene.",
+                    "Enough trials were started from this network today. Try again tomorrow."));
+        } else if (mode == TRIAL && "not_found".equals(st)) {
+            status(L.s("Bu sunucuda ücretsiz deneme yok.", "This server has no free trial."));
         } else if ("bad_voucher".equals(st)) {
             status(L.s("Kod geçersiz ya da iptal edilmiş.", "The code is not valid or was cancelled."));
         } else if ("used".equals(st)) {
@@ -342,6 +377,9 @@ final class Credits implements CommandListener, Runnable {
         }
         if ("voucher".equals(k)) {
             return L.s("Kod", "Code");
+        }
+        if ("trial".equals(k)) {
+            return L.s("Ücretsiz deneme", "Free trial");
         }
         if ("adjust".equals(k)) {
             return L.s("Düzeltme", "Adjustment");

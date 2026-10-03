@@ -30,6 +30,8 @@ final class Updates implements Runnable {
     private static String url = "";
     /** The server's credit shop (/health "shop-url", https), "" if none; kept with the rest. */
     private static String shop = "";
+    /** The server offers a free trial (/health "trial", 0.15.3); kept with the rest. */
+    private static boolean trial;
     private static long checkedAt;
     private static boolean loaded;
     private static boolean running;
@@ -80,6 +82,7 @@ final class Updates implements Runnable {
         latest = v;
         url = u;
         shop = Net.isHttps(sh) ? sh : "";
+        trial = m.flag("trial");
         checkedAt = System.currentTimeMillis();
         return changed;
     }
@@ -114,6 +117,12 @@ final class Updates implements Runnable {
             return "";
         }
         return shop.startsWith("https://") ? shop.substring(8) : shop;
+    }
+
+    /** True if this server offers a free trial. */
+    static synchronized boolean trial(String serverUrl) {
+        load();
+        return trial && serverUrl.equals(server);
     }
 
     /** The JAD to open for the update ("" if none). */
@@ -171,6 +180,7 @@ final class Updates implements Runnable {
             url = in.readUTF();
             checkedAt = in.readLong();
             shop = in.readUTF(); // added in 0.14.2; older records end before it
+            trial = in.readBoolean(); // 0.15.3
         } catch (RecordStoreException e) {
             // nothing kept yet
         } catch (IOException e) {
@@ -191,6 +201,7 @@ final class Updates implements Runnable {
             out.writeUTF(url);
             out.writeLong(checkedAt);
             out.writeUTF(shop);
+            out.writeBoolean(trial);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);
