@@ -26,9 +26,10 @@ the Nokia E63 (S60 QWERTY).
 - **Pick the model per chat**: first the provider (Claude, OpenAI, Gemini,
   Grok), then one of the models the server offers; switch in the middle of
   a chat with Options > Model. Every reply is labelled with its model.
-- **Chat** with bubbles, timestamps and a typing indicator that counts the
-  seconds. Replies keep their paragraphs and lists (dots, numbers, hanging
-  indent).
+- **Chat**: your messages in bubbles, replies full width, day headings
+  ("Today", "Yesterday"), and a typing indicator that counts the seconds.
+  Replies keep their paragraphs and lists (dots, numbers, hanging indent);
+  an unsent draft waits in the input bar.
 - **Web search** for news, weather, rates: the model searches on the server
   with its provider's search tool; the phone's 2007 browser is not involved. Sources are listed under the
   reply.
@@ -65,15 +66,17 @@ the Nokia E63 (S60 QWERTY).
 - **Short notes, details on request**: info and errors are one line; select
   one (1/3) and press the centre key for the explanation; setup and settings
   screens keep theirs under Options > Info.
-- **Setup wizard** on first start: language, server address, connection
-  test, pairing with a 6-digit code (no long code to type).
+- **Setup wizard** on first start: server address, connection test,
+  pairing with a 6-digit code (no long code to type); the language follows
+  the phone. A build that names its server skips to the pairing.
 - **Keypad-first**: every screen works with the keypad (on QWERTY phones
   like the E63, the digits printed on the letter keys); a Shortcuts screen
   lists every key. Retry after an error is one key and never charges twice.
-- **Look and feel**: full screen menu and chat, light and dark theme, three
-  text sizes, start-up animation and jingle, reply chime, vibration and
-  backlight. Texts are
-  fitted to the screen and checked from 128x160 to 320x240.
+- **Look and feel**: every screen except text entry is drawn by the app:
+  line icons with smooth edges, lists with two-line rows, settings with
+  switches that save at once, full screen. Light, dark or automatic (dark
+  in the evening) look, three text sizes, start-up animation and jingle,
+  reply chime, vibration and backlight. Texts are fitted to the screen.
 
 **On the server**
 
