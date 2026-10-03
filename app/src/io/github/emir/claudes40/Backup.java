@@ -20,6 +20,10 @@ import java.io.IOException;
  * card can use it until the device is revoked on the server.
  *
  * File work runs on its own thread (the phone may ask for permission).
+ * When the phone refuses it (the app's data access "Not allowed": the
+ * phone then shows "Application access set to not allowed" at every try),
+ * no further try is made in this run; the next run tries only when the
+ * backed-up settings have changed.
  */
 final class Backup implements Runnable {
 
@@ -28,6 +32,8 @@ final class Backup implements Runnable {
 
     /** What the backup file holds now (as far as we know); null: unknown, write on the next save. */
     private static String written;
+    /** The phone refused file access in this run: no more tries. */
+    private static boolean denied;
 
     private final byte[] data;
 
@@ -47,7 +53,7 @@ final class Backup implements Runnable {
         }
         String k = key(s);
         synchronized (Backup.class) {
-            if (k.equals(written)) {
+            if (denied || k.equals(written)) {
                 return;
             }
             written = k;
@@ -60,9 +66,16 @@ final class Backup implements Runnable {
             Files.writeSetup(data);
         } catch (IOException e) {
             failed();
-        } catch (RuntimeException e) { // SecurityException: permission denied
+        } catch (SecurityException e) {
+            refused();
+        } catch (RuntimeException e) {
             failed();
         }
+    }
+
+    /** Permission denied: kept as written, so only a later change of these settings in another run tries again. */
+    private static synchronized void refused() {
+        denied = true;
     }
 
     private static synchronized void failed() {
