@@ -1,11 +1,22 @@
 # AIKON – phone app
 
 Java ME MIDlet for Nokia Series 40 and Symbian S60 (CLDC 1.1 / MIDP 2.0, class file 46.0).
-English and Turkish UI (follows the phone language; Settings > Language).
+UI in eight languages: English (the code's), and from `lang/xx.txt` Turkish,
+Spanish, Portuguese, French, German, Russian, Indonesian; it follows the
+phone language (English for any other) and changes under Settings >
+Language. `make langs` shows what each file covers; the build fails when a
+file misses a text of the code or keeps one the code no longer has.
+
+Every screen except text entry is drawn by the app (Canvas): line icons and
+the AIKON wordmark rendered with smooth edges on the phone (`Icons`,
+`Wordmark`), lists (`RowList`) and text pages (`TextPage`) with a title bar,
+full screen with the setting.
 
 Features: animated splash with an original start-up jingle (MIDP tone
-sequences), a first-run setup wizard, icon home menu with number-key
-shortcuts, chat bubbles with timestamps, lists and paragraphs, a typing
+sequences), a short first-run setup (only the pairing or credit code for a
+build that names its server), icon home menu with number-key shortcuts,
+chat with your messages in bubbles and replies full width, day headings,
+lists and paragraphs, a typing
 animation with the elapsed seconds, a reading mode that pages through one
 reply (whole lines only, page number, keeps its place, backlight kept on),
 message actions (shorten, translate, ask about it, open in the editor; they
@@ -26,14 +37,15 @@ cp app.local.properties.example app.local.properties   # set GATEWAY_URL=https:/
 make            # downloads pinned tools to .deps/j2me (SHA-256 checked), builds, runs the package checks twice
 ```
 
-Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~100 KB), `dist/SHA256SUMS`.
+Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~220 KB with the languages), `dist/SHA256SUMS`.
 Version and build number live only in `app.properties`.
 
 Pipeline: ECJ compiles against the CLDC 1.1 + MIDP 2.0 API stubs, plus the
 optional JSR 75 FileConnection API (MicroEmulator jar) and PIM API
 (compile-only stubs in `stubs/jsr75-pim`, used only by `Files` and `Pim`),
 ProGuard `-microedition` preverifies (no shrink/obfuscate), `tools/package.py`
-writes a deterministic JAR and the JAD, `tools/check.py` verifies it.
+writes a deterministic JAR and the JAD (with the language files packed by
+`tools/strings.py`), `tools/check.py` verifies it.
 
 ## Install
 

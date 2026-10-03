@@ -73,6 +73,10 @@ the Nokia E63 (S60 QWERTY).
 - **Keypad-first**: every screen works with the keypad (on QWERTY phones
   like the E63, the digits printed on the letter keys); a Shortcuts screen
   lists every key. Retry after an error is one key and never charges twice.
+- **Eight languages**: English, Türkçe, Español, Português, Français,
+  Deutsch, Русский and Bahasa Indonesia. The app opens in the phone's
+  language (English for any other) and changes under Settings > Language.
+  The replies follow the language you write in, whatever the menus say.
 - **Look and feel**: every screen except text entry is drawn by the app:
   line icons with smooth edges, lists with two-line rows, settings with
   switches that save at once, full screen. Light, dark or automatic (dark
@@ -133,7 +137,7 @@ put on the phone once. Details and measurements: [docs/ARCHITECTURE.md](docs/ARC
 
 | Path | What |
 |---|---|
-| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~230 KB JAR, UI in eight languages (see Features). Reproducible build with package checks. |
+| [`app/`](app/) | The phone app: CLDC 1.1 / MIDP 2.0 MIDlet, ~220 KB JAR, UI in eight languages (see Features). Reproducible build with package checks. |
 | [`server/`](server/) | One Go binary / Docker image (~7 MB): phone-facing TLS, chat backend (Claude via the official `anthropic-sdk-go`; OpenAI, Gemini, Grok over plain HTTPS), SQLite, pairing, admin API bound to localhost. |
 | [`docs/`](docs/) | [SETUP.md](docs/SETUP.md) (step by step), [ARCHITECTURE.md](docs/ARCHITECTURE.md) (protocol, TLS, design). |
 
@@ -198,6 +202,19 @@ deployment), OpenSSL or LibreSSL.
 - Photos are scaled down to 1024 pixels and kept on your server with their
   chat (30 days, or until you delete it); each photo adds about 1000 input
   tokens to the messages of its chat.
+
+## Translations
+
+The app is written in English; every other language is one text file,
+[`app/lang/xx.txt`](app/lang/): an English text, a TAB, its translation,
+one per line. The Spanish, Portuguese, French, German, Russian and
+Indonesian files are first drafts: corrections from native speakers are
+very welcome (a pull request that edits the file is enough). A new language
+is a new file plus its code and name in `L.java` (LANGS, NAMES); `make -C app langs` shows what each
+file covers, and the build refuses a file that misses a text. Languages
+written right to left (Arabic, Hebrew) need layout work first, and scripts
+the phones' fonts lack (Japanese, Chinese) are out of reach on this
+hardware.
 
 ## Contributors
 
