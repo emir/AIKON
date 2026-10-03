@@ -73,6 +73,9 @@ final class SavedList implements CommandListener, Runnable {
             }
             busy = true;
             job = j;
+            if (j == JOB_LIST) {
+                chatRow = false; // until fill() finds the list empty
+            }
             jobFile = file;
         }
         if (j == JOB_LIST) {
@@ -138,8 +141,16 @@ final class SavedList implements CommandListener, Runnable {
         }
     }
 
+    /** Nothing saved: the list shows only the "Go to the chat" row. */
+    private boolean chatRow;
+
+    private synchronized boolean emptyList() {
+        return !busy && chatRow && files.size() == 0;
+    }
+
     private void fill(Vector found) {
         synchronized (this) {
+            chatRow = found.size() == 0;
             files.removeAllElements();
             for (int i = 0; i < found.size(); i++) {
                 files.addElement(found.elementAt(i));
@@ -148,6 +159,7 @@ final class SavedList implements CommandListener, Runnable {
         list.deleteAll();
         if (found.size() == 0) {
             list.note(L.t("Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone."));
+            list.add(L.t("Go to the chat"), null, Icons.CHAT, RowList.ACCENT); // the centre key opens it
         }
         for (int i = 0; i < found.size(); i++) {
             String l = label((String) found.elementAt(i));
@@ -207,6 +219,8 @@ final class SavedList implements CommandListener, Runnable {
             String f = selectedFile();
             if (f != null) {
                 start(JOB_READ, f);
+            } else if (emptyList()) {
+                midlet.showChat(); // the "Go to the chat" row of an empty list
             }
         } else if (c == deleteCmd) {
             String f;

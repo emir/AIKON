@@ -201,6 +201,39 @@ final class Models implements CommandListener, Runnable {
         }
     }
 
+    private static boolean fetching;
+
+    /**
+     * No list kept yet (a fresh pairing, a free trial): fetches it on a
+     * worker thread, so the chat names its model; the screens are repainted
+     * after. Free (no model is called); at most one at a time.
+     */
+    static void maybeFetch(final ClaudeS40MIDlet midlet) {
+        Settings s = midlet.settings;
+        if (s.testMode || !s.ready() || count() > 0) {
+            return;
+        }
+        synchronized (Models.class) {
+            if (fetching) {
+                return;
+            }
+            fetching = true;
+        }
+        new Thread(new Runnable() {
+            public void run() {
+                try {
+                    if (fetch(midlet) == null) {
+                        midlet.modelsChanged();
+                    }
+                } finally {
+                    synchronized (Models.class) {
+                        fetching = false;
+                    }
+                }
+            }
+        }).start();
+    }
+
     /**
      * Fetches the list (worker thread only). Lines: id TAB name TAB search
      * TAB photos TAB provider (the provider since server 0.7.1), with
@@ -275,6 +308,8 @@ final class Models implements CommandListener, Runnable {
     /** Model ids, or provider names on the first step, in list order. */
     private String[] shown = new String[0];
     private boolean loading;
+    /** A "Try again" row is shown (an error, or no list). */
+    private boolean retryRow;
     /** The provider whose models are shown; null on the first step. */
     private String provider;
     /** True while the providers are listed (more than one provider). */
@@ -373,6 +408,13 @@ final class Models implements CommandListener, Runnable {
                     ? L.t("In test mode the list cannot come from the server.")
                     : L.t("No list yet. Choose 'Refresh the list'."));
         }
+        boolean retry = (error != null || i2.length == 0) && !midlet.settings.testMode;
+        synchronized (this) {
+            retryRow = retry;
+        }
+        if (retry) {
+            list.add(L.t("Try again"), null, Icons.RESEND, RowList.ACCENT); // the centre key fetches again
+        }
         Vector v = new Vector();
         int sel = -1;
         if (step1) {
@@ -451,6 +493,13 @@ final class Models implements CommandListener, Runnable {
                 }
             }
             if (id == null) {
+                boolean retry;
+                synchronized (this) {
+                    retry = retryRow && !loading;
+                }
+                if (retry) {
+                    start(); // the "Try again" row (the only row without a model)
+                }
                 return;
             }
             if (step1) {

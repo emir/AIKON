@@ -144,6 +144,7 @@ final class Pairing implements CommandListener, Runnable {
                 s.token = token;
                 String err = s.save();
                 form.setText(codeItem, "OK");
+                midlet.doneFeedback();
                 finish(err != null ? err
                         : L.t("Paired (") + c.msg.field("device")
                                 + L.t("). Access code saved; chat is ready."),

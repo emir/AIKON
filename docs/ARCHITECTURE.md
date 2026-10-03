@@ -135,6 +135,11 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   the bytes to `/v1/image` and attaches the returned id to the next
   message; the editor then shows "Message with a photo" and offers "Remove
   the photo". A message sent with a photo is shown with "[Photo]".
+- Where the app was left (RMS `cs40resume`, `Resume`): whether the chat was
+  open and its conversation id, so the next start goes back there (the chat
+  is fetched again unless it is the one kept on the phone); the unsent draft
+  only while "keep last chat" is on. Written on entering/leaving the chat
+  and at exit, only when it changed.
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
   on/off, "keep last chat", setup wizard done, the backlight option (light up for a reply; the old reading-mode one is kept unused),

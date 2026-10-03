@@ -559,3 +559,7 @@ Type the new credit code with the number keys.	Набери новый код к
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Ещё нет кода? Функции > Купить код: QR-код для смартфона.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Отсканируй его камерой смартфона, купи там код и набери его здесь.
 Saving...	Сохраняю...
+Try again	Повторить
+Search again	Искать снова
+Start a new chat	Начать новый чат
+Go to the chat	Перейти в чат

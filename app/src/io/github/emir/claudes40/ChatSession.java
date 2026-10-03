@@ -270,6 +270,11 @@ final class ChatSession implements Runnable, Net.Listener {
         return entries.size();
     }
 
+    /** The conversation id ("" before the first reply of a new chat). */
+    synchronized String conversation() {
+        return conversation;
+    }
+
     synchronized boolean hasConversation() {
         return conversation.length() > 0;
     }
@@ -307,13 +312,19 @@ final class ChatSession implements Runnable, Net.Listener {
         return model;
     }
 
-    /** Name of the model that answers in this chat: known, chosen for new chats, or "Claude". */
+    /**
+     * Name of the model that answers in this chat: as known when the chat
+     * started, else looked up now (the list may have come since), else the
+     * model's id, never a provider it may not be (a free trial's model on a
+     * phone that has no list yet).
+     */
     synchronized String ai() {
         if (modelName.length() > 0) {
             return modelName;
         }
-        String n = Models.name(Models.startId());
-        return n.length() > 0 ? n : "Claude";
+        String id = model.length() > 0 ? model : Models.startId();
+        String n = Models.name(id);
+        return n.length() > 0 ? n : id.length() > 0 ? id : "AIKON";
     }
 
     /** Switches this chat to another model from the next message on. */

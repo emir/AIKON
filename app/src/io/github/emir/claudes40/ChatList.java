@@ -50,6 +50,13 @@ final class ChatList implements CommandListener, Runnable {
     private String jobId;
     private boolean jobPin;
     private boolean searchMode;
+    /** The rows' {title, second line}, in the order of ids (for changes shown before the server answers). */
+    private final Vector shown = new Vector();
+    /** The action row of an empty list or an error (CTA_*), offered on the centre key. */
+    private int cta;
+    private static final int CTA_NEW = 1;
+    private static final int CTA_SEARCH = 2;
+    private static final int CTA_RETRY = 3;
 
     ChatList(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
@@ -106,7 +113,8 @@ final class ChatList implements CommandListener, Runnable {
             list.deleteAll();
             list.skeleton(5);
         } else {
-            list.setBusy(true); // pinning or deleting: the rows stay until the list comes again
+            optimistic(j, id, pin); // shown at once; the list from the server follows (or undoes it)
+            list.setBusy(true);
         }
         new Thread(this).start();
     }
@@ -141,9 +149,6 @@ final class ChatList implements CommandListener, Runnable {
                 actionError = (j == JOB_PIN ? L.t("Could not pin (") : L.t("Could not delete ("))
                         + (st.length() > 0 ? st : "?") + ").";
             }
-            list.setBusy(false);
-            list.deleteAll();
-            list.skeleton(5);
         }
         boolean search = q != null;
         Net.Result r = search
@@ -175,12 +180,36 @@ final class ChatList implements CommandListener, Runnable {
                 pins.addElement(pinned.elementAt(i));
             }
         }
+        render(error, search, titles, pinned);
+        if (actionError != null) {
+            midlet.info(actionError, list);
+        }
+    }
+
+    /** The rows (and the action row of an empty list or an error); keeps them for optimistic(). */
+    private void render(String error, boolean search, Vector titles, Vector pinned) {
+        int act = error != null ? CTA_RETRY : titles.size() > 0 ? 0 : search ? CTA_SEARCH : CTA_NEW;
+        synchronized (this) {
+            cta = act;
+            shown.removeAllElements();
+            for (int i = 0; i < titles.size(); i++) {
+                shown.addElement(titles.elementAt(i));
+            }
+        }
+        list.setBusy(false);
         list.deleteAll();
         if (error != null) {
             list.note(L.t("Error: ") + error);
         } else if (titles.size() == 0) {
             list.note(search ? L.t("Nothing found. Plain letters are fine: 'sise' finds 'şişe'.")
                     : L.t("No chats yet. The server keeps chats for 30 days, pinned ones until unpinned."));
+        }
+        if (act == CTA_RETRY) {
+            list.add(L.t("Try again"), null, Icons.RESEND, RowList.ACCENT);
+        } else if (act == CTA_SEARCH) {
+            list.add(L.t("Search again"), null, Icons.SEARCH, RowList.ACCENT);
+        } else if (act == CTA_NEW) {
+            list.add(L.t("Start a new chat"), null, Icons.NEW_CHAT, RowList.ACCENT);
         }
         boolean anyPinned = false;
         for (int i = 0; i < pinned.size(); i++) {
@@ -196,9 +225,45 @@ final class ChatList implements CommandListener, Runnable {
             lastPinned = p;
             list.add(t[0], t[1], p ? Icons.PIN : Icons.CHAT, p ? RowList.ACCENT : 0);
         }
-        if (actionError != null) {
-            midlet.info(actionError, list);
+    }
+
+    /**
+     * A pin, unpin or delete shown before the server answers: the chat moves
+     * to the top (pinned), below the pinned ones (unpinned) or goes. The
+     * list fetched after the change replaces it, so a refused change comes
+     * back by itself (and its reason is shown).
+     */
+    private void optimistic(int j, String id, boolean pin) {
+        Vector t = new Vector();
+        Vector p = new Vector();
+        boolean search;
+        synchronized (this) {
+            int k = ids.indexOf(id);
+            if (k < 0 || k >= shown.size()) {
+                return;
+            }
+            Object row = shown.elementAt(k);
+            ids.removeElementAt(k);
+            pins.removeElementAt(k);
+            shown.removeElementAt(k);
+            if (j == JOB_PIN) {
+                int at = 0;
+                if (!pin) {
+                    while (at < pins.size() && ((Boolean) pins.elementAt(at)).booleanValue()) {
+                        at++;
+                    }
+                }
+                ids.insertElementAt(id, at);
+                pins.insertElementAt(pin ? Boolean.TRUE : Boolean.FALSE, at);
+                shown.insertElementAt(row, at);
+            }
+            for (int i = 0; i < shown.size(); i++) {
+                t.addElement(shown.elementAt(i));
+                p.addElement(pins.elementAt(i));
+            }
+            search = searchMode;
         }
+        render(null, search, t, p);
     }
 
     /**
@@ -318,6 +383,20 @@ final class ChatList implements CommandListener, Runnable {
             confirm.setCommandListener(this);
             display.setCurrent(confirm);
         } else if (c == openCmd) {
+            int act;
+            synchronized (this) {
+                act = loading ? 0 : cta;
+            }
+            if (act != 0 && list.getSelectedItem() == 0) {
+                if (act == CTA_NEW) {
+                    midlet.startNewChat(list);
+                } else if (act == CTA_SEARCH) {
+                    commandAction(searchCmd, list);
+                } else {
+                    commandAction(refreshCmd, list);
+                }
+                return;
+            }
             String[] sel = selected();
             if (sel != null) {
                 midlet.openConversation(sel[0]);

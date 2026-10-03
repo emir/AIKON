@@ -559,3 +559,7 @@ Type the new credit code with the number keys.	Yeni kredi kodunu tuşlarla yaz.
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Henüz kodun yok mu? Seçenekler > Kod satın al: akıllı telefonla taranacak bir QR kod.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Akıllı telefonun kamerasıyla tara, kodu orada satın al, sonra buraya yaz.
 Saving...	Kaydediliyor...
+Try again	Tekrar dene
+Search again	Yeniden ara
+Start a new chat	Yeni sohbet başlat
+Go to the chat	Sohbete git

@@ -559,3 +559,7 @@ Type the new credit code with the number keys.	Escribe el nuevo código de créd
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	¿Aún sin código? Opciones > Comprar un código: un código QR para escanear con un smartphone.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Escanéalo con la cámara de un smartphone, compra allí un código y luego escríbelo aquí.
 Saving...	Guardando...
+Try again	Reintentar
+Search again	Buscar de nuevo
+Start a new chat	Empezar un chat nuevo
+Go to the chat	Ir al chat

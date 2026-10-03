@@ -341,6 +341,7 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         String st = r.msg.field("status");
         String bal = r.msg.field("balance");
         if ("ok".equals(st)) {
+            midlet.doneFeedback();
             midlet.session().setBalance(bal);
             if (mode == PAIR || mode == TRIAL) {
                 s.token = r.msg.field("token");

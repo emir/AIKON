@@ -150,6 +150,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         if (display == null) {
             display = Display.getDisplay(this);
             settings.load(getAppProperty("ClaudeS40-Gateway"));
+            Resume.load();
             L.init(settings);
             Theme.apply(settings);
             session = new ChatSession(this);
@@ -279,8 +280,36 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         if (!settings.setupDone && !settings.ready() && !settings.testMode) {
             new Setup(this).start();
         } else {
-            showMenu();
+            resumeOrMenu();
         }
+    }
+
+    /**
+     * Start-up: back in the chat if the app was left there (Resume), with
+     * the draft kept for it; that chat is fetched again when it is not the
+     * one kept on the phone. Otherwise the menu.
+     */
+    private void resumeOrMenu() {
+        if (!Resume.inChat || !settings.ready() && !settings.testMode) {
+            showMenu();
+            return;
+        }
+        if (settings.saveChat && Resume.draft.length() > 0 && session.draft().length() == 0) {
+            session.setDraft(Resume.draft);
+        }
+        Updates.maybeCheck(this);
+        Credits.maybeFetchBalance(this);
+        String conv = Resume.conversation;
+        if (conv.length() > 0 && !conv.equals(session.conversation()) && !settings.testMode) {
+            openConversation(conv); // "Loading chat..." in the chat
+        } else {
+            showChat();
+        }
+    }
+
+    /** Keeps where the app is (Resume): in the chat or not, the chat's id, the draft if chats are kept. */
+    void remember(boolean inChat) {
+        Resume.save(inChat, session.conversation(), settings.saveChat ? session.draft() : "");
     }
 
     /**
@@ -289,7 +318,9 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
      */
     void setupDone(String message) {
         display.setCurrent(chat);
+        remember(true);
         chat.toast(message);
+        Models.maybeFetch(this); // a fresh pairing has no model list yet
     }
 
     void setupFinished(String message) {
@@ -302,10 +333,16 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     protected void pauseApp() {
         // a running request finishes on its own thread; nothing to stop
+        if (session != null) {
+            remember(Resume.inChat);
+        }
     }
 
     protected void destroyApp(boolean unconditional) {
-        // nothing is stored except Settings, which are saved explicitly
+        // Settings are saved explicitly; here only where the app was left (Resume)
+        if (session != null) {
+            remember(Resume.inChat);
+        }
     }
 
     void exit() {
@@ -458,6 +495,17 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
     }
 
+    /**
+     * A short buzz when a wait the user may have looked away from ends well
+     * (pairing approved, a code accepted, a transcript or a photo ready);
+     * follows Settings > "Vibrate on reply". Replies have replyFeedback().
+     */
+    void doneFeedback() {
+        if (settings.vibrate) {
+            display.vibrate(90);
+        }
+    }
+
     /** The phone has JSR 75 FileConnection (saved replies, Files). */
     static boolean hasFiles() {
         return !"-".equals(prop("microedition.io.file.FileConnection.version"));
@@ -526,6 +574,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     /** The photo is on the server: attach it to the next message and let the user write the question. */
     void photoAttached(String id, boolean fromComposer) {
+        doneFeedback();
         session.setImage(id);
         String d = session.draft();
         if (d.trim().length() == 0) {
@@ -558,6 +607,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
 
     /** The server's text for a voice message: added to the draft, shown in the editor to check and send. */
     void dictated(String text) {
+        doneFeedback();
         String d = session.draft().trim();
         String t = d.length() > 0 ? d + " " + text : text;
         if (t.length() > ChatSession.MAX_MESSAGE) {
@@ -589,6 +639,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             applyLook(); // automatic look: evening or morning came
         }
         display.setCurrent(home);
+        remember(false);
+        Models.maybeFetch(this);
         home.setUpdate(updateVersion().length() > 0);
         Updates.maybeCheck(this);
         Credits.maybeFetchBalance(this);
@@ -607,6 +659,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     /** From the balance request (worker thread). */
     void balanceChanged() {
         home.repaint();
+    }
+
+    /** The model list came (Models.maybeFetch): the chat and the menu name the model. */
+    void modelsChanged() {
+        home.repaint();
+        chat.repaint();
     }
 
     /** "Update": what happens, then the phone's own installer. */
@@ -641,6 +699,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             applyLook();
         }
         display.setCurrent(chat);
+        remember(true);
+        Models.maybeFetch(this);
     }
 
     /**
@@ -1319,6 +1379,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 session.persist();
             } else {
                 ChatStore.delete();
+                Resume.save(Resume.inChat, Resume.conversation, ""); // no draft kept either
             }
             break;
         case S_SOUND:

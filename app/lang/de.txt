@@ -559,3 +559,7 @@ Type the new credit code with the number keys.	Tippe den neuen Guthabencode mit 
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Noch kein Code? Optionen > Code kaufen: ein QR-Code zum Scannen mit dem Smartphone.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Scanne ihn mit der Smartphone-Kamera, kaufe dort einen Code und tippe ihn dann hier ein.
 Saving...	Wird gespeichert...
+Try again	Erneut versuchen
+Search again	Neu suchen
+Start a new chat	Neuen Chat beginnen
+Go to the chat	Zum Chat
