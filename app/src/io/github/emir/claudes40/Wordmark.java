@@ -77,11 +77,6 @@ final class Wordmark {
         return (int) ((LEFT[i] - X0) * (Math.max(8, width) / (float) W));
     }
 
-    /** Letter i's width in the artwork's pixels (scale with width / artWidth()). */
-    static int letterArtWidth(int i) {
-        return RIGHT[i] - LEFT[i];
-    }
-
     /** The artwork's width (the whole wordmark). */
     static int artWidth() {
         return W;

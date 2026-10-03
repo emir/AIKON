@@ -29,8 +29,14 @@ final class Splash extends Canvas {
     private static final int MOVE = 13;
     /** The wordmark's letters (Wordmark.letter: 0 A, 1 I, 2 K, 3 O, 4 N) in the order of N O K I A. */
     private static final int[] NOKIA = { 4, 3, 2, 1, 0 };
-    /** Space between the letters of N O K I A, in the artwork's pixels. */
-    private static final int GAP = 40;
+    /**
+     * Where each letter of N O K I A starts (its left edge), in the artwork's
+     * pixels, and the word's width: measured from the letters' outlines so
+     * the narrowest space between two letters is 10, as between I and K or
+     * O and N in AIKON.
+     */
+    private static final int[] NOKIA_X = { 0, 236, 505, 744, 817 };
+    private static final int NOKIA_W = 1108;
 
     private final ClaudeS40MIDlet midlet;
     private Timer timer;
@@ -108,21 +114,15 @@ final class Splash extends Canvas {
             lettersW = ww;
         }
         float k = ww / (float) Wordmark.artWidth();
-        // N O K I A laid out with even gaps, centred
-        int total = GAP * 4;
-        for (int j = 0; j < 5; j++) {
-            total += Wordmark.letterArtWidth(NOKIA[j]);
-        }
-        float nx = (w - total * k) / 2;
+        float nx = (w - NOKIA_W * k) / 2; // N O K I A centred
         int maxMove = 1;
         int[] from = new int[5];
         int[] to = new int[5];
         for (int j = 0; j < 5; j++) {
             int i = NOKIA[j];
-            from[j] = (int) nx;
+            from[j] = (int) (nx + NOKIA_X[j] * k);
             to[j] = x0 + Wordmark.letterX(i, ww);
             maxMove = Math.max(maxMove, Math.abs(to[j] - from[j]));
-            nx += (Wordmark.letterArtWidth(i) + GAP) * k;
         }
         for (int j = 0; j < 5; j++) {
             int x = from[j];
