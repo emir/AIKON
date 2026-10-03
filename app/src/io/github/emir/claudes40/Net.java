@@ -89,7 +89,7 @@ final class Net {
             } catch (UnsupportedEncodingException e) {
                 Result r = new Result();
                 r.error = ERR_ENCODING;
-                r.detail = L.s("UTF-8 desteklenmiyor", "UTF-8 not supported");
+                r.detail = L.t("UTF-8 not supported");
                 return r;
             }
         }
@@ -106,7 +106,7 @@ final class Net {
         Result r = new Result();
         if (!isHttps(url)) {
             r.error = ERR_NOT_HTTPS;
-            r.detail = L.s("Adres https:// ile başlamalı", "The address must start with https://");
+            r.detail = L.t("The address must start with https://");
             return r;
         }
         HttpConnection c = null;
@@ -160,23 +160,23 @@ final class Net {
                 r.body = new String(buf, 0, end, "UTF-8");
             } catch (UnsupportedEncodingException e) {
                 r.error = ERR_ENCODING;
-                r.detail = L.s("UTF-8 desteklenmiyor", "UTF-8 not supported");
+                r.detail = L.t("UTF-8 not supported");
                 return r;
             }
             r.msg = S40Message.parse(r.body);
             r.phase = PHASE_DONE;
         } catch (SecurityException e) {
             r.error = ERR_PERMISSION;
-            r.detail = L.s("Java ağ izni verilmedi", "Java network access denied");
+            r.detail = L.t("Java network access denied");
         } catch (ConnectionNotFoundException e) {
             r.error = ERR_NO_CONNECTION_TYPE;
-            r.detail = L.s("Bağlantı türü desteklenmiyor: ", "Connection type not supported: ") + e.getMessage();
+            r.detail = L.t("Connection type not supported: ") + e.getMessage();
         } catch (CertificateException e) {
             r.error = ERR_CERTIFICATE;
             // S60 reports TLS alerts as CertificateException too; its message
             // carries the Symbian error code (e.g. -7547): show only that code
             String code = symbianCode(e.getMessage());
-            r.detail = L.s("Sertifika: ", "Certificate: ") + certReason(e.getReason()) + (code != null ? " [" + code + "]" : "")
+            r.detail = L.t("Certificate: ") + certReason(e.getReason()) + (code != null ? " [" + code + "]" : "")
                     + certSubject(e.getCertificate());
         } catch (IOException e) {
             r.error = ERR_IO;
@@ -258,13 +258,13 @@ final class Net {
         }
         StringBuffer sb = new StringBuffer();
         sb.append(si.getProtocolName()).append(' ').append(si.getProtocolVersion());
-        sb.append(L.s("\nŞifre: ", "\nCipher: ")).append(si.getCipherSuite());
+        sb.append(L.t("\nCipher: ")).append(si.getCipherSuite());
         Certificate cert = si.getServerCertificate();
         if (cert != null) {
-            sb.append(L.s("\nSertifika: ", "\nCertificate: ")).append(cert.getSubject());
-            sb.append(L.s("\nVeren: ", "\nIssuer: ")).append(cert.getIssuer());
-            sb.append(L.s("\nİmza: ", "\nSignature: ")).append(cert.getSigAlgName());
-            sb.append(L.s("\nGeçerlilik sonu: ", "\nValid until: ")).append(Text.date(cert.getNotAfter()));
+            sb.append(L.t("\nCertificate: ")).append(cert.getSubject());
+            sb.append(L.t("\nIssuer: ")).append(cert.getIssuer());
+            sb.append(L.t("\nSignature: ")).append(cert.getSigAlgName());
+            sb.append(L.t("\nValid until: ")).append(Text.date(cert.getNotAfter()));
         }
         return sb.toString();
     }
@@ -273,7 +273,7 @@ final class Net {
         if (c == null) {
             return "";
         }
-        return L.s("\nKonu: ", "\nSubject: ") + c.getSubject() + L.s("\nVeren: ", "\nIssuer: ") + c.getIssuer();
+        return L.t("\nSubject: ") + c.getSubject() + L.t("\nIssuer: ") + c.getIssuer();
     }
 
     /** The first negative number in a message ("-7547"), or null. */
@@ -294,29 +294,28 @@ final class Net {
     static String certReason(byte reason) {
         switch (reason) {
         case CertificateException.UNRECOGNIZED_ISSUER:
-            return L.s("tanınmayan sertifika otoritesi (telefonda kök sertifika yok)", "unknown certificate authority (root not on the phone)");
+            return L.t("unknown certificate authority (root not on the phone)");
         case CertificateException.EXPIRED:
             // S60 also reports a not-yet-valid certificate as EXPIRED
-            return L.s("süresi dolmuş veya henüz geçerli değil (telefonun tarihi / saat dilimi?)",
-                    "expired or not yet valid (phone date / time zone?)");
+            return L.t("expired or not yet valid (phone date / time zone?)");
         case CertificateException.NOT_YET_VALID:
-            return L.s("henüz geçerli değil (telefon saati?)", "not yet valid (phone clock?)");
+            return L.t("not yet valid (phone clock?)");
         case CertificateException.SITENAME_MISMATCH:
-            return L.s("alan adı uyuşmuyor", "host name mismatch");
+            return L.t("host name mismatch");
         case CertificateException.BROKEN_CHAIN:
-            return L.s("sertifika zinciri eksik", "broken certificate chain");
+            return L.t("broken certificate chain");
         case CertificateException.ROOT_CA_EXPIRED:
-            return L.s("kök sertifikanın süresi dolmuş", "root certificate expired");
+            return L.t("root certificate expired");
         case CertificateException.VERIFICATION_FAILED:
-            return L.s("imza doğrulanamadı (kök sertifika eksik veya algoritma desteklenmiyor)", "signature not verified (root missing or algorithm unsupported)");
+            return L.t("signature not verified (root missing or algorithm unsupported)");
         case CertificateException.MISSING_SIGNATURE:
-            return L.s("imza yok", "missing signature");
+            return L.t("missing signature");
         case CertificateException.BAD_EXTENSIONS:
-            return L.s("desteklenmeyen uzantı", "unsupported extension");
+            return L.t("unsupported extension");
         case CertificateException.INAPPROPRIATE_KEY_USAGE:
-            return L.s("uygunsuz anahtar kullanımı", "inappropriate key usage");
+            return L.t("inappropriate key usage");
         default:
-            return L.s("kod ", "code ") + reason;
+            return L.t("code ") + reason;
         }
     }
 
@@ -324,24 +323,24 @@ final class Net {
     static String explain(Result r) {
         switch (r.error) {
         case ERR_NOT_HTTPS:
-            return L.s("Sunucu adresi https:// ile başlamalı.", "The server address must start with https://.");
+            return L.t("The server address must start with https://.");
         case ERR_PERMISSION:
-            return L.s("Java ağ izni verilmedi. Uygulama ayarlarından ağ erişimine izin verin.", "Java network access was denied. Allow it in the application settings.");
+            return L.t("Java network access was denied. Allow it in the application settings.");
         case ERR_NO_CONNECTION_TYPE:
-            return L.s("HTTPS bağlantısı açılamadı. Java erişim noktası (mobil veri / WLAN) ayarını kontrol edin.", "Could not open HTTPS. Check the Java access point (mobile data / WLAN).");
+            return L.t("Could not open HTTPS. Check the Java access point (mobile data / WLAN).");
         case ERR_CERTIFICATE:
-            return L.s("Güvenli bağlantı kurulamadı (sertifika/TLS). ", "Secure connection failed (certificate/TLS). ") + r.detail;
+            return L.t("Secure connection failed (certificate/TLS). ") + r.detail;
         case ERR_ENCODING:
-            return L.s("Karakter kodlaması hatası: ", "Character encoding error: ") + r.detail;
+            return L.t("Character encoding error: ") + r.detail;
         case ERR_IO:
             // MIDP stacks usually connect (DNS, TCP, TLS) only inside
             // getResponseCode(), so no HTTP status yet means the connection
             // itself may have failed
             if (r.httpCode < 0) {
-                return L.s("Bağlantı kurulamadı veya yanıt gelmedi (erişim noktası, DNS, ağ veya TLS). ", "Could not connect or no reply (access point, DNS, network or TLS). ")
+                return L.t("Could not connect or no reply (access point, DNS, network or TLS). ")
                         + hint(r.detail) + r.detail;
             }
-            return L.s("Yanıt okunamadı (HTTP ", "Could not read the reply (HTTP ") + r.httpCode + "). " + hint(r.detail) + r.detail;
+            return L.t("Could not read the reply (HTTP ") + r.httpCode + "). " + hint(r.detail) + r.detail;
         default:
             return "";
         }
@@ -350,14 +349,14 @@ final class Net {
     private static String hint(String d) {
         String s = d == null ? "" : d.toLowerCase();
         if (s.indexOf("dns") >= 0 || s.indexOf("host") >= 0 || s.indexOf("resolv") >= 0) {
-            return L.s("(DNS olabilir) ", "(maybe DNS) ");
+            return L.t("(maybe DNS) ");
         }
         if (s.indexOf("timeout") >= 0 || s.indexOf("timed out") >= 0) {
-            return L.s("(zaman aşımı) ", "(timeout) ");
+            return L.t("(timeout) ");
         }
         if (s.indexOf("ssl") >= 0 || s.indexOf("tls") >= 0 || s.indexOf("handshake") >= 0
                 || s.indexOf("cert") >= 0) {
-            return L.s("(TLS olabilir) ", "(maybe TLS) ");
+            return L.t("(maybe TLS) ");
         }
         return "";
     }

@@ -39,8 +39,8 @@ final class Cal {
             return text;
         }
         Cal c = line(text.substring(at[0], at[1]));
-        String nice = "» " + (c.todo ? L.s("Yapılacak: ", "To-do: ") + Text.local(c.when, false)
-                : L.s("Takvim: ", "Calendar: ") + Text.local(c.when, true)) + " · " + c.title;
+        String nice = "» " + (c.todo ? L.t("To-do: ") + Text.local(c.when, false)
+                : L.t("Calendar: ") + Text.local(c.when, true)) + " · " + c.title;
         return text.substring(0, at[0]) + nice + text.substring(at[1]);
     }
 

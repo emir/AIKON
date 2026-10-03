@@ -64,7 +64,7 @@ final class Files {
                 close(fc);
             }
         }
-        throw last != null ? last : new IOException(L.s("klasör bulunamadı", "no folder found"));
+        throw last != null ? last : new IOException(L.t("no folder found"));
     }
 
     /** "E:/ClaudeS40/" for people; "" if not known yet. */
@@ -106,7 +106,7 @@ final class Files {
                 close(fc);
             }
         }
-        throw new IOException(L.s("dosya adı bulunamadı", "no free file name"));
+        throw new IOException(L.t("no free file name"));
     }
 
     /** The .txt files in the folder, newest name first (names start with the date). */
@@ -313,7 +313,7 @@ final class Files {
         String dir = folder();
         String priv = ClaudeS40MIDlet.prop("fileconn.dir.private");
         if (priv.startsWith("file:///") && dir.startsWith(priv)) {
-            throw new IOException(L.s("kalıcı klasör yok", "no lasting folder"));
+            throw new IOException(L.t("no lasting folder"));
         }
         return dir;
     }

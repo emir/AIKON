@@ -56,9 +56,9 @@ final class Setup implements CommandListener {
     /** "Kurulum 2/3" / "Setup 2/3" for step index 1..3 (just "Kurulum" in the short flow). */
     static String title(int step) {
         if (preset) {
-            return L.s("Kurulum", "Setup");
+            return L.t("Setup");
         }
-        return L.s("Kurulum ", "Setup ") + step + "/" + STEPS;
+        return L.t("Setup ") + step + "/" + STEPS;
     }
 
     void start() {
@@ -72,12 +72,12 @@ final class Setup implements CommandListener {
     /** Shows the current step (again). */
     void show() {
         // built each time: the language may have changed in step 1
-        nextCmd = new Command(L.s("İleri", "Next"), Command.OK, 1);
-        backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-        skipCmd = new Command(L.s("Kurulumu atla", "Skip setup"), Command.SCREEN, 5);
-        startCmd = new Command(L.s("Başlat", "Start"), Command.OK, 1);
-        finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
-        againCmd = new Command(L.s("Yeniden eşleştir", "Pair again"), Command.SCREEN, 2);
+        nextCmd = new Command(L.t("Next"), Command.OK, 1);
+        backCmd = new Command(L.t("Back"), Command.BACK, 1);
+        skipCmd = new Command(L.t("Skip setup"), Command.SCREEN, 5);
+        startCmd = new Command(L.t("Start"), Command.OK, 1);
+        finishCmd = new Command(L.t("Finish"), Command.OK, 1);
+        againCmd = new Command(L.t("Pair again"), Command.SCREEN, 2);
         helpCmd = Help.command();
         Settings s = midlet.settings;
         if (step == 2) {
@@ -95,21 +95,19 @@ final class Setup implements CommandListener {
         }
         form = new Form(title(step));
         if (step == 1) {
-            urlField = new TextField(L.s("Sunucu adresi", "Server address"), s.url.length() > 0 ? s.url : "https://",
+            urlField = new TextField(L.t("Server address"), s.url.length() > 0 ? s.url : "https://",
                     200, TextField.URL);
             form.append(urlField);
             form.addCommand(nextCmd);
         } else {
             if (s.token.length() >= 16) {
-                form.append(new StringItem(null, L.s("Bu telefon zaten eşleştirilmiş. Kurulum tamam.",
-                        "This phone is already paired. Setup is complete.")));
+                form.append(new StringItem(null, L.t("This phone is already paired. Setup is complete.")));
                 form.addCommand(finishCmd);
                 form.addCommand(againCmd);
             } else {
                 form.append(new StringItem(null, s.credits
-                        ? L.s("Son adım: Başlat'a bas, kredi kodunu gir.", "Last step: press Start and type your credit code.")
-                        : L.s("Son adım: Başlat'a bas, çıkan kodu sunucu sahibi onaylasın.",
-                                "Last step: press Start; the server's owner approves the code shown.")));
+                        ? L.t("Last step: press Start and type your credit code.")
+                        : L.t("Last step: press Start; the server's owner approves the code shown.")));
                 form.addCommand(startCmd);
             }
             form.addCommand(backCmd);
@@ -143,13 +141,7 @@ final class Setup implements CommandListener {
     /** The longer explanation of the current step. */
     private String helpText() {
         if (step == 1) {
-            return L.s("Hoş geldin! Üç adım: sunucu adresi, bağlantı testi, eşleştirme. Her adımda 'Kurulumu atla' "
-                    + "ile çıkabilir, sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile dönebilirsin. Dil telefonunkiyle "
-                    + "aynıdır; Ayarlar'dan değişir.\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu "
-                    + "(sahte yanıtlar, ağ yok).\n\n"
-                    + "Sunucu adresini sunucunun sahibi verir.\n\nAdres https:// ile başlamalı; şifresiz bağlantı "
-                    + "hiç kullanılmaz. Sonraki adımda güvenli bağlantı test edilir.",
-                    "Welcome! Three steps: server address, connection test, pairing. Every step can be left with "
+            return L.t("Welcome! Three steps: server address, connection test, pairing. Every step can be left with "
                     + "'Skip setup'; come back later from Settings > Options > Setup wizard. The language follows the "
                     + "phone; change it in Settings.\n\nJust trying it out? Skip setup, then Settings > Test mode (fake "
                     + "replies, no network).\n\n"
@@ -157,17 +149,11 @@ final class Setup implements CommandListener {
                     + "connections are never used. The next step tests the secure connection.");
         }
         if (midlet.settings.credits) {
-            return L.s("Bu sunucu kredi kodlarıyla çalışır: Başlat'a bas ve satın aldığın 16 haneli kodu gir. Telefon "
-                    + "kodla eşleşir; sunucu sahibinin onayı gerekmez.\n\nErişim kodu bu telefonda ve hafıza kartındaki "
-                    + "kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.",
-                    "This server works with credit codes: press Start and type the 16-digit code you bought. The phone "
+            return L.t("This server works with credit codes: press Start and type the 16-digit code you bought. The phone "
                     + "is paired with the code; no approval by the server's owner.\n\nThe access code is kept on this "
                     + "phone and in the setup backup on the memory card, and sent only to the https:// address.");
         }
-        return L.s("Başlat'a basınca 6 haneli bir kod çıkar. Sunucunun sahibi kodu onaylayınca telefon erişim "
-                + "kodunu kendisi alır; uzun bir kod yazmak gerekmez.\n\nErişim kodu bu telefonda ve hafıza "
-                + "kartındaki kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.",
-                "Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its "
+        return L.t("Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its "
                 + "access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the "
                 + "setup backup on the memory card, and sent only to the https:// address.");
     }
@@ -179,8 +165,7 @@ final class Setup implements CommandListener {
             url = url.substring(0, url.length() - 1);
         }
         if (!Net.isHttps(url) || url.length() <= "https://".length()) {
-            midlet.info(L.s("Adres https:// ile başlamalı, örneğin https://sunucu-adresi. HTTP desteklenmez.",
-                    "The address must start with https://, for example https://your-server. HTTP is not supported."),
+            midlet.info(L.t("The address must start with https://, for example https://your-server. HTTP is not supported."),
                     form);
             return;
         }
@@ -237,20 +222,17 @@ final class Setup implements CommandListener {
         s.setupDone = true;
         String err = s.save();
         if (err == null && s.ready()) {
-            midlet.setupDone(L.s("Kurulum tamam!", "All set!"));
+            midlet.setupDone(L.t("All set!"));
             return;
         }
         midlet.setupFinished(err != null ? err
-                : L.s("Kurulum kaydedildi. Eksik adımları Ayarlar'dan tamamlayabilirsin.",
-                        "Setup saved. Finish the missing steps from Settings."));
+                : L.t("Setup saved. Finish the missing steps from Settings."));
     }
 
     private void skip() {
         Settings s = midlet.settings;
         s.setupDone = true;
         String err = s.save();
-        midlet.setupSkipped(err != null ? err : L.s(
-                "Kurulum atlandı. Ayarlar > Seçenekler > Kurulum sihirbazı.",
-                "Setup skipped. Settings > Options > Setup wizard."));
+        midlet.setupSkipped(err != null ? err : L.t("Setup skipped. Settings > Options > Setup wizard."));
     }
 }

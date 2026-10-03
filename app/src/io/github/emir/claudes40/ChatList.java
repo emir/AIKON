@@ -27,16 +27,16 @@ final class ChatList implements CommandListener, Runnable {
 
     private final ClaudeS40MIDlet midlet;
     private final RowList list;
-    private final Command openCmd = new Command(L.s("Aç", "Open"), Command.OK, 1);
-    private final Command searchCmd = new Command(L.s("Sohbetlerde ara", "Search chats"), Command.SCREEN, 2);
-    private final Command pinCmd = new Command(L.s("Sabitle / kaldır", "Pin / unpin"), Command.SCREEN, 3);
-    private final Command deleteCmd = new Command(L.s("Sil", "Delete"), Command.SCREEN, 5);
-    private final Command allCmd = new Command(L.s("Tüm sohbetler", "All chats"), Command.SCREEN, 2);
-    private final Command refreshCmd = new Command(L.s("Yenile", "Refresh"), Command.SCREEN, 4);
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-    private final Command findCmd = new Command(L.s("Ara", "Search"), Command.OK, 1);
-    private final Command yesCmd = new Command(L.s("Sil", "Delete"), Command.OK, 1);
-    private final Command noCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command openCmd = new Command(L.t("Open"), Command.OK, 1);
+    private final Command searchCmd = new Command(L.t("Search chats"), Command.SCREEN, 2);
+    private final Command pinCmd = new Command(L.t("Pin / unpin"), Command.SCREEN, 3);
+    private final Command deleteCmd = new Command(L.t("Delete"), Command.SCREEN, 5);
+    private final Command allCmd = new Command(L.t("All chats"), Command.SCREEN, 2);
+    private final Command refreshCmd = new Command(L.t("Refresh"), Command.SCREEN, 4);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final Command findCmd = new Command(L.t("Search"), Command.OK, 1);
+    private final Command yesCmd = new Command(L.t("Delete"), Command.OK, 1);
+    private final Command noCmd = new Command(L.t("Cancel"), Command.BACK, 1);
     private TextBox searchBox;
     private TextPage confirm;
 
@@ -53,7 +53,7 @@ final class ChatList implements CommandListener, Runnable {
 
     ChatList(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
-        list = new RowList(L.s("Sohbetler", "Chats"));
+        list = new RowList(L.t("Chats"));
         list.setSelectCommand(openCmd);
         list.addCommand(searchCmd);
         list.addCommand(pinCmd);
@@ -85,7 +85,7 @@ final class ChatList implements CommandListener, Runnable {
             }
             searchMode = search;
         }
-        list.title(search ? L.s("Ara: ", "Search: ") + q : L.s("Sohbetler", "Chats"));
+        list.title(search ? L.t("Search: ") + q : L.t("Chats"));
     }
 
     private void start(int j, String id, boolean pin) {
@@ -132,12 +132,11 @@ final class ChatList implements CommandListener, Runnable {
             if (!r.ok()) {
                 actionError = Net.explain(r);
             } else if ("pin_limit".equals(st)) {
-                actionError = L.f("En fazla {0} sohbet sabitlenebilir. Önce birini kaldırın.",
-                        "At most {0} chats can be pinned. Unpin one first.", r.msg.field("max"));
+                actionError = L.f("At most {0} chats can be pinned. Unpin one first.", r.msg.field("max"));
             } else if (j == JOB_DELETE && ("deleted".equals(st) || "conversation_not_found".equals(st))) {
                 midlet.chatDeleted(id);
             } else if (!"ok".equals(st)) {
-                actionError = (j == JOB_PIN ? L.s("Sabitlenemedi (", "Could not pin (") : L.s("Silinemedi (", "Could not delete ("))
+                actionError = (j == JOB_PIN ? L.t("Could not pin (") : L.t("Could not delete ("))
                         + (st.length() > 0 ? st : "?") + ").";
             }
             list.deleteAll();
@@ -159,8 +158,8 @@ final class ChatList implements CommandListener, Runnable {
         } else if (m == null || !"ok".equals(m.field("status"))) {
             String st = m == null ? "?" : m.field("status");
             error = "not_found".equals(st) || "method_not_allowed".equals(st)
-                    ? L.s("Sunucu aramayı bilmiyor (sunucu 0.4.0 gerekli).", "The server cannot search (needs server 0.4.0).")
-                    : L.s("Liste alınamadı (", "Could not get the list (") + st + ").";
+                    ? L.t("The server cannot search (needs server 0.4.0).")
+                    : L.t("Could not get the list (") + st + ").";
         } else {
             parse(m.text, search, found, pinned, titles);
         }
@@ -175,12 +174,10 @@ final class ChatList implements CommandListener, Runnable {
         }
         list.deleteAll();
         if (error != null) {
-            list.note(L.s("Hata: ", "Error: ") + error);
+            list.note(L.t("Error: ") + error);
         } else if (titles.size() == 0) {
-            list.note(search ? L.s("Bulunamadı. Türkçe harf gerekmez: 'sise' de 'şişe'yi bulur.",
-                    "Nothing found. Plain letters are fine: 'sise' finds 'şişe'.")
-                    : L.s("Henüz sohbet yok. Sohbetler sunucuda 30 gün kalır, sabitlenenler kaldırılana kadar.",
-                            "No chats yet. The server keeps chats for 30 days, pinned ones until unpinned."));
+            list.note(search ? L.t("Nothing found. Plain letters are fine: 'sise' finds 'şişe'.")
+                    : L.t("No chats yet. The server keeps chats for 30 days, pinned ones until unpinned."));
         }
         boolean anyPinned = false;
         for (int i = 0; i < pinned.size(); i++) {
@@ -191,7 +188,7 @@ final class ChatList implements CommandListener, Runnable {
             String[] t = (String[]) titles.elementAt(i);
             boolean p = ((Boolean) pinned.elementAt(i)).booleanValue();
             if (anyPinned && !search && (i == 0 || p != lastPinned)) {
-                list.section(p ? L.s("Sabitlenenler", "Pinned") : L.s("Son sohbetler", "Recent"));
+                list.section(p ? L.t("Pinned") : L.t("Recent"));
             }
             lastPinned = p;
             list.add(t[0], t[1], p ? Icons.PIN : Icons.CHAT, p ? RowList.ACCENT : 0);
@@ -262,7 +259,7 @@ final class ChatList implements CommandListener, Runnable {
             if (c == findCmd) {
                 String q = searchBox.getString().trim();
                 if (q.length() < 2) {
-                    midlet.info(L.s("En az 2 harf yazın.", "Type at least 2 letters."), searchBox);
+                    midlet.info(L.t("Type at least 2 letters."), searchBox);
                     return;
                 }
                 display.setCurrent(list);
@@ -293,7 +290,7 @@ final class ChatList implements CommandListener, Runnable {
             start(JOB_LIST, null, false);
         } else if (c == searchCmd) {
             if (searchBox == null) {
-                searchBox = new TextBox(L.s("Sohbetlerde ara", "Search chats"), "", 100, TextField.ANY);
+                searchBox = new TextBox(L.t("Search chats"), "", 100, TextField.ANY);
                 searchBox.addCommand(findCmd);
                 searchBox.addCommand(noCmd);
                 searchBox.setCommandListener(this);
@@ -312,8 +309,7 @@ final class ChatList implements CommandListener, Runnable {
             synchronized (this) {
                 jobId = sel[0];
             }
-            confirm = TextPage.message(L.s("Sohbeti sil", "Delete chat"), L.s("Bu sohbet sunucudan silinsin mi? Geri alınamaz.",
-                    "Delete this chat from the server? This cannot be undone."));
+            confirm = TextPage.message(L.t("Delete chat"), L.t("Delete this chat from the server? This cannot be undone."));
             confirm.addCommand(yesCmd);
             confirm.addCommand(noCmd);
             confirm.setCommandListener(this);

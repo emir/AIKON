@@ -170,9 +170,9 @@ final class Settings {
             Backup.changed(this);
             return null;
         } catch (RecordStoreException e) {
-            return L.s("Ayarlar kaydedilemedi: ", "Could not save settings: ") + e.getMessage();
+            return L.t("Could not save settings: ") + e.getMessage();
         } catch (IOException e) {
-            return L.s("Ayarlar kaydedilemedi: ", "Could not save settings: ") + e.getMessage();
+            return L.t("Could not save settings: ") + e.getMessage();
         } finally {
             closeQuietly(rs);
         }

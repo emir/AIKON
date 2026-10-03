@@ -28,11 +28,11 @@ final class ConnTest implements CommandListener, Runnable {
     /** The wizard this test is a step of, or null. */
     private final Setup setup;
     private final TextPage form;
-    private final Command startCmd = new Command(L.s("Başlat", "Start"), Command.OK, 1);
-    private final Command againCmd = new Command(L.s("Yeniden test et", "Test again"), Command.SCREEN, 2);
-    private final Command detailsCmd = new Command(L.s("Ayrıntılar", "Details"), Command.HELP, 8);
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-    private final Command nextCmd = new Command(L.s("İleri", "Next"), Command.OK, 1);
+    private final Command startCmd = new Command(L.t("Start"), Command.OK, 1);
+    private final Command againCmd = new Command(L.t("Test again"), Command.SCREEN, 2);
+    private final Command detailsCmd = new Command(L.t("Details"), Command.HELP, 8);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final Command nextCmd = new Command(L.t("Next"), Command.OK, 1);
     private boolean running;
     /** Started by the wizard of a build that names its server: goes on by itself once it passed. */
     private boolean auto;
@@ -44,7 +44,7 @@ final class ConnTest implements CommandListener, Runnable {
     ConnTest(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
         this.setup = setup;
-        form = new TextPage(setup != null ? Setup.title(2) : L.s("Bağlantı testi", "Connection test"));
+        form = new TextPage(setup != null ? Setup.title(2) : L.t("Connection test"));
         form.addCommand(backCmd);
         form.setCommandListener(this);
         intro();
@@ -73,13 +73,12 @@ final class ConnTest implements CommandListener, Runnable {
 
     private void intro() {
         form.deleteAll();
-        String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)");
-        form.append(L.s("Sunucu", "Server"), url);
+        String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.t("(not set)");
+        form.append(L.t("Server"), url);
         if (midlet.settings.connectionVerified()) {
-            line(L.s("Bu adres daha önce doğrulandı.", "This address was verified before."));
+            line(L.t("This address was verified before."));
         } else {
-            line(L.s("Başlat'a bas: güvenli bağlantı ve Türkçe karakterler denenir.",
-                    "Press Start to check the secure connection and Turkish characters."));
+            line(L.t("Press Start to check the secure connection and Turkish characters."));
         }
     }
 
@@ -101,16 +100,16 @@ final class ConnTest implements CommandListener, Runnable {
         } else if (c == nextCmd) {
             setup.next();
         } else if (c == detailsCmd) {
-            Help.show(midlet.display(), L.s("Ayrıntılar", "Details"), details.toString(), form);
+            Help.show(midlet.display(), L.t("Details"), details.toString(), form);
         } else if ((c == startCmd || c == againCmd) && !running) {
             synchronized (this) {
                 running = true;
                 details.setLength(0);
             }
             form.deleteAll();
-            String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.s("(ayarlanmadı)", "(not set)");
-            form.append(L.s("Sunucu", "Server"), url);
-            line(L.s("Deneniyor...", "Testing..."));
+            String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.t("(not set)");
+            form.append(L.t("Server"), url);
+            line(L.t("Testing..."));
             commands();
             new Thread(this).start();
         }
@@ -122,7 +121,7 @@ final class ConnTest implements CommandListener, Runnable {
 
     /** One checklist row: what was checked and whether it worked. */
     private void check(String what, boolean ok) {
-        form.append(what, (ok ? L.s("tamam", "OK") : L.s("olmadı", "failed")));
+        form.append(what, (ok ? L.t("OK") : L.t("failed")));
     }
 
     private void detail(String label, String text) {
@@ -160,58 +159,55 @@ final class ConnTest implements CommandListener, Runnable {
             form.delete(form.size() - 1); // "Testing..."
         }
         if (!Net.isHttps(base)) {
-            result(false, L.s("Adres https:// ile başlamalı. Ayarlar'dan girin.",
-                    "The address must start with https://. Set it in Settings."));
+            result(false, L.t("The address must start with https://. Set it in Settings."));
             return;
         }
 
         // 1. health
         Net.Result h = Net.request(base + "/health", "GET", null, null, midlet.userAgent(), null);
         String why = problem("/health", h);
-        check(L.s("Sunucuya ulaşma", "Reaching the server"), why == null);
+        check(L.t("Reaching the server"), why == null);
         if (why != null) {
             fail(why);
             return;
         }
         S40Message hm = h.msg;
         Updates.fromHealth(base, hm); // the newest app and the shop, known at once
-        detail(L.s("Sunucu", "Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
-                + (hm.flag("mock") ? L.s(", TEST MODU (sahte yanıtlar)", ", TEST MODE (fake replies)") : ""));
-        detail(L.s("Telefonun TLS bağlantısı", "This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.s("(bilgi yok)", "(no info)"));
-        detail(L.s("Sunucunun gördüğü TLS", "TLS seen by the server"), hm.field("tls-version") + ", " + hm.field("tls-cipher"));
+        detail(L.t("Server"), hm.field("service") + " " + hm.field("version") + " (" + hm.field("environment") + ")"
+                + (hm.flag("mock") ? L.t(", TEST MODE (fake replies)") : ""));
+        detail(L.t("This phone's TLS connection"), h.tls.length() > 0 ? h.tls : L.t("(no info)"));
+        detail(L.t("TLS seen by the server"), hm.field("tls-version") + ", " + hm.field("tls-cipher"));
         if (hm.flag("credits")) {
-            detail(L.s("Kredi", "Credits"), L.s("bu sunucu kredi kodlarıyla çalışır", "this server works with credit codes"));
+            detail(L.t("Credits"), L.t("this server works with credit codes"));
         }
 
         // 2. echo
         Net.Result e = Net.request(base + "/echo", "POST", null, PROBE, midlet.userAgent(), null);
         why = problem("/echo", e);
         if (why != null) {
-            check(L.s("Türkçe karakterler", "Turkish characters"), false);
+            check(L.t("Turkish characters"), false);
             fail(why);
             return;
         }
         boolean same = PROBE.equals(e.msg.text);
         boolean serverMatch = "match".equals(e.msg.field("probe"));
-        check(L.s("Türkçe karakterler", "Turkish characters"), same && serverMatch);
-        detail(L.s("UTF-8 gönderim", "UTF-8 upload"), serverMatch ? L.s("sunucu doğru aldı", "the server got it right")
-                : L.s("sunucu farklı bayt aldı: ", "the server got different bytes: ") + e.msg.field("hex"));
-        detail(L.s("UTF-8 alım", "UTF-8 download"), (same ? L.s("doğru: ", "correct: ") : L.s("farklı: ", "different: "))
+        check(L.t("Turkish characters"), same && serverMatch);
+        detail(L.t("UTF-8 upload"), serverMatch ? L.t("the server got it right")
+                : L.t("the server got different bytes: ") + e.msg.field("hex"));
+        detail(L.t("UTF-8 download"), (same ? L.t("correct: ") : L.t("different: "))
                 + e.msg.text);
-        detail(L.s("Telefonda görünüm", "Rendering on this phone"), "ç ğ ı İ ö ş ü  Ç Ğ Ö Ş Ü");
+        detail(L.t("Rendering on this phone"), "ç ğ ı İ ö ş ü  Ç Ğ Ö Ş Ü");
         if (!same || !serverMatch) {
-            fail(L.s("Karakter kodlaması hatası.", "Character encoding error."));
+            fail(L.t("Character encoding error."));
             return;
         }
 
         s.verifiedUrl = base;
         s.credits = hm.flag("credits");
         String err = s.save();
-        detail(L.s("Not", "Note"), L.s("Bağlantının kurulması tek başına güncel güvenlik düzeyinin kanıtı değildir; "
-                + "yukarıdaki TLS sürümüne ve şifreye bakın.",
-                "A working connection alone does not prove a current security level; check the TLS version and "
+        detail(L.t("Note"), L.t("A working connection alone does not prove a current security level; check the TLS version and "
                 + "cipher above."));
-        result(true, L.s("Hazır, sohbet kullanılabilir.", "Ready, chat can be used.") + (err != null ? " (" + err + ")" : ""));
+        result(true, L.t("Ready, chat can be used.") + (err != null ? " (" + err + ")" : ""));
     }
 
     /** Why a step failed (also kept in the details), or null if it passed. */
@@ -220,12 +216,11 @@ final class ConnTest implements CommandListener, Runnable {
         if (!r.ok()) {
             why = Net.explain(r);
         } else if (r.msg == null) {
-            why = "HTTP " + r.httpCode + L.s(": yanıt bu sunucudan değil (operatör ağı, yanlış adres?).",
-                    ": not this server's reply (carrier network, wrong address?).");
+            why = "HTTP " + r.httpCode + L.t(": not this server's reply (carrier network, wrong address?).");
         } else if (r.httpCode != 200 || !"ok".equals(r.msg.field("status"))) {
-            why = "HTTP " + r.httpCode + L.s(", durum: ", ", status: ") + r.msg.field("status");
+            why = "HTTP " + r.httpCode + L.t(", status: ") + r.msg.field("status");
         } else {
-            detail(step, L.s("tamam (HTTP 200)", "OK (HTTP 200)"));
+            detail(step, L.t("OK (HTTP 200)"));
             return null;
         }
         detail(step, why);
@@ -233,7 +228,7 @@ final class ConnTest implements CommandListener, Runnable {
     }
 
     private void result(boolean ok, String text) {
-        form.append(ok ? L.s("Sonuç", "Result") : L.s("Olmadı", "Failed"), text);
+        form.append(ok ? L.t("Result") : L.t("Failed"), text);
     }
 
     private void fail(String why) {
@@ -242,6 +237,6 @@ final class ConnTest implements CommandListener, Runnable {
             s.verifiedUrl = "";
             s.save();
         }
-        result(false, why + L.s(" Sohbet kilitli.", " Chat is locked."));
+        result(false, why + L.t(" Chat is locked."));
     }
 }

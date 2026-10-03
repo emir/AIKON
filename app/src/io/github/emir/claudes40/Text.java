@@ -283,10 +283,10 @@ final class Text {
         long day = 24L * 60 * 60 * 1000;
         int k = dayKey(ms);
         if (k == dayKey(System.currentTimeMillis())) {
-            return L.s("Bugün", "Today");
+            return L.t("Today");
         }
         if (k == dayKey(System.currentTimeMillis() - day)) {
-            return L.s("Dün", "Yesterday");
+            return L.t("Yesterday");
         }
         Calendar c = Calendar.getInstance();
         c.setTime(new Date(ms));
@@ -385,7 +385,7 @@ final class Text {
             return n + " B";
         }
         long tenths = n < 1024L * 1024 ? n * 10 / 1024 : n * 10 / (1024L * 1024);
-        return tenths / 10 + L.s(",", ".") + tenths % 10 + (n < 1024L * 1024 ? " KB" : " MB");
+        return tenths / 10 + L.t(".") + tenths % 10 + (n < 1024L * 1024 ? " KB" : " MB");
     }
 
     static int parseInt(String s, int fallback) {

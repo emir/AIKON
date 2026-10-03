@@ -1,0 +1,554 @@
+# AIKON UI, Turkish (tr). Line: English key, TAB, translation.
+To-do: 	Yapılacak: 
+Calendar: 	Takvim: 
+Save	Kaydet
+Cancel	Vazgeç
+Add to calendar	Takvime ekle
+Title	Başlık
+Where	Nereye
+Calendar	Takvim
+To-do list	Yapılacaklar
+Date and time	Tarih ve saat
+Alarm (calendar)	Hatırlatma (takvim)
+None	Yok
+At the start	Başlarken
+15 minutes before	15 dakika önce
+1 hour before	1 saat önce
+1 day before	1 gün önce
+A title and a date are needed.	Başlık ve tarih gerekli.
+Added to the to-do list: 	Yapılacaklara eklendi: 
+Added to the calendar: 	Takvime eklendi: 
+Capture	Çek
+Opening the camera...	Kamera açılıyor...
+Centre key or 'Capture': take the photo	Orta tuş veya 'Çek': fotoğraf çek
+Camera access was denied. Answer 'Yes' when the phone asks.	Kamera izni verilmedi. Telefon sorduğunda 'Evet' deyin.
+Could not take the photo.	Fotoğraf çekilemedi.
+Could not open the camera. 	Kamera açılamadı. 
+Taking the photo...	Çekiliyor...
+Write	Yaz
+Dictate	Sesle yaz
+Add a photo	Fotoğraf ekle
+Show the rest	Devamını göster
+Reading mode	Okuma modu
+Quick prompts	Hızlı sorular
+Retry	Tekrar dene
+Chats	Sohbetler
+New chat	Yeni sohbet
+Model	Model
+Delete chat	Sohbeti sil
+Shortcuts	Kısayollar
+Message actions	Mesaj işlemleri
+Menu	Menü
+Close	Kapat
+A request is still running.	Önceki istek sürüyor.
+Centre key: add to calendar	Orta tuş: takvime ekle
+Text: 	Yazı: 
+Small	Küçük
+Large	Büyük
+Medium	Orta
+You	Sen
+Test mode · fake	Test modu · sahte
+Reply shortened	Yanıt kısaltıldı
+0 · Show the rest	0 · Devamını göster
+Centre key · Retry	Orta tuş · Tekrar dene
+No reply to read yet	Okunacak yanıt yok
+Loading the rest...	Devamı yükleniyor...
+Web searches can take a while	Web araması biraz sürebilir
+Sending	Gönderiliyor
+{0} is typing	{0} yazıyor
+ s	 sn
+Centre key to write	Yazmak için orta tuş
+ left	 hak
+Draft: 	Taslak: 
+Write a message	Mesaj yaz
+Centre key: details · 1/3: select	Orta tuş: ayrıntı · 1/3: seç
+Centre key: actions · 1/3: select	Orta tuş: işlemler · 1/3: seç
+Centre key: retry · 5: write	Orta tuş: tekrar dene · 5: yaz
+0: the rest · 7: reading mode	0: devamı · 7: okuma modu
+7: reading mode · 5: write	7: okuma modu · 5: yaz
+New reply · press 3	Yeni yanıt geldi · 3
+0 or centre key: the rest	Devamı için 0 veya orta tuş
+0: the rest	0: devamı
+Open	Aç
+Search chats	Sohbetlerde ara
+Pin / unpin	Sabitle / kaldır
+Delete	Sil
+All chats	Tüm sohbetler
+Refresh	Yenile
+Back	Geri
+Search	Ara
+Search: 	Ara: 
+At most {0} chats can be pinned. Unpin one first.	En fazla {0} sohbet sabitlenebilir. Önce birini kaldırın.
+Could not pin (	Sabitlenemedi (
+Could not delete (	Silinemedi (
+The server cannot search (needs server 0.4.0).	Sunucu aramayı bilmiyor (sunucu 0.4.0 gerekli).
+Could not get the list (	Liste alınamadı (
+Error: 	Hata: 
+Nothing found. Plain letters are fine: 'sise' finds 'şişe'.	Bulunamadı. Türkçe harf gerekmez: 'sise' de 'şişe'yi bulur.
+No chats yet. The server keeps chats for 30 days, pinned ones until unpinned.	Henüz sohbet yok. Sohbetler sunucuda 30 gün kalır, sabitlenenler kaldırılana kadar.
+Pinned	Sabitlenenler
+Recent	Son sohbetler
+Type at least 2 letters.	En az 2 harf yazın.
+Delete this chat from the server? This cannot be undone.	Bu sohbet sunucudan silinsin mi? Geri alınamaz.
+[Photo] 	[Fotoğraf] 
+Next replies: {0}	Sonraki yanıtlar: {0}
+{0} answers from your next message on and sees this chat's history too.	{0} bir sonraki mesajından itibaren yanıtlar ve bu sohbetin geçmişini de görür.
+The message is empty.	Mesaj boş.
+Messages can be at most {0} characters.	Mesaj en fazla {0} karakter olabilir.
+Nothing to retry.	Tekrar denenecek istek yok.
+There is no more to this reply.	Yanıtın devamı yok.
+Saved on this phone	Telefonda kayıtlı sohbet
+This chat is kept on the phone and readable offline. Write to continue it on the server.	Bu sohbet telefonda saklı: ağ olmadan da okunur. Yazınca sunucuda kaldığı yerden sürer.
+The previous chat stays on the server for 30 days; open it again from Chats.	Önceki sohbet sunucuda 30 gün kalır; Sohbetler'den yeniden açılabilir.
+Chat cleared	Sohbet temizlendi
+Chat deleted	Sohbet silindi
+Deleting...	Siliniyor...
+Loading more...	Devamı yükleniyor...
+Loading chat...	Sohbet yükleniyor...
+Sending...	Gönderiliyor...
+Waiting for reply...	Yanıt bekleniyor...
+[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: "{3}"	[Test modu] Bu gerçek bir {0} yanıtı değildir. Ağ kullanılmadı.\nMesajın {1} karakter; bu sohbette önceki mesaj sayısı: {2}.\nAldığım metin: "{3}"
+\nPhoto: attached (not sent to a server).	\nFotoğraf: eklendi (sunucuya gönderilmedi).
+Test mode event	Test modu etkinliği
+Could not connect	Bağlantı kurulamadı
+No reply	Yanıt alınamadı
+\n\n'Retry' asks about the same request; it is not sent to {0} twice.	\n\n'Tekrar dene' aynı isteği sorar; {0} ikinci kez çağrılmaz.
+Unrecognised server reply	Sunucu yanıtı tanınmadı
+HTTP {0}. Carrier network or wrong address?	HTTP {0}. Operatör ağı veya yanlış adres olabilir.
+{0} declined	{0} yanıt vermedi
+{0} declined to answer this one. Ask differently or pick another model.	{0} bu isteğe yanıt vermedi. İsteği farklı sorabilir ya da başka bir model seçebilirsiniz.
+Still working	Yanıt bekleniyor
+Still working on it	Sunucuda hâlâ işleniyor
+Choose 'Retry' in a moment; it asks about the same request and is not charged again.	Biraz sonra 'Tekrar dene' seçin; aynı istek sorulur, yeniden ücretlenmez.
+Busy	Meşgul
+Another request is running	Başka bir istek sürüyor
+Choose 'Retry' in a moment.	Biraz sonra 'Tekrar dene' seçin.
+The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.	Aracı sunucu AIKON sunucusundan yanıt alamadı ({0}). 'Tekrar dene' aynı isteği sorar; {1} ikinci kez çağrılmaz.
+Limit reached	Kullanım sınırı
+Daily limit reached. Try again tomorrow (UTC).	Kullanım sınırına ulaşıldı. Yarın (UTC) tekrar deneyin.
+Unknown result	Sonuç belirsiz
+Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.	Sonuç belirsiz: istek {0} tarafına ulaşmış olabilir. Otomatik tekrar yapılmadı. Mesaj taslakta duruyor; yeniden göndermek yeni bir ücretli istek olur.
+Chat full	Sohbet doldu
+This chat got too long. Continue with 'New chat'.	Bu sohbet çok uzadı. 'Yeni sohbet' ile devam edin.
+Chat not found	Sohbet yok
+Chat not found on the server (it may have expired). Continue with 'New chat'.	Sohbet sunucuda bulunamadı (süresi dolmuş olabilir). 'Yeni sohbet' ile devam edin.
+Not authorised	Yetki yok
+Access code invalid or revoked. Settings > Pair this phone.	Erişim kodu geçersiz veya iptal edilmiş. Ayarlar > Cihazı eşleştir.
+Not enough credits	Kredi yetersiz
+Not enough credits for this message (balance: {0}).	Bu mesaj için kredi yetmiyor (bakiye: {0}).
+Not enough credits for this message.	Bu mesaj için kredi yetmiyor.
+ Add a code under main menu > Credits; your message is kept as a draft.	 Ana menü > Kredi'den yeni kod gir; mesajın taslakta duruyor.
+Trial: one model	Deneme: tek model
+The free trial works with one model only. Pick it in the Model menu; a credit code opens every model (main menu > Credits). Your message is kept as a draft.	Ücretsiz deneme yalnızca bir modelle çalışır. Model menüsünden onu seç; kredi kodu yükleyince tüm modeller açılır (Ana menü > Kredi). Mesajın taslakta duruyor.
+Account closed	Hesap kapalı
+This account is closed. Write to the server's support address.	Bu hesap kapatılmış. Sunucunun destek adresine yaz.
+No credits	Kredi yok
+The server's {0} API account is out of credits. Send again once it is topped up.	Sunucunun {0} API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.
+{0} is busy	{0} meşgul
+{0} is busy right now. Send again shortly.	{0} şu an meşgul. Birazdan yeniden gönderin.
+Model not offered	Model yok
+The chosen model is no longer offered by the server. Pick another with Menu > Model; your message is kept as a draft.	Seçilen model sunucuda artık yok. Menü > Model ile başka birini seçin; mesajınız taslakta duruyor.
+Photo not found	Fotoğraf yok
+The photo is not on the server: unused for a day, or used in another chat. Add it again; your message is kept as a draft.	Fotoğraf sunucuda bulunamadı: bir gün içinde kullanılmamış ya da başka bir sohbette kullanılmış. Fotoğrafı yeniden ekleyin; mesajınız taslakta duruyor.
+Too long	Mesaj uzun
+The message is too long.	Mesaj çok uzun.
+No reply (	Yanıt alınamadı (
+The rest is gone	Devamı sunucuda yok
+The rest of this reply is no longer on the server (kept for 7 days).	Yanıtın devamı sunucuda artık yok (yanıtlar 7 gün saklanır).
+Could not load more	Devamı alınamadı
+Press 0 to try again (free; {0} is not asked again).\n\n	0 tuşuyla tekrar deneyin (ücretsiz; {0} tekrar çağrılmaz).\n\n
+Older messages hidden	Eski mesajlar gizli
+Older messages are not shown on the phone; the model still sees them.	Daha eski mesajlar telefonda gösterilmiyor; model onları hâlâ görüyor.
+Chat opened	Sohbet açıldı
+Chat not found on the server (deleted or expired).	Sohbet sunucuda bulunamadı (silinmiş veya süresi dolmuş olabilir).
+Not loaded	Yüklenemedi
+The end did not load	Sohbetin sonu yüklenemedi
+Not deleted	Silinemedi
+Send	Gönder
+Remove the photo	Fotoğrafı kaldır
+Change	Değiştir
+OK	Tamam
+Pair this phone	Cihazı eşleştir
+Credits	Kredi
+Setup wizard	Kurulum sihirbazı
+Play the jingle	Melodiyi çal
+Replay the intro	Açılışı izle
+Data usage	Veri kullanımı
+Reset setup	Kurulumu sıfırla
+Reset	Sıfırla
+Update	Güncelle
+Your earlier setup was restored: server, pairing and your notes. To start over: Settings > Options > Reset setup.	Önceki kurulum geri yüklendi: sunucu, eşleştirme ve notların. Baştan kurmak için: Ayarlar > Seçenekler > Kurulumu sıfırla.
+Test mode: fake replies	Test modu: sahte yanıtlar
+Setup: server address needed	Kurulum: sunucu adresi gerekli
+Setup: run the connection test	Kurulum: bağlantı testi gerekli
+Setup: pair this phone	Kurulum: cihazı eşleştir
+{0} credits · New version {1}	{0} kredi · Yeni sürüm {1}
+New version {0} · Update	Yeni sürüm {0} · Güncelle
+No credits left · add a code under Credits	Kredi bitti · Kredi'den kod gir
+Credits low · {0} left	Kredi azaldı · {0} kredi
+Ready · {0} credits	Hazır · {0} kredi
+Ready · {0} left today	Hazır · bugün {0} hak kaldı
+Ready · new AI on an old Nokia	Hazır · eski Nokia'da yeni yapay zekâ
+Buy a credit code (on a computer or smartphone): 	Kredi kodu al (bilgisayardan ya da akıllı telefondan): 
+ credits	 kredi
+Last: 	Son: 
+This phone does not let apps use the camera or files.	Bu telefon uygulamaların kamera veya dosya kullanmasına izin vermiyor.
+What is in this photo?	Bu fotoğrafta ne var?
+This phone does not let apps record audio.	Bu telefon uygulamaların ses kaydetmesini desteklemiyor.
+Check, then send	Kontrol edip gönderin
+AIKON {0} will be downloaded. The phone asks to install it and AIKON closes; your settings and pairing are kept.	AIKON {0} indirilecek. Telefon kurulumu soracak ve AIKON kapanacak; ayarların ve eşleşmen korunur.
+The phone could not open the link. Open this in the browser: 	Telefon bağlantıyı açamadı. Tarayıcıda şunu açın: 
+Message	Mesaj
+Message with a photo	Fotoğraflı mesaj
+Message {0}	Mesaj · {0}
+Server chats are not shown in test mode.	Test modunda sunucudaki sohbetler gösterilmez.
+This phone does not let apps save files.	Bu telefon uygulamaların dosya kaydetmesini desteklemiyor.
+Chat	Sohbet
+Centre key or 5: write\nUp / down: one line\n2 / 8, left / right: one page\n1 / 3: select a message; centre key: shorten, translate, edit...\n* / #: top / end\n0: the rest of a reply\n7: reading mode\n9: text size\nAfter an error, centre key: retry\n	Orta tuş veya 5: yaz\nYukarı / aşağı: bir satır\n2 / 8, sol / sağ: bir sayfa\n1 / 3: mesaj seç; orta tuş: kısalt, çevir, düzenle...\n* / #: en başa / en sona\n0: yanıtın devamı\n7: okuma modu\n9: yazı boyutu\nHatadan sonra orta tuş: tekrar dene\n
+Shows one reply page by page, full width.\nCentre key, 8 or right: next page\n2 or left: previous page\nUp / down: one line\n1 / 3: previous / next reply\n* / #: top / end\n0: the rest of a reply\n9: text size\n7 or Close: back to the chat\n	Bir yanıtı tam ekran, sayfa sayfa gösterir.\nOrta tuş, 8 veya sağ: sonraki sayfa\n2 veya sol: önceki sayfa\nYukarı / aşağı: bir satır\n1 / 3: önceki / sonraki yanıt\n* / #: en başa / en sona\n0: yanıtın devamı\n9: yazı boyutu\n7 veya Kapat: sohbete dön\n
+Main menu and lists	Ana menü ve listeler
+1-9: opens that row directly (in lists the first nine rows; not in Settings)	1-9: satırı doğrudan açar (listelerde ilk dokuz satır; Ayarlar'da yok)
+QWERTY keyboard	QWERTY klavye
+Digits sit on letter keys: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: same as the centre key\nOn the main menu, N only moves to Exit (does not quit)\n	Rakamlar harf tuşlarında: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: orta tuş gibi\nAna menüde N yalnızca Çıkış'a gider (kapatmaz)\n
+Actions like shorten or translate never send by themselves: the editor opens with the text ready and you press Send.	Kısalt, çevir gibi işlemler hiçbir şeyi kendiliğinden göndermez: yazma kutusu hazır metinle açılır, Gönder'e sen basarsın.
+Loading the rest of a reply is free: it comes from the server, the model is not asked again.	Yanıtın devamını almak ücretsizdir: sunucudaki yanıt gelir, model tekrar çağrılmaz.
+Reply	Yanıt
+Your message	Mesajın
+Open in reading mode	Okuma modunda aç
+Make it shorter	Kısalt
+Explain it more simply	Daha basit anlat
+Translate to Turkish	Türkçeye çevir
+Translate to English	İngilizceye çevir
+Ask about this	Bunun hakkında sor
+Edit and send again	Düzenleyip yeniden gönder
+Save to phone (.txt)	Telefona kaydet (.txt)
+Add to calendar / to-do	Takvime / yapılacaklara ekle
+Open in editor	Düzenleyicide aç
+Make this reply shorter, 3 sentences at most: 	Şu yanıtını kısalt, en fazla 3 cümle: 
+Explain this reply more simply: 	Şu yanıtını daha basit anlat: 
+Translate all of this reply to Turkish: 	Şu yanıtının tamamını Türkçeye çevir: 
+Translate all of this reply to English: 	Şu yanıtının tamamını İngilizceye çevir: 
+About this part: 	Şu kısım hakkında: 
+Text	Metin
+First enter the server address (https://...) in Settings.	Önce Ayarlar'dan sunucu adresini (https://...) girin.
+Run the 'Connection test' first. Nothing is sent before the secure connection is verified.	Önce 'Bağlantı testi'ni çalıştırın. Güvenli bağlantı doğrulanmadan mesaj gönderilmez.
+Pair this phone first: Settings > Options > 'Pair this phone'.	Önce Ayarlar > Seçenekler > 'Cihazı eşleştir' ile telefonu eşleştirin.
+Delete the server address, pairing and your notes from this phone and from the backup file? The setup wizard opens next.	Sunucu adresi, eşleştirme ve notların bu telefondan ve yedek dosyasından silinsin mi? Sonra kurulum sihirbazı açılır.
+Settings	Ayarlar
+Light	Gündüz
+Dark	Gece
+Automatic: dark 19-07	Otomatik: akşam 19-07 gece
+none	yok
+Look	Görünüm
+Replies	Yanıtlar
+Sound and screen	Ses ve ekran
+Language and server	Dil ve sunucu
+Text size	Yazı boyutu
+May search the web	Web'de arayabilir
+news, weather...	haber, hava, kur...
+Keep last chat on phone	Son sohbeti telefonda sakla
+Your notes for the AI	Yapay zekâ için notların
+Jingle and reply sound	Melodi ve bildirim sesi
+Vibrate on reply	Yanıtta titreşim
+Full screen	Tam ekran
+Light up for a reply	Yanıtta ışığı yak
+if the screen went dark	ekran kararmışsa
+Language	Dil
+Server address	Sunucu adresi
+(not set)	(ayarlanmadı)
+Access code	Erişim kodu
+Connection test	Bağlantı testi
+passed	geçti
+not passed yet	henüz geçmedi
+Test mode	Test modu
+fake replies, no network	sahte yanıt, ağ kullanılmaz
+Same as phone	Telefona göre
+Server address (https://...)	Sunucu adresi (https://...)
+The address must start with https://. HTTP is not supported.	Adres https:// ile başlamalı. HTTP desteklenmez.
+The access code must be 16-64 letters/digits.	Erişim kodu 16-64 harf/rakam olmalı.
+Today	Bugün
+Total since 	Toplam, başlangıç 
+Save the server address (https://...) first.	Önce sunucu adresini (https://...) kaydedin.
+Run the 'Connection test' first. Pairing only runs over a verified connection.	Önce 'Bağlantı testi'ni çalıştırın. Eşleştirme yalnızca doğrulanmış bağlantıyla yapılır.
+Estimates: messages are counted exactly, HTTP headers roughly.\n\nThe encrypted connection set-up is not counted, so your operator counts more.\n\nTest mode uses no data.	Yaklaşık değerler: mesajlar tam, HTTP başlıkları tahminen sayılır.\n\nŞifreli bağlantının kurulumu sayılmaz; operatörün saydığı miktar daha fazladır.\n\nTest modunda veri kullanılmaz.
+The AI does not run on the phone: messages travel over an encrypted link to the server and on to the chosen model's provider (Anthropic, OpenAI, Google, xAI). Not an official app of these providers or of Nokia.\n\nThe server deletes chats 30 days after the last message; pinned ones stay until unpinned. The phone keeps the last chat only if 'Keep last chat on phone' is on; saved replies and calendar entries stay on the phone only.\n\nWeb search runs on the server with the model provider's search tool, not the phone's browser.	Yapay zekâ telefonda çalışmaz: mesajlar şifreli bağlantıyla sunucuya, oradan seçtiğin modelin sağlayıcısına (Anthropic, OpenAI, Google, xAI) gider. Bu sağlayıcıların ya da Nokia'nın resmî bir uygulaması değildir.\n\nSohbetler sunucuda son mesajdan 30 gün sonra silinir; sabitlenenler sabitleme kaldırılana kadar kalır. Telefonda yalnızca 'Son sohbeti telefonda sakla' açıksa son sohbet tutulur; kaydedilen yanıtlar ve takvim kayıtları yalnızca telefonda durur.\n\nWeb araması sunucuda, modelin sağlayıcısının arama aracıyla yapılır; telefonun tarayıcısı kullanılmaz.
+Your notes for the AI: say briefly who you are and how you like answers, e.g. "I'm Emir, I live in Istanbul, keep it short." Sent to the server with every message.\n\nInstead of typing the access code, use Options > 'Pair this phone'. The code is stored on this phone and (so a reinstall needs no setup) in the setup backup on the memory card, and sent only to the https:// address.\n\nThe connection test must pass again whenever the address changes; nothing is sent before.\n\nTest mode gives fake replies and uses no network.	Yapay zekâ için notların: kendinden ve nasıl yanıt istediğinden kısaca söz et, örneğin "Adım Emir, İstanbul'dayım, kısa ve Türkçe yaz." Her mesajla sunucuya gönderilir.\n\nErişim kodunu yazmak yerine Seçenekler > 'Cihazı eşleştir' kullanılabilir. Kod bu telefonda ve (uygulama silinince kurulum gerekmesin diye) hafıza kartındaki kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.\n\nBağlantı testi, adres her değiştiğinde yeniden geçmeli; geçmeden mesaj gönderilmez.\n\nTest modu sahte yanıt verir, ağ kullanmaz.
+About	Hakkında
+Version 	Sürüm 
+ (build 	 (derleme 
+New version	Yeni sürüm
+ · Update on the home screen	 · ana ekranda Güncelle
+AI chat for Nokia S40 and S60 phones.	Nokia S40 ve S60 telefonlar için yapay zekâ sohbeti.
+Made by: 	Geliştiren: 
+Platform	Platform
+Voice recording	Ses kaydı
+yes	var
+no	yok
+Camera	Kamera
+Start	Başlat
+Test again	Yeniden test et
+Details	Ayrıntılar
+Next	İleri
+Server	Sunucu
+This address was verified before.	Bu adres daha önce doğrulandı.
+Press Start to check the secure connection and Turkish characters.	Başlat'a bas: güvenli bağlantı ve Türkçe karakterler denenir.
+Testing...	Deneniyor...
+failed	olmadı
+The address must start with https://. Set it in Settings.	Adres https:// ile başlamalı. Ayarlar'dan girin.
+Reaching the server	Sunucuya ulaşma
+, TEST MODE (fake replies)	, TEST MODU (sahte yanıtlar)
+This phone's TLS connection	Telefonun TLS bağlantısı
+(no info)	(bilgi yok)
+TLS seen by the server	Sunucunun gördüğü TLS
+this server works with credit codes	bu sunucu kredi kodlarıyla çalışır
+Turkish characters	Türkçe karakterler
+UTF-8 upload	UTF-8 gönderim
+the server got it right	sunucu doğru aldı
+the server got different bytes: 	sunucu farklı bayt aldı: 
+UTF-8 download	UTF-8 alım
+correct: 	doğru: 
+different: 	farklı: 
+Rendering on this phone	Telefonda görünüm
+Character encoding error.	Karakter kodlaması hatası.
+Note	Not
+A working connection alone does not prove a current security level; check the TLS version and cipher above.	Bağlantının kurulması tek başına güncel güvenlik düzeyinin kanıtı değildir; yukarıdaki TLS sürümüne ve şifreye bakın.
+Ready, chat can be used.	Hazır, sohbet kullanılabilir.
+: not this server's reply (carrier network, wrong address?).	: yanıt bu sunucudan değil (operatör ağı, yanlış adres?).
+, status: 	, durum: 
+OK (HTTP 200)	tamam (HTTP 200)
+Result	Sonuç
+Failed	Olmadı
+ Chat is locked.	 Sohbet kilitli.
+Type the code	Kodu yaz
+Try for free	Ücretsiz dene
+Finish	Bitir
+Add credits	Kredi yükle
+Credit code	Kredi kodu
+Centre key: type the 16-digit credit code.	Orta tuşla 16 haneli kredi kodunu yaz.
+\n\nNo code? Options > Try for free: a few messages with one model.	\n\nKodun yok mu? Seçenekler > Ücretsiz dene: birkaç mesaj, tek modelle.
+Centre key: type the new credit code.	Orta tuşla yeni kredi kodunu yaz.
+Balance	Bakiye
+Loading...	Yükleniyor...
+Enter the code with Options > 'Add credits'.	Kodu Seçenekler > 'Kredi yükle' ile gir.
+The code has 16 digits. Centre key to finish it.	Kod 16 rakam. Orta tuşla tamamla.
+A digit may be mistyped; check the code.	Bir rakam yanlış yazılmış olabilir; kodu kontrol et.
+Starting the trial...	Deneme başlatılıyor...
+Credits are used according to the length of the message and the chosen model. Failed requests and requests with an unknown result cost nothing.\n\nAdd a new code with 'Add credits'.	Kredi, mesajın uzunluğuna ve seçilen modele göre harcanır. Başarısız ya da sonucu belirsiz kalan isteklerden kredi düşülmez.\n\nYeni bir kodla 'Kredi yükle'.
+You get the code from the shop of the server that sells credits. It has 16 digits; the last one is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once.	Kodu, kredi satan sunucunun sitesinden alırsın. 16 rakamdır; son rakam bir kontrol rakamı olduğu için yanlış yazılan kod gönderilmeden fark edilir.\n\nKod bir kez kullanılır.
+ This phone is paired with the code; no approval by the server's owner.	 Bu telefon kodla eşleşir; sunucu sahibinin onayı gerekmez.
+Could not send. 	Gönderilemedi. 
+Trial started: {0} credits. A credit code opens every model.	Deneme başladı: {0} kredi. Kod yükleyince tüm modeller açılır.
+Paired. 	Eşleştirildi. 
+Added. 	Yüklendi. 
+Balance: 	Bakiye: 
+Today's free trials are used up. Try again tomorrow, or get a credit code.	Bugünkü ücretsiz denemeler bitti. Yarın yeniden dene ya da kredi kodu al.
+Enough trials were started from this network today. Try again tomorrow.	Bu ağdan bugün yeterince deneme açıldı. Yarın yeniden dene.
+This server has no free trial.	Bu sunucuda ücretsiz deneme yok.
+The code is not valid or was cancelled.	Kod geçersiz ya da iptal edilmiş.
+This code was already used.	Bu kod daha önce kullanılmış.
+Too many wrong codes. Try again in 15 minutes.	Çok fazla hatalı deneme. 15 dakika sonra yeniden dene.
+The pairing is not valid. Settings > Options > 'Pair this phone'.	Eşleştirme geçersiz. Ayarlar > Seçenekler > 'Cihazı eşleştir'.
+This server does not sell credits.	Bu sunucu kredi satmıyor.
+Server: 	Sunucu: 
+This phone runs without credits.	Bu telefon kredisiz çalışıyor.
+Voice	Sesle yazma
+Code	Kod
+Free trial	Ücretsiz deneme
+Adjustment	Düzeltme
+ requests · 	 istek · 
+ (sent 	 (gönderilen 
+, received 	, alınan 
+Done	Bitir
+Send again	Yeniden gönder
+Record again	Yeniden kaydet
+Opening the microphone...	Mikrofon açılıyor...
+Speak now. Press 'Done' when you finish.	Konuşun. Bitince 'Bitir'e basın.
+Finishing the recording...	Kayıt bitiyor...
+Sending (	Gönderiliyor (
+The recording is empty or too short.	Kayıt boş ya da çok kısa.
+[Test mode] This is not a real transcription; no network was used. Recording: 	[Test modu] Bu gerçek bir yazıya dökme değil; ağ kullanılmadı. Kayıt: 
+ bytes.	 bayt.
+\n'Retry' asks about the same recording; it is not charged twice.	\n'Tekrar dene' aynı kaydı sorar; ikinci kez ücretlendirilmez.
+Unrecognised server reply (HTTP {0}).	Sunucu yanıtı tanınmadı (HTTP {0}).
+No speech was recognised. Record again.	Konuşma anlaşılamadı. Yeniden kaydedin.
+The server is still working on it. 'Retry' in a few seconds.	Sunucu hâlâ yazıya döküyor. Birkaç saniye sonra 'Tekrar dene'.
+Another recording is being processed. 'Retry' in a moment.	Başka bir ses kaydı işleniyor. Birazdan 'Tekrar dene'.
+No voice messages left today. More tomorrow (UTC).	Bugünkü sesle yazma hakkınız bitti. Yarın (UTC) yenilenir.
+Voice messages are not turned on on the server.	Sunucuda sesle yazma açık değil.
+The recording is too long. At most {0} seconds.	Kayıt çok uzun. En fazla {0} saniye.
+The recording is too short.	Kayıt çok kısa.
+The server could not read this recording.	Sunucu bu ses kaydını okuyamadı.
+Unknown result: the speech service did not answer in time. 'Send again' is a new (paid) request.	Sonuç belirsiz: yazıya dökme servisi zamanında yanıt vermedi. 'Yeniden gönder' yeni (ücretli) bir istek olur.
+The speech service is not answering right now ({0}). 'Send again' later.	Yazıya dökme servisi şu an yanıt vermiyor ({0}). Biraz sonra 'Yeniden gönder'.
+The server's speech-to-text setup has a problem ({0}).	Sunucudaki yazıya dökme ayarında sorun var ({0}).
+Not enough credits. Add a code in Settings > Options > 'Credits'.	Kredi yetersiz. Ayarlar > Seçenekler > 'Kredi' ile yeni kod gir.
+The account is closed. Write to the server's support address.	Hesap kapatılmış. Sunucunun destek adresine yaz.
+Recording: 	Kayıt: 
+ bytes	 bayt
+Turning speech into text...	Yazıya dökülüyor...
+Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text opens in the editor so you can fix it before sending.\n\nThe recording is not kept on the server.	En fazla 30 saniye konuş. Ses sunucuya gider ve yazıya dökülür; metin yazma kutusuna gelir, göndermeden önce düzeltebilirsin.\n\nKayıt sunucuda saklanmaz.
+no folder found	klasör bulunamadı
+no free file name	dosya adı bulunamadı
+no lasting folder	kalıcı klasör yok
+Info	Bilgi
+Saved	Kaydedilenler
+Exit	Çıkış
+Pick up where you left off	Kaldığın yerden devam et
+Open earlier chats	Önceki sohbetleri aç
+Search the web, translate...	Web'de ara, çevir, özetle...
+Start fresh	Temiz bir sayfa aç
+Replies on the phone, offline	Telefondaki yanıtlar, internetsiz
+Can we reach the server?	Sunucuya ulaşıyor muyuz?
+Text size, look, sound, language	Yazı boyutu, görünüm, ses, dil
+What is AIKON?	AIKON nedir?
+See you soon	Görüşmek üzere
+Balance, add a code, buy	Bakiye, kod gir, kredi al
+Select	Seç
+The server has no model choice (needs server 0.7.0).	Sunucu model seçimini bilmiyor (sunucu 0.7.0 gerekli).
+The server listed no models.	Sunucu hiç model listelemedi.
+Choose	Seç
+Refresh the list	Listeyi yenile
+now	şu an
+last used	son seçim
+default	varsayılan
+In test mode the list cannot come from the server.	Test modunda liste sunucudan alınamaz.
+No list yet. Choose 'Refresh the list'.	Liste boş. 'Listeyi yenile'yi seçin.
+Other	Diğer
+1 model	1 model
+{0} models	{0} model
+~{0} credits a message	mesaj başı ~{0} kredi
+Test mode uses no network.	Test modunda ağ kullanılmaz.
+UTF-8 not supported	UTF-8 desteklenmiyor
+The address must start with https://	Adres https:// ile başlamalı
+Java network access denied	Java ağ izni verilmedi
+Connection type not supported: 	Bağlantı türü desteklenmiyor: 
+Certificate: 	Sertifika: 
+\nCipher: 	\nŞifre: 
+\nCertificate: 	\nSertifika: 
+\nIssuer: 	\nVeren: 
+\nSignature: 	\nİmza: 
+\nValid until: 	\nGeçerlilik sonu: 
+\nSubject: 	\nKonu: 
+unknown certificate authority (root not on the phone)	tanınmayan sertifika otoritesi (telefonda kök sertifika yok)
+expired or not yet valid (phone date / time zone?)	süresi dolmuş veya henüz geçerli değil (telefonun tarihi / saat dilimi?)
+not yet valid (phone clock?)	henüz geçerli değil (telefon saati?)
+host name mismatch	alan adı uyuşmuyor
+broken certificate chain	sertifika zinciri eksik
+root certificate expired	kök sertifikanın süresi dolmuş
+signature not verified (root missing or algorithm unsupported)	imza doğrulanamadı (kök sertifika eksik veya algoritma desteklenmiyor)
+missing signature	imza yok
+unsupported extension	desteklenmeyen uzantı
+inappropriate key usage	uygunsuz anahtar kullanımı
+code 	kod 
+The server address must start with https://.	Sunucu adresi https:// ile başlamalı.
+Java network access was denied. Allow it in the application settings.	Java ağ izni verilmedi. Uygulama ayarlarından ağ erişimine izin verin.
+Could not open HTTPS. Check the Java access point (mobile data / WLAN).	HTTPS bağlantısı açılamadı. Java erişim noktası (mobil veri / WLAN) ayarını kontrol edin.
+Secure connection failed (certificate/TLS). 	Güvenli bağlantı kurulamadı (sertifika/TLS). 
+Character encoding error: 	Karakter kodlaması hatası: 
+Could not connect or no reply (access point, DNS, network or TLS). 	Bağlantı kurulamadı veya yanıt gelmedi (erişim noktası, DNS, ağ veya TLS). 
+Could not read the reply (HTTP 	Yanıt okunamadı (HTTP 
+(maybe DNS) 	(DNS olabilir) 
+(timeout) 	(zaman aşımı) 
+(maybe TLS) 	(TLS olabilir) 
+Pairing code	Eşleştirme kodu
+Status	Durum
+Give this code to the server's owner.	Bu kodu sunucunun sahibine ilet.
+Requesting a code...	Kod isteniyor...
+Pairing	Eşleştirme
+The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter approval the phone fetches its access code by itself; keep this screen open. The code is valid for 10 minutes.	Sunucunun sahibi kodu sunucuda onaylar:\nadmin.sh SUNUCU pair <kod>\n\nOnaydan sonra telefon erişim kodunu kendisi alır; bu ekran açık kalsın. Kod 10 dakika geçerlidir.
+Could not start. 	Başlatılamadı. 
+Too many pending pairings; try again in a few minutes.	Bekleyen eşleştirme çok fazla; birkaç dakika sonra deneyin.
+Could not start (	Başlatılamadı (
+Waiting for approval...	Onay bekleniyor...
+Connection problem, pairing stopped. 	Bağlantı sorunu, eşleştirme durdu. 
+Connection problem, trying again (	Bağlantı sorunu, tekrar deneniyor (
+Paired (	Eşleştirildi (
+). Access code saved; chat is ready.	). Erişim kodu kaydedildi; sohbet kullanılabilir.
+Pairing expired. Start again.	Eşleştirme süresi doldu. Yeniden başlatın.
+Another photo	Başka fotoğraf
+Take a photo	Kamerayla çek
+Choose from the phone	Telefondan seç
+The server could not read this photo (it must be JPEG or PNG).	Sunucu bu fotoğrafı okuyamadı (JPEG veya PNG olmalı).
+The photo is too large.	Fotoğraf çok büyük.
+No photos left today. More tomorrow (UTC).	Bugünkü fotoğraf hakkınız bitti. Yarın (UTC) yenilenir.
+The server does not take photos (older version).	Sunucu fotoğrafları desteklemiyor (eski sürüm).
+The server is preparing the photo...	Sunucu fotoğrafı hazırlıyor...
+Photo	Fotoğraf
+The photo goes to the server and is shown to this chat's model, also with later messages.\n\nIt stays on the server with the chat (30 days, or until you delete the chat). An unused photo is deleted after a day.\n\nThe photo is never sent by itself: it goes with your message when you press Send.	Fotoğraf sunucuya gider ve bu sohbetin modeline gösterilir; sonraki mesajlarda da görünür.\n\nSohbetle birlikte sunucuda kalır (30 gün ya da sohbeti silene kadar). Kullanılmayan fotoğraf bir gün sonra silinir.\n\nFotoğraf tek başına gönderilmez: mesajını yazıp Gönder'e basınca gider.
+Choose a photo	Fotoğraf seç
+File access was denied. Answer 'Yes' when the phone asks.	Dosya erişimi izni verilmedi. Telefon sorduğunda 'Evet' deyin.
+Could not read the folder: 	Klasör okunamadı: 
+.. (up)	.. (üst klasör)
+Drives	Sürücüler
+The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.	Fotoğraf çok büyük ({0} KB). En fazla {1} KB; uygulamadaki kamerayla çekin.
+Could not read the file: 	Dosya okunamadı: 
+File access was denied.	Dosya erişimi izni verilmedi.
+The photo does not fit in the phone's memory. Take it with the app's camera.	Fotoğraf telefonun belleğine sığmadı. Uygulamadaki kamerayla çekin.
+Reading...	Okunuyor...
+The phone did not accept it: 	Telefon kaydı kabul etmedi: 
+Permission denied. Answer 'Yes' when the phone asks, to add it.	İzin verilmedi. Takvime ekleme için telefonun sorusuna 'Evet' deyin.
+Could not add it: 	Eklenemedi: 
+Microphone access was denied. Answer 'Yes' when the phone asks.	Mikrofon izni verilmedi. Telefon sorduğunda 'Evet' deyin.
+Could not start recording. 	Ses kaydı başlatılamadı. 
+Still busy with the previous file.	Önceki kayıt işlemi sürüyor.
+File error: 	Dosya işlemi başarısız: 
+Permission denied. Answer 'Yes' when the phone asks about file access.	İzin verilmedi. Telefon dosya erişimini sorduğunda 'Evet' deyin.
+Saved on the phone:\n	Telefona kaydedildi:\n
+\n\nRead it offline: main menu > Saved.	\n\nAna menü > Kaydedilenler'den internetsiz okunur.
+Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone.	Henüz kayıt yok. Sohbette bir yanıtı seçin (1/3), orta tuş > Telefona kaydet.
+Delete this file from the phone?\n	Bu kayıt telefondan silinsin mi?\n
+Could not save settings: 	Ayarlar kaydedilemedi: 
+Setup	Kurulum
+Setup 	Kurulum 
+Skip setup	Kurulumu atla
+Pair again	Yeniden eşleştir
+This phone is already paired. Setup is complete.	Bu telefon zaten eşleştirilmiş. Kurulum tamam.
+Last step: press Start and type your credit code.	Son adım: Başlat'a bas, kredi kodunu gir.
+Last step: press Start; the server's owner approves the code shown.	Son adım: Başlat'a bas, çıkan kodu sunucu sahibi onaylasın.
+Welcome! Three steps: server address, connection test, pairing. Every step can be left with 'Skip setup'; come back later from Settings > Options > Setup wizard. The language follows the phone; change it in Settings.\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).\n\nThe server's owner gives you its address.\n\nIt must start with https://; unencrypted connections are never used. The next step tests the secure connection.	Hoş geldin! Üç adım: sunucu adresi, bağlantı testi, eşleştirme. Her adımda 'Kurulumu atla' ile çıkabilir, sonra Ayarlar > Seçenekler > Kurulum sihirbazı ile dönebilirsin. Dil telefonunkiyle aynıdır; Ayarlar'dan değişir.\n\nSadece denemek için: kurulumu atla, sonra Ayarlar > Test modu (sahte yanıtlar, ağ yok).\n\nSunucu adresini sunucunun sahibi verir.\n\nAdres https:// ile başlamalı; şifresiz bağlantı hiç kullanılmaz. Sonraki adımda güvenli bağlantı test edilir.
+This server works with credit codes: press Start and type the 16-digit code you bought. The phone is paired with the code; no approval by the server's owner.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Bu sunucu kredi kodlarıyla çalışır: Başlat'a bas ve satın aldığın 16 haneli kodu gir. Telefon kodla eşleşir; sunucu sahibinin onayı gerekmez.\n\nErişim kodu bu telefonda ve hafıza kartındaki kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.
+Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Başlat'a basınca 6 haneli bir kod çıkar. Sunucunun sahibi kodu onaylayınca telefon erişim kodunu kendisi alır; uzun bir kod yazmak gerekmez.\n\nErişim kodu bu telefonda ve hafıza kartındaki kurulum yedeğinde saklanır, yalnızca https:// adresine gönderilir.
+The address must start with https://, for example https://your-server. HTTP is not supported.	Adres https:// ile başlamalı, örneğin https://sunucu-adresi. HTTP desteklenmez.
+All set!	Kurulum tamam!
+Setup saved. Finish the missing steps from Settings.	Kurulum kaydedildi. Eksik adımları Ayarlar'dan tamamlayabilirsin.
+Setup skipped. Settings > Options > Setup wizard.	Kurulum atlandı. Ayarlar > Seçenekler > Kurulum sihirbazı.
+Yesterday	Dün
+.	,
+Search the web	Web'de ara
+Weather	Hava durumu
+Today's news	Bugünün haberleri
+Exchange rates	Döviz ve altın
+Reply to a message	Mesaja cevap yaz
+Write a text for me	Benim için mesaj yaz
+Add to my calendar	Takvimime ekle
+Add a to-do	Yapılacak ekle
+Fix my writing	Yazımı düzelt
+Summarize	Özetle
+Quick answer	Kısa cevap
+Explain simply	Basitçe anlat
+Calculate / convert	Hesapla / çevir
+What does it mean?	Bu ne demek?
+What can I cook?	Ne pişirebilirim?
+Help me decide	Karar vermeme yardım et
+How do I...?	Nasıl yapılır?
+Roast this phone	Bu telefonu roastla
+Search the web and answer briefly: 	Web'de ara ve kısaca cevapla: 
+Weather today and tomorrow in: 	Bugün ve yarın hava durumu, şehir: 
+Search the web: the most important news today, 5 short lines.	Web'de ara: bugünün en önemli haberleri, 5 kısa satır.
+Current exchange rate, search the web, numbers first: 	Güncel kur, web'de ara, önce rakamlar: 
+Translate to English: 	İngilizceye çevir: 
+Translate to Turkish: 	Türkçeye çevir: 
+Write a short, friendly reply to this message: 	Bu mesaja kısa ve samimi bir cevap yaz: 
+Write a short text message that says: 	Şunu söyleyen kısa bir mesaj yaz: 
+Add to my calendar: 	Takvimime ekle: 
+Add to my to-do list: 	Yapılacaklar listeme ekle: 
+Fix the spelling and grammar, keep my tone: 	Yazım ve dil bilgisini düzelt, üslubumu koru: 
+Summarize in 3 short lines: 	3 kısa satırda özetle: 
+Answer in 2 sentences: 	2 cümleyle cevapla: 
+Explain simply, like I'm new to it: 	Yeni başlayan birine anlatır gibi basitçe anlat: 
+Calculate or convert, result first: 	Hesapla ya da birim çevir, önce sonucu yaz: 
+What does this word or phrase mean? One example: 	Bu kelime ya da ifade ne demek? Bir örnekle: 
+What can I cook with: 	Elimde şunlar var, ne pişirebilirim: 
+Help me decide, short pros and cons: 	Karar vermeme yardım et, kısa artı ve eksiler: 
+Step by step, at most 5 steps: how do I 	En fazla 5 adımda anlat, nasıl yapılır: 
+Roast this phone. It's an old Nokia and it's talking to you.	Bu telefonu roastla. Eski bir Nokia ve şu an seninle konuşuyor.

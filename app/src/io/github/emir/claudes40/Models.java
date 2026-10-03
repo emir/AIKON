@@ -200,11 +200,10 @@ final class Models implements CommandListener, Runnable {
         }
         String st = m == null ? "?" : m.field("status");
         if ("not_found".equals(st) || "method_not_allowed".equals(st)) {
-            return L.s("Sunucu model seçimini bilmiyor (sunucu 0.7.0 gerekli).",
-                    "The server has no model choice (needs server 0.7.0).");
+            return L.t("The server has no model choice (needs server 0.7.0).");
         }
         if (!"ok".equals(st)) {
-            return L.s("Liste alınamadı (", "Could not get the list (") + st + ").";
+            return L.t("Could not get the list (") + st + ").";
         }
         Vector vi = new Vector();
         Vector vn = new Vector();
@@ -229,7 +228,7 @@ final class Models implements CommandListener, Runnable {
             }
         }
         if (vi.size() == 0) {
-            return L.s("Sunucu hiç model listelemedi.", "The server listed no models.");
+            return L.t("The server listed no models.");
         }
         synchronized (Models.class) {
             ids = new String[vi.size()];
@@ -251,9 +250,9 @@ final class Models implements CommandListener, Runnable {
 
     private final ClaudeS40MIDlet midlet;
     private final RowList list;
-    private final Command chooseCmd = new Command(L.s("Seç", "Choose"), Command.OK, 1);
-    private final Command refreshCmd = new Command(L.s("Listeyi yenile", "Refresh the list"), Command.SCREEN, 2);
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+    private final Command chooseCmd = new Command(L.t("Choose"), Command.OK, 1);
+    private final Command refreshCmd = new Command(L.t("Refresh the list"), Command.SCREEN, 2);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
     private final Displayable back;
     private final int purpose;
     /** Model ids, or provider names on the first step, in list order. */
@@ -276,7 +275,7 @@ final class Models implements CommandListener, Runnable {
     }
 
     private String title() {
-        String t = purpose == FOR_NEW ? L.s("Yeni sohbet", "New chat") : L.s("Model", "Model");
+        String t = purpose == FOR_NEW ? L.t("New chat") : L.t("Model");
         return provider != null && provider.length() > 0 ? t + ": " + provider : t;
     }
 
@@ -328,8 +327,8 @@ final class Models implements CommandListener, Runnable {
             n2 = names;
             p2 = providers;
             c2 = costs;
-            mark = purpose == FOR_SWITCH ? L.s("şu an", "now")
-                    : current.equals(last) ? L.s("son seçim", "last used") : L.s("varsayılan", "default");
+            mark = purpose == FOR_SWITCH ? L.t("now")
+                    : current.equals(last) ? L.t("last used") : L.t("default");
         }
         String currentProvider = "";
         Vector groups = new Vector();
@@ -351,11 +350,11 @@ final class Models implements CommandListener, Runnable {
         list.title(title());
         list.deleteAll();
         if (error != null) {
-            list.note(L.s("Hata: ", "Error: ") + error);
+            list.note(L.t("Error: ") + error);
         } else if (i2.length == 0) {
             list.note(midlet.settings.testMode
-                    ? L.s("Test modunda liste sunucudan alınamaz.", "In test mode the list cannot come from the server.")
-                    : L.s("Liste boş. 'Listeyi yenile'yi seçin.", "No list yet. Choose 'Refresh the list'."));
+                    ? L.t("In test mode the list cannot come from the server.")
+                    : L.t("No list yet. Choose 'Refresh the list'."));
         }
         Vector v = new Vector();
         int sel = -1;
@@ -367,8 +366,8 @@ final class Models implements CommandListener, Runnable {
                 for (int k = 0; k < p2.length; k++) {
                     count += p2[k].equals(g) ? 1 : 0;
                 }
-                list.add(g.length() > 0 ? g : L.s("Diğer", "Other"),
-                        (count == 1 ? L.s("1 model", "1 model") : L.f("{0} model", "{0} models", String.valueOf(count)))
+                list.add(g.length() > 0 ? g : L.t("Other"),
+                        (count == 1 ? L.t("1 model") : L.f("{0} models", String.valueOf(count)))
                                 + (now ? " · " + mark : ""), -1,
                         now ? RowList.CHECK : 0);
                 v.addElement(g);
@@ -383,7 +382,7 @@ final class Models implements CommandListener, Runnable {
                 }
                 boolean now = i2[i].equals(current);
                 String cost = i < c2.length ? c2[i] : "";
-                String sub = cost.length() > 0 ? L.f("mesaj başı ~{0} kredi", "~{0} credits a message", String.valueOf(cost)) : "";
+                String sub = cost.length() > 0 ? L.f("~{0} credits a message", String.valueOf(cost)) : "";
                 list.add(n2[i], now ? (sub.length() > 0 ? sub + " · " : "") + mark : sub, -1, now ? RowList.CHECK : 0);
                 v.addElement(i2[i]);
                 if (now) {
@@ -419,7 +418,7 @@ final class Models implements CommandListener, Runnable {
             }
         } else if (c == refreshCmd) {
             if (midlet.settings.testMode) {
-                midlet.info(L.s("Test modunda ağ kullanılmaz.", "Test mode uses no network."), list);
+                midlet.info(L.t("Test mode uses no network."), list);
             } else {
                 start();
             }

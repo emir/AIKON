@@ -320,13 +320,14 @@ public class EmuShot {
         System.exit(3);
     }
 
-    /** A label as the app shows it now (its L.s: Turkish, English or a language file). */
+    /** A label as the app shows it now (its L.t: English, or from a language file). */
     static String t(String en, String turkish) {
         try {
             Class l = Class.forName("io.github.emir.claudes40.L", true, midlet.getClass().getClassLoader());
-            Method s = l.getDeclaredMethod("s", String.class, String.class);
+            Method s = l.getDeclaredMethod("t", String.class);
             s.setAccessible(true);
-            return (String) s.invoke(null, turkish, en);
+            String v = (String) s.invoke(null, en);
+            return tr && v.equals(en) ? turkish : v; // texts the harness types are not UI keys
         } catch (Exception e) {
             return tr ? turkish : en;
         }

@@ -17,20 +17,20 @@ import javax.microedition.lcdui.Graphics;
 final class HomeCanvas extends Canvas implements CommandListener {
 
     private final String[] titles = {
-        L.s("Sohbet", "Chat"), L.s("Sohbetler", "Chats"), L.s("Hızlı sorular", "Quick prompts"),
-        L.s("Yeni sohbet", "New chat"), L.s("Kaydedilenler", "Saved"),
-        L.s("Bağlantı testi", "Connection test"), L.s("Ayarlar", "Settings"), L.s("Hakkında", "About"),
-        L.s("Çıkış", "Exit") };
+        L.t("Chat"), L.t("Chats"), L.t("Quick prompts"),
+        L.t("New chat"), L.t("Saved"),
+        L.t("Connection test"), L.t("Settings"), L.t("About"),
+        L.t("Exit") };
     private final String[] hints = {
-        L.s("Kaldığın yerden devam et", "Pick up where you left off"),
-        L.s("Önceki sohbetleri aç", "Open earlier chats"),
-        L.s("Web'de ara, çevir, özetle...", "Search the web, translate..."),
-        L.s("Temiz bir sayfa aç", "Start fresh"),
-        L.s("Telefondaki yanıtlar, internetsiz", "Replies on the phone, offline"),
-        L.s("Sunucuya ulaşıyor muyuz?", "Can we reach the server?"),
-        L.s("Yazı boyutu, görünüm, ses, dil", "Text size, look, sound, language"),
-        L.s("AIKON nedir?", "What is AIKON?"),
-        L.s("Görüşmek üzere", "See you soon") };
+        L.t("Pick up where you left off"),
+        L.t("Open earlier chats"),
+        L.t("Search the web, translate..."),
+        L.t("Start fresh"),
+        L.t("Replies on the phone, offline"),
+        L.t("Can we reach the server?"),
+        L.t("Text size, look, sound, language"),
+        L.t("What is AIKON?"),
+        L.t("See you soon") };
 
     /**
      * Rows on screen, most used first; the values are the item ids of
@@ -49,20 +49,20 @@ final class HomeCanvas extends Canvas implements CommandListener {
     }
 
     private String title(int id) {
-        return id == Icons.CREDIT ? L.s("Kredi", "Credits") : titles[id];
+        return id == Icons.CREDIT ? L.t("Credits") : titles[id];
     }
 
     private String hint(int id) {
-        return midlet.homeHint(id, id == Icons.CREDIT ? L.s("Bakiye, kod gir, kredi al", "Balance, add a code, buy")
+        return midlet.homeHint(id, id == Icons.CREDIT ? L.t("Balance, add a code, buy")
                 : hints[id]);
     }
 
     private static final int MARGIN = 6;
 
     private final ClaudeS40MIDlet midlet;
-    private final Command selectCmd = new Command(L.s("Seç", "Select"), Command.OK, 1);
-    private final Command exitCmd = new Command(L.s("Çıkış", "Exit"), Command.EXIT, 2);
-    private final Command updateCmd = new Command(L.s("Güncelle", "Update"), Command.SCREEN, 3);
+    private final Command selectCmd = new Command(L.t("Select"), Command.OK, 1);
+    private final Command exitCmd = new Command(L.t("Exit"), Command.EXIT, 2);
+    private final Command updateCmd = new Command(L.t("Update"), Command.SCREEN, 3);
     private boolean updateShown;
     private int selected;
     private int top;

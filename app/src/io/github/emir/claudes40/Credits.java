@@ -42,13 +42,13 @@ final class Credits implements CommandListener, Runnable {
     private TextBox codeBox;
     private String code = "";
     private boolean busy;
-    private final Command enterCmd = new Command(L.s("Kodu yaz", "Type the code"), Command.OK, 1);
-    private final Command okCmd = new Command(L.s("Tamam", "OK"), Command.OK, 1);
-    private final Command trialCmd = new Command(L.s("Ücretsiz dene", "Try for free"), Command.SCREEN, 2);
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-    private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
-    private final Command topupCmd = new Command(L.s("Kredi yükle", "Add credits"), Command.SCREEN, 2);
-    private final Command refreshCmd = new Command(L.s("Yenile", "Refresh"), Command.SCREEN, 3);
+    private final Command enterCmd = new Command(L.t("Type the code"), Command.OK, 1);
+    private final Command okCmd = new Command(L.t("OK"), Command.OK, 1);
+    private final Command trialCmd = new Command(L.t("Try for free"), Command.SCREEN, 2);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final Command finishCmd = new Command(L.t("Finish"), Command.OK, 1);
+    private final Command topupCmd = new Command(L.t("Add credits"), Command.SCREEN, 2);
+    private final Command refreshCmd = new Command(L.t("Refresh"), Command.SCREEN, 3);
     private final Command helpCmd = Help.command();
 
     Credits(ClaudeS40MIDlet midlet, Setup setup, Displayable back) {
@@ -62,10 +62,9 @@ final class Credits implements CommandListener, Runnable {
         mode = PAIR;
         String shop = midlet.shopLine();
         boolean trial = Updates.trial(midlet.settings.url);
-        codeForm(setup != null ? Setup.title(Setup.STEPS) : L.s("Kredi kodu", "Credit code"),
-                L.s("Orta tuşla 16 haneli kredi kodunu yaz.", "Centre key: type the 16-digit credit code.")
-                + (trial ? L.s("\n\nKodun yok mu? Seçenekler > Ücretsiz dene: birkaç mesaj, tek modelle.",
-                        "\n\nNo code? Options > Try for free: a few messages with one model.") : "")
+        codeForm(setup != null ? Setup.title(Setup.STEPS) : L.t("Credit code"),
+                L.t("Centre key: type the 16-digit credit code.")
+                + (trial ? L.t("\n\nNo code? Options > Try for free: a few messages with one model.") : "")
                 + (shop.length() > 0 ? "\n\n" + shop : ""));
         if (trial) {
             form.addCommand(trialCmd);
@@ -74,18 +73,18 @@ final class Credits implements CommandListener, Runnable {
 
     void showTopup() {
         mode = TOPUP;
-        codeForm(L.s("Kredi yükle", "Add credits"), L.s("Orta tuşla yeni kredi kodunu yaz.", "Centre key: type the new credit code."));
+        codeForm(L.t("Add credits"), L.t("Centre key: type the new credit code."));
     }
 
     void showBalance() {
         mode = BALANCE;
-        page = new TextPage(L.s("Kredi", "Credits"));
+        page = new TextPage(L.t("Credits"));
         form = page;
-        statusItem = page.append(L.s("Bakiye", "Balance"), L.s("Yükleniyor...", "Loading..."));
+        statusItem = page.append(L.t("Balance"), L.t("Loading..."));
         page.setBig(statusItem);
         String shop = midlet.shopLine();
         page.append(null, (shop.length() > 0 ? shop + "\n" : "")
-                + L.s("Kodu Seçenekler > 'Kredi yükle' ile gir.", "Enter the code with Options > 'Add credits'."));
+                + L.t("Enter the code with Options > 'Add credits'."));
         form.addCommand(backCmd);
         form.addCommand(topupCmd);
         form.addCommand(refreshCmd);
@@ -103,7 +102,7 @@ final class Credits implements CommandListener, Runnable {
     private void codeForm(String title, String line) {
         page = new TextPage(title);
         form = page;
-        int c = page.append(L.s("Kredi kodu", "Credit code"), grouped(""));
+        int c = page.append(L.t("Credit code"), grouped(""));
         page.setBig(c);
         page.append(null, line);
         statusItem = page.append(null, ""); // sending, the result, a mistyped digit
@@ -127,7 +126,7 @@ final class Credits implements CommandListener, Runnable {
     }
 
     private void typeCode() {
-        codeBox = new TextBox(L.s("Kredi kodu", "Credit code"), code, 16, TextField.NUMERIC);
+        codeBox = new TextBox(L.t("Credit code"), code, 16, TextField.NUMERIC);
         codeBox.addCommand(okCmd);
         codeBox.addCommand(backCmd);
         codeBox.setCommandListener(this);
@@ -144,14 +143,14 @@ final class Credits implements CommandListener, Runnable {
             code = v;
             page.setText(0, grouped(v));
             if (!valid(v)) {
-                status(v.length() < 16 ? L.s("Kod 16 rakam. Orta tuşla tamamla.", "The code has 16 digits. Centre key to finish it.")
-                        : L.s("Bir rakam yanlış yazılmış olabilir; kodu kontrol et.", "A digit may be mistyped; check the code."));
+                status(v.length() < 16 ? L.t("The code has 16 digits. Centre key to finish it.")
+                        : L.t("A digit may be mistyped; check the code."));
                 return;
             }
             if (mode == TRIAL) {
                 mode = PAIR; // a code typed after a trial that did not start
             }
-            status(L.s("Gönderiliyor...", "Sending..."));
+            status(L.t("Sending..."));
             start();
             return;
         }
@@ -175,7 +174,7 @@ final class Credits implements CommandListener, Runnable {
             typeCode();
         } else if (c == trialCmd) {
             mode = TRIAL;
-            status(L.s("Deneme başlatılıyor...", "Starting the trial..."));
+            status(L.t("Starting the trial..."));
             start();
         }
     }
@@ -190,17 +189,12 @@ final class Credits implements CommandListener, Runnable {
 
     private String helpText() {
         if (mode == BALANCE) {
-            return L.s("Kredi, mesajın uzunluğuna ve seçilen modele göre harcanır. Başarısız ya da sonucu belirsiz "
-                    + "kalan isteklerden kredi düşülmez.\n\nYeni bir kodla 'Kredi yükle'.",
-                    "Credits are used according to the length of the message and the chosen model. Failed requests "
+            return L.t("Credits are used according to the length of the message and the chosen model. Failed requests "
                     + "and requests with an unknown result cost nothing.\n\nAdd a new code with 'Add credits'.");
         }
-        return L.s("Kodu, kredi satan sunucunun sitesinden alırsın. 16 rakamdır; son rakam bir kontrol rakamı "
-                + "olduğu için yanlış yazılan kod gönderilmeden fark edilir.\n\nKod bir kez kullanılır.",
-                "You get the code from the shop of the server that sells credits. It has 16 digits; the last one "
+        return L.t("You get the code from the shop of the server that sells credits. It has 16 digits; the last one "
                 + "is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once.")
-                + (mode == PAIR ? L.s(" Bu telefon kodla eşleşir; sunucu sahibinin onayı gerekmez.",
-                        " This phone is paired with the code; no approval by the server's owner.") : "");
+                + (mode == PAIR ? L.t(" This phone is paired with the code; no approval by the server's owner.") : "");
     }
 
     /** 16 digits with a valid check digit (Luhn). */
@@ -254,7 +248,7 @@ final class Credits implements CommandListener, Runnable {
                 ? Net.request(s.url + "/v1/pair/voucher", "POST", null, S40Message.format(k, v, ""), midlet.userAgent(), null)
                 : Net.request(s.url + "/v1/redeem", "POST", s.token, S40Message.format(k, v, ""), midlet.userAgent(), null);
         if (!r.ok() || r.msg == null) {
-            status(L.s("Gönderilemedi. ", "Could not send. ") + (r.ok() ? "HTTP " + r.httpCode : Net.explain(r)));
+            status(L.t("Could not send. ") + (r.ok() ? "HTTP " + r.httpCode : Net.explain(r)));
             return;
         }
         String st = r.msg.field("status");
@@ -274,36 +268,32 @@ final class Credits implements CommandListener, Runnable {
             if (mode == TRIAL && model.length() > 0) {
                 Models.setLast(model); // new chats start with the trial's model
             }
-            status(mode == TRIAL ? L.f("Deneme başladı: {0} kredi. Kod yükleyince tüm modeller açılır.", "Trial started: {0} credits. A credit code opens every model.", bal)
-                    : (mode == PAIR ? L.s("Eşleştirildi. ", "Paired. ") : L.s("Yüklendi. ", "Added. "))
-                    + L.s("Bakiye: ", "Balance: ") + bal + L.s(" kredi", " credits"));
+            status(mode == TRIAL ? L.f("Trial started: {0} credits. A credit code opens every model.", bal)
+                    : (mode == PAIR ? L.t("Paired. ") : L.t("Added. "))
+                    + L.t("Balance: ") + bal + L.t(" credits"));
             form.removeCommand(enterCmd);
             form.removeCommand(trialCmd);
             if ((mode == PAIR || mode == TRIAL) && setup != null) {
                 form.addCommand(finishCmd);
             }
         } else if ("trial_closed".equals(st)) {
-            status(L.s("Bugünkü ücretsiz denemeler bitti. Yarın yeniden dene ya da kredi kodu al.",
-                    "Today's free trials are used up. Try again tomorrow, or get a credit code."));
+            status(L.t("Today's free trials are used up. Try again tomorrow, or get a credit code."));
         } else if (mode == TRIAL && "slow_down".equals(st)) {
-            status(L.s("Bu ağdan bugün yeterince deneme açıldı. Yarın yeniden dene.",
-                    "Enough trials were started from this network today. Try again tomorrow."));
+            status(L.t("Enough trials were started from this network today. Try again tomorrow."));
         } else if (mode == TRIAL && "not_found".equals(st)) {
-            status(L.s("Bu sunucuda ücretsiz deneme yok.", "This server has no free trial."));
+            status(L.t("This server has no free trial."));
         } else if ("bad_voucher".equals(st)) {
-            status(L.s("Kod geçersiz ya da iptal edilmiş.", "The code is not valid or was cancelled."));
+            status(L.t("The code is not valid or was cancelled."));
         } else if ("used".equals(st)) {
-            status(L.s("Bu kod daha önce kullanılmış.", "This code was already used."));
+            status(L.t("This code was already used."));
         } else if ("slow_down".equals(st)) {
-            status(L.s("Çok fazla hatalı deneme. 15 dakika sonra yeniden dene.",
-                    "Too many wrong codes. Try again in 15 minutes."));
+            status(L.t("Too many wrong codes. Try again in 15 minutes."));
         } else if ("unauthorized".equals(st)) {
-            status(L.s("Eşleştirme geçersiz. Ayarlar > Seçenekler > 'Cihazı eşleştir'.",
-                    "The pairing is not valid. Settings > Options > 'Pair this phone'."));
+            status(L.t("The pairing is not valid. Settings > Options > 'Pair this phone'."));
         } else if ("not_found".equals(st)) {
-            status(L.s("Bu sunucu kredi satmıyor.", "This server does not sell credits."));
+            status(L.t("This server does not sell credits."));
         } else {
-            status(L.s("Sunucu: ", "Server: ") + st);
+            status(L.t("Server: ") + st);
         }
     }
 
@@ -312,17 +302,17 @@ final class Credits implements CommandListener, Runnable {
         Net.Result r = Net.request(s.url + "/v1/balance", "POST", s.token,
                 S40Message.format(new String[0], new String[0], ""), midlet.userAgent(), null);
         if (!r.ok() || r.msg == null || !"ok".equals(r.msg.field("status"))) {
-            status(r.ok() ? L.s("Sunucu: ", "Server: ") + (r.msg == null ? "HTTP " + r.httpCode : r.msg.field("status"))
+            status(r.ok() ? L.t("Server: ") + (r.msg == null ? "HTTP " + r.httpCode : r.msg.field("status"))
                     : Net.explain(r));
             return;
         }
         if (!r.msg.flag("credits")) {
-            status(L.s("Bu telefon kredisiz çalışıyor.", "This phone runs without credits."));
+            status(L.t("This phone runs without credits."));
             return;
         }
         String bal = r.msg.field("balance");
         midlet.session().setBalance(bal);
-        status(bal + L.s(" kredi", " credits"));
+        status(bal + L.t(" credits"));
         // keep the balance item, list the newest charges below it
         while (page.size() > 2) { // the balance and how to buy stay
             page.delete(2);
@@ -369,19 +359,19 @@ final class Credits implements CommandListener, Runnable {
 
     private static String kind(String k) {
         if ("chat".equals(k)) {
-            return L.s("Sohbet", "Chat");
+            return L.t("Chat");
         }
         if ("transcribe".equals(k)) {
-            return L.s("Sesle yazma", "Voice");
+            return L.t("Voice");
         }
         if ("voucher".equals(k)) {
-            return L.s("Kod", "Code");
+            return L.t("Code");
         }
         if ("trial".equals(k)) {
-            return L.s("Ücretsiz deneme", "Free trial");
+            return L.t("Free trial");
         }
         if ("adjust".equals(k)) {
-            return L.s("Düzeltme", "Adjustment");
+            return L.t("Adjustment");
         }
         return k;
     }

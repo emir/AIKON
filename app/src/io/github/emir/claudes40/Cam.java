@@ -41,15 +41,15 @@ final class Cam extends Canvas implements CommandListener, Runnable {
 
     private final ClaudeS40MIDlet midlet;
     private final Photo photo;
-    private final Command shootCmd = new Command(L.s("Çek", "Capture"), Command.OK, 1);
-    private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command shootCmd = new Command(L.t("Capture"), Command.OK, 1);
+    private final Command cancelCmd = new Command(L.t("Cancel"), Command.BACK, 1);
 
     private Player player;
     private VideoControl video;
     private int job;
     private boolean ready;
     private boolean closed;
-    private String status = L.s("Kamera açılıyor...", "Opening the camera...");
+    private String status = L.t("Opening the camera...");
     /** What each failed snapshot attempt said (shown if none works). */
     private final StringBuffer tried = new StringBuffer();
 
@@ -80,7 +80,7 @@ final class Cam extends Canvas implements CommandListener, Runnable {
                 }
                 if (err == null) {
                     ready = true;
-                    status = L.s("Orta tuş veya 'Çek': fotoğraf çek", "Centre key or 'Capture': take the photo");
+                    status = L.t("Centre key or 'Capture': take the photo");
                     addCommand(shootCmd);
                 }
             }
@@ -96,8 +96,7 @@ final class Cam extends Canvas implements CommandListener, Runnable {
         try {
             b = snapshot();
         } catch (SecurityException e) {
-            err = L.s("Kamera izni verilmedi. Telefon sorduğunda 'Evet' deyin.",
-                    "Camera access was denied. Answer 'Yes' when the phone asks.");
+            err = L.t("Camera access was denied. Answer 'Yes' when the phone asks.");
         }
         release();
         synchronized (this) {
@@ -107,7 +106,7 @@ final class Cam extends Canvas implements CommandListener, Runnable {
             closed = true;
         }
         if (b == null) {
-            photo.failed(err != null ? err : L.s("Fotoğraf çekilemedi.", "Could not take the photo.")
+            photo.failed(err != null ? err : L.t("Could not take the photo.")
                     + "\n" + tried.toString() + "\n(" + ClaudeS40MIDlet.prop("video.snapshot.encodings") + ")");
         } else {
             photo.chosen(b);
@@ -133,8 +132,7 @@ final class Cam extends Canvas implements CommandListener, Runnable {
                 return null;
             } catch (SecurityException e) {
                 release();
-                return L.s("Kamera izni verilmedi. Telefon sorduğunda 'Evet' deyin.",
-                        "Camera access was denied. Answer 'Yes' when the phone asks.");
+                return L.t("Camera access was denied. Answer 'Yes' when the phone asks.");
             } catch (MediaException e) {
                 last = e.getMessage();
                 release();
@@ -146,7 +144,7 @@ final class Cam extends Canvas implements CommandListener, Runnable {
                 release();
             }
         }
-        return L.s("Kamera açılamadı. ", "Could not open the camera. ") + (last == null ? "" : last);
+        return L.t("Could not open the camera. ") + (last == null ? "" : last);
     }
 
     /** The viewfinder: as large as fits above the status line, 4:3. */
@@ -228,7 +226,7 @@ final class Cam extends Canvas implements CommandListener, Runnable {
                 return;
             }
             ready = false;
-            status = L.s("Çekiliyor...", "Taking the photo...");
+            status = L.t("Taking the photo...");
             removeCommand(shootCmd);
             job = JOB_SHOOT;
         }

@@ -284,7 +284,7 @@ final class ChatSession implements Runnable, Net.Listener {
 
     /** "[Photo] " before a message that was sent with a photo. */
     static String photoMark() {
-        return L.s("[Fotoğraf] ", "[Photo] ");
+        return L.t("[Photo] ");
     }
 
     synchronized boolean hasImage() {
@@ -320,7 +320,7 @@ final class ChatSession implements Runnable, Net.Listener {
     String setModel(String id) {
         synchronized (this) {
             if (state != STATE_IDLE) {
-                return L.s("Önceki istek sürüyor.", "A request is still running.");
+                return L.t("A request is still running.");
             }
             model = id;
             modelName = Models.name(id);
@@ -337,8 +337,8 @@ final class ChatSession implements Runnable, Net.Listener {
                 if (modelNote != null && entries.size() > 0 && entries.lastElement() == modelNote) {
                     entries.removeElementAt(entries.size() - 1);
                 }
-                modelNote = new Entry(KIND_INFO, L.f("Sonraki yanıtlar: {0}", "Next replies: {0}", ai()),
-                        L.f("{0} bir sonraki mesajından itibaren yanıtlar ve bu sohbetin geçmişini de görür.", "{0} answers from your next message on and sees this chat's history too.", ai()));
+                modelNote = new Entry(KIND_INFO, L.f("Next replies: {0}", ai()),
+                        L.f("{0} answers from your next message on and sees this chat's history too.", ai()));
                 add(modelNote);
             }
         }
@@ -352,14 +352,14 @@ final class ChatSession implements Runnable, Net.Listener {
     String send(String text) {
         synchronized (this) {
             if (state != STATE_IDLE) {
-                return L.s("Önceki istek sürüyor.", "A request is still running.");
+                return L.t("A request is still running.");
             }
             String t = text == null ? "" : text.trim();
             if (t.length() == 0) {
-                return L.s("Mesaj boş.", "The message is empty.");
+                return L.t("The message is empty.");
             }
             if (t.length() > MAX_MESSAGE) {
-                return L.f("Mesaj en fazla {0} karakter olabilir.", "Messages can be at most {0} characters.", String.valueOf(MAX_MESSAGE));
+                return L.f("Messages can be at most {0} characters.", String.valueOf(MAX_MESSAGE));
             }
             draft = t;
             pendingId = Text.requestId();
@@ -380,7 +380,7 @@ final class ChatSession implements Runnable, Net.Listener {
     String retry() {
         synchronized (this) {
             if (!canRetry()) {
-                return L.s("Tekrar denenecek istek yok.", "Nothing to retry.");
+                return L.t("Nothing to retry.");
             }
             canRetry = false;
             begin(JOB_CHAT);
@@ -415,14 +415,14 @@ final class ChatSession implements Runnable, Net.Listener {
     String more(int uid) {
         synchronized (this) {
             if (state != STATE_IDLE) {
-                return L.s("Önceki istek sürüyor.", "A request is still running.");
+                return L.t("A request is still running.");
             }
             Entry e = uid == 0 ? lastMore() : find(uid);
             if (e != null && !e.more()) {
                 e = null;
             }
             if (e == null) {
-                return L.s("Yanıtın devamı yok.", "There is no more to this reply.");
+                return L.t("There is no more to this reply.");
             }
             jobEntry = e;
             begin(JOB_MORE);
@@ -435,7 +435,7 @@ final class ChatSession implements Runnable, Net.Listener {
     String open(String conv) {
         synchronized (this) {
             if (state != STATE_IDLE) {
-                return L.s("Önceki istek sürüyor.", "A request is still running.");
+                return L.t("A request is still running.");
             }
             jobConversation = conv;
             begin(JOB_HISTORY);
@@ -453,9 +453,8 @@ final class ChatSession implements Runnable, Net.Listener {
             resetLocal();
             // "test" (test mode) or an unexpected id: start a new conversation when writing
             conversation = conv != null && conv.length() == 16 ? conv : "";
-            note(KIND_INFO, L.s("Telefonda kayıtlı sohbet", "Saved on this phone"),
-                    L.s("Bu sohbet telefonda saklı: ağ olmadan da okunur. Yazınca sunucuda kaldığı yerden sürer.",
-                            "This chat is kept on the phone and readable offline. Write to continue it on the server."));
+            note(KIND_INFO, L.t("Saved on this phone"),
+                    L.t("This chat is kept on the phone and readable offline. Write to continue it on the server."));
             for (int i = 0; i < saved.size(); i++) {
                 Entry e = (Entry) saved.elementAt(i);
                 entries.addElement(e);
@@ -476,7 +475,7 @@ final class ChatSession implements Runnable, Net.Listener {
     String newChat(String modelId) {
         synchronized (this) {
             if (state != STATE_IDLE) {
-                return L.s("Önceki istek sürüyor.", "A request is still running.");
+                return L.t("A request is still running.");
             }
             resetLocal();
             model = modelId == null ? "" : modelId;
@@ -490,20 +489,19 @@ final class ChatSession implements Runnable, Net.Listener {
     /** "New chat · <model>". Called with the lock held. */
     private void newChatNote() {
         String with = modelName.length() > 0 ? " · " + modelName : "";
-        note(KIND_INFO, L.s("Yeni sohbet", "New chat") + with,
-                L.s("Önceki sohbet sunucuda 30 gün kalır; Sohbetler'den yeniden açılabilir.",
-                        "The previous chat stays on the server for 30 days; open it again from Chats."));
+        note(KIND_INFO, L.t("New chat") + with,
+                L.t("The previous chat stays on the server for 30 days; open it again from Chats."));
     }
 
     /** Deletes the current conversation on the server, then starts a new one. */
     String deleteChat() {
         synchronized (this) {
             if (state != STATE_IDLE) {
-                return L.s("Önceki istek sürüyor.", "A request is still running.");
+                return L.t("A request is still running.");
             }
             if (conversation.length() == 0 || midlet.settings.testMode) {
                 resetLocal();
-                note(KIND_INFO, L.s("Sohbet temizlendi", "Chat cleared"), "");
+                note(KIND_INFO, L.t("Chat cleared"), "");
                 changed(false);
                 return null;
             }
@@ -521,7 +519,7 @@ final class ChatSession implements Runnable, Net.Listener {
             }
             resetLocal();
             ChatStore.delete();
-            note(KIND_INFO, L.s("Sohbet silindi", "Chat deleted"), "");
+            note(KIND_INFO, L.t("Chat deleted"), "");
         }
         changed(false);
     }
@@ -552,13 +550,13 @@ final class ChatSession implements Runnable, Net.Listener {
     private String jobLabel() {
         switch (job) {
         case JOB_DELETE:
-            return L.s("Siliniyor...", "Deleting...");
+            return L.t("Deleting...");
         case JOB_MORE:
-            return L.s("Devamı yükleniyor...", "Loading more...");
+            return L.t("Loading more...");
         case JOB_HISTORY:
-            return L.s("Sohbet yükleniyor...", "Loading chat...");
+            return L.t("Loading chat...");
         default:
-            return L.s("Gönderiliyor...", "Sending...");
+            return L.t("Sending...");
         }
     }
 
@@ -568,7 +566,7 @@ final class ChatSession implements Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 state = STATE_WAITING;
-                status = job == JOB_CHAT ? L.s("Yanıt bekleniyor...", "Waiting for reply...") : jobLabel();
+                status = job == JOB_CHAT ? L.t("Waiting for reply...") : jobLabel();
                 version++;
             }
             changed(false);
@@ -678,15 +676,15 @@ final class ChatSession implements Runnable, Net.Listener {
                     prior++;
                 }
             }
-            String reply = L.f("[Test modu] Bu gerçek bir {0} yanıtı değildir. Ağ kullanılmadı.\nMesajın {1} karakter; bu sohbette önceki mesaj sayısı: {2}.\nAldığım metin: \"{3}\"", "[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: \"{3}\"", new String[] { ai(), String.valueOf(text.length()), String.valueOf((prior - 1)), String.valueOf(text) });
+            String reply = L.f("[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: \"{3}\"", new String[] { ai(), String.valueOf(text.length()), String.valueOf((prior - 1)), String.valueOf(text) });
             if (photo) {
-                reply += L.s("\nFotoğraf: eklendi (sunucuya gönderilmedi).", "\nPhoto: attached (not sent to a server).");
+                reply += L.t("\nPhoto: attached (not sent to a server).");
             }
             String low = text.toLowerCase();
             if (low.indexOf("takvim") >= 0 || low.indexOf("calendar") >= 0 || low.indexOf("remind") >= 0) {
                 // a fake entry line, to try "Add to calendar" without the network
                 reply += "\nEVENT: " + Text.iso(System.currentTimeMillis() + 24L * 60 * 60 * 1000).substring(0, 10)
-                        + " 15:00 | " + L.s("Test modu etkinliği", "Test mode event");
+                        + " 15:00 | " + L.t("Test mode event");
             }
             conversation = conv.length() > 0 ? conv : "test";
             add(new Entry(KIND_TEST, reply, false, System.currentTimeMillis(), 0, null, null, ""));
@@ -702,13 +700,13 @@ final class ChatSession implements Runnable, Net.Listener {
             state = STATE_IDLE;
             S40Message m = r.msg;
             if (!r.ok()) {
-                status = r.httpCode < 0 ? L.s("Bağlantı kurulamadı", "Could not connect") : L.s("Yanıt alınamadı", "No reply");
-                note(KIND_ERROR, status, Net.explain(r) + L.f("\n\n'Tekrar dene' aynı isteği sorar; {0} ikinci kez çağrılmaz.", "\n\n'Retry' asks about the same request; it is not sent to {0} twice.", ai()));
+                status = r.httpCode < 0 ? L.t("Could not connect") : L.t("No reply");
+                note(KIND_ERROR, status, Net.explain(r) + L.f("\n\n'Retry' asks about the same request; it is not sent to {0} twice.", ai()));
                 canRetry = true;
             } else if (m == null) {
-                status = L.s("Yanıt alınamadı", "No reply");
-                note(KIND_ERROR, L.s("Sunucu yanıtı tanınmadı", "Unrecognised server reply"),
-                        L.f("HTTP {0}. Operatör ağı veya yanlış adres olabilir.", "HTTP {0}. Carrier network or wrong address?", String.valueOf(r.httpCode)));
+                status = L.t("No reply");
+                note(KIND_ERROR, L.t("Unrecognised server reply"),
+                        L.f("HTTP {0}. Carrier network or wrong address?", String.valueOf(r.httpCode)));
                 canRetry = true;
             } else {
                 newReply = handle(m, r.bodyCut);
@@ -743,8 +741,8 @@ final class ChatSession implements Runnable, Net.Listener {
             String next = m.flag("more") && !bodyCut && m.field("next").length() > 0 ? m.field("next") : null;
             boolean cut = (m.flag("truncated") && next == null) || bodyCut;
             if (m.flag("refused")) {
-                note(KIND_INFO, L.f("{0} yanıt vermedi", "{0} declined", ai()),
-                        L.f("{0} bu isteğe yanıt vermedi. İsteği farklı sorabilir ya da başka bir model seçebilirsiniz.", "{0} declined to answer this one. Ask differently or pick another model.", ai()));
+                note(KIND_INFO, L.f("{0} declined", ai()),
+                        L.f("{0} declined to answer this one. Ask differently or pick another model.", ai()));
             } else {
                 add(new Entry(m.flag("mock") ? KIND_TEST : KIND_CLAUDE, m.text, cut, System.currentTimeMillis(),
                         Text.parseInt(m.field("searched"), 0), m.field("request"), next, m.field("model-name")));
@@ -754,17 +752,16 @@ final class ChatSession implements Runnable, Net.Listener {
             return true;
         }
         if ("pending".equals(st)) {
-            status = L.s("Yanıt bekleniyor", "Still working");
-            note(KIND_INFO, L.s("Sunucuda hâlâ işleniyor", "Still working on it"),
-                    L.s("Biraz sonra 'Tekrar dene' seçin; aynı istek sorulur, yeniden ücretlenmez.",
-                            "Choose 'Retry' in a moment; it asks about the same request and is not charged again."));
+            status = L.t("Still working");
+            note(KIND_INFO, L.t("Still working on it"),
+                    L.t("Choose 'Retry' in a moment; it asks about the same request and is not charged again."));
             canRetry = true;
             return false;
         }
         if ("busy".equals(st)) {
-            status = L.s("Meşgul", "Busy");
-            note(KIND_INFO, L.s("Başka bir istek sürüyor", "Another request is running"),
-                    L.s("Biraz sonra 'Tekrar dene' seçin.", "Choose 'Retry' in a moment."));
+            status = L.t("Busy");
+            note(KIND_INFO, L.t("Another request is running"),
+                    L.t("Choose 'Retry' in a moment."));
             canRetry = true;
             return false;
         }
@@ -772,76 +769,65 @@ final class ChatSession implements Runnable, Net.Listener {
             // the TLS relay could not complete the call to the gateway; the
             // gateway may have received it, so keep the id: "Tekrar dene"
             // gets the recorded result instead of a second paid call
-            status = L.s("Yanıt alınamadı", "No reply");
-            note(KIND_ERROR, status, L.f("Aracı sunucu AIKON sunucusundan yanıt alamadı ({0}). 'Tekrar dene' aynı isteği sorar; {1} ikinci kez çağrılmaz.", "The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.", st, ai()));
+            status = L.t("No reply");
+            note(KIND_ERROR, status, L.f("The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.", st, ai()));
             canRetry = true;
             return false;
         }
         String msg;
         if ("limit".equals(st)) {
-            status = L.s("Kullanım sınırı", "Limit reached");
-            msg = L.s("Kullanım sınırına ulaşıldı. Yarın (UTC) tekrar deneyin.",
-                    "Daily limit reached. Try again tomorrow (UTC).");
+            status = L.t("Limit reached");
+            msg = L.t("Daily limit reached. Try again tomorrow (UTC).");
         } else if ("uncertain".equals(st)) {
-            status = L.s("Sonuç belirsiz", "Unknown result");
-            msg = L.f("Sonuç belirsiz: istek {0} tarafına ulaşmış olabilir. Otomatik tekrar yapılmadı. Mesaj taslakta duruyor; yeniden göndermek yeni bir ücretli istek olur.", "Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.", ai());
+            status = L.t("Unknown result");
+            msg = L.f("Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.", ai());
         } else if ("conversation_full".equals(st)) {
-            status = L.s("Sohbet doldu", "Chat full");
-            msg = L.s("Bu sohbet çok uzadı. 'Yeni sohbet' ile devam edin.",
-                    "This chat got too long. Continue with 'New chat'.");
+            status = L.t("Chat full");
+            msg = L.t("This chat got too long. Continue with 'New chat'.");
         } else if ("conversation_not_found".equals(st)) {
-            status = L.s("Sohbet yok", "Chat not found");
-            msg = L.s("Sohbet sunucuda bulunamadı (süresi dolmuş olabilir). 'Yeni sohbet' ile devam edin.",
-                    "Chat not found on the server (it may have expired). Continue with 'New chat'.");
+            status = L.t("Chat not found");
+            msg = L.t("Chat not found on the server (it may have expired). Continue with 'New chat'.");
         } else if ("unauthorized".equals(st)) {
-            status = L.s("Yetki yok", "Not authorised");
-            msg = L.s("Erişim kodu geçersiz veya iptal edilmiş. Ayarlar > Cihazı eşleştir.",
-                    "Access code invalid or revoked. Settings > Pair this phone.");
+            status = L.t("Not authorised");
+            msg = L.t("Access code invalid or revoked. Settings > Pair this phone.");
         } else if ("credit".equals(st)) {
-            status = L.s("Kredi yetersiz", "Not enough credits");
+            status = L.t("Not enough credits");
             String shop = midlet.shopLine();
             msg = (balance.length() > 0
-                    ? L.f("Bu mesaj için kredi yetmiyor (bakiye: {0}).", "Not enough credits for this message (balance: {0}).", balance)
-                    : L.s("Bu mesaj için kredi yetmiyor.", "Not enough credits for this message."))
-                    + L.s(" Ana menü > Kredi'den yeni kod gir; mesajın taslakta duruyor.",
-                            " Add a code under main menu > Credits; your message is kept as a draft.")
+                    ? L.f("Not enough credits for this message (balance: {0}).", balance)
+                    : L.t("Not enough credits for this message."))
+                    + L.t(" Add a code under main menu > Credits; your message is kept as a draft.")
                     + (shop.length() > 0 ? "\n\n" + shop : "");
         } else if ("trial_model".equals(st)) {
-            status = L.s("Deneme: tek model", "Trial: one model");
-            msg = L.s("Ücretsiz deneme yalnızca bir modelle çalışır. Model menüsünden onu seç; kredi kodu yükleyince "
-                    + "tüm modeller açılır (Ana menü > Kredi). Mesajın taslakta duruyor.",
-                    "The free trial works with one model only. Pick it in the Model menu; a credit code opens every "
+            status = L.t("Trial: one model");
+            msg = L.t("The free trial works with one model only. Pick it in the Model menu; a credit code opens every "
                     + "model (main menu > Credits). Your message is kept as a draft.");
         } else if ("account_disabled".equals(st)) {
-            status = L.s("Hesap kapalı", "Account closed");
-            msg = L.s("Bu hesap kapatılmış. Sunucunun destek adresine yaz.",
-                    "This account is closed. Write to the server's support address.");
+            status = L.t("Account closed");
+            msg = L.t("This account is closed. Write to the server's support address.");
         } else if ("billing".equals(st)) {
-            status = L.s("Kredi yok", "No credits");
-            msg = L.f("Sunucunun {0} API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.", "The server's {0} API account is out of credits. Send again once it is topped up.", ai());
+            status = L.t("No credits");
+            msg = L.f("The server's {0} API account is out of credits. Send again once it is topped up.", ai());
         } else if ("rate_limited".equals(st) || "overloaded".equals(st)) {
-            status = L.f("{0} meşgul", "{0} is busy", ai());
-            msg = L.f("{0} şu an meşgul. Birazdan yeniden gönderin.", "{0} is busy right now. Send again shortly.", ai());
+            status = L.f("{0} is busy", ai());
+            msg = L.f("{0} is busy right now. Send again shortly.", ai());
         } else if ("model_unavailable".equals(st)) {
-            status = L.s("Model yok", "Model not offered");
-            msg = L.s("Seçilen model sunucuda artık yok. Menü > Model ile başka birini seçin; mesajınız taslakta duruyor.",
-                    "The chosen model is no longer offered by the server. Pick another with Menu > Model; "
+            status = L.t("Model not offered");
+            msg = L.t("The chosen model is no longer offered by the server. Pick another with Menu > Model; "
                     + "your message is kept as a draft.");
             model = "";
             modelName = "";
         } else if ("image_not_found".equals(st)) {
-            status = L.s("Fotoğraf yok", "Photo not found");
-            msg = L.s("Fotoğraf sunucuda bulunamadı: bir gün içinde kullanılmamış ya da başka bir sohbette kullanılmış. "
-                    + "Fotoğrafı yeniden ekleyin; mesajınız taslakta duruyor.",
-                    "The photo is not on the server: unused for a day, or used in another chat. Add it again; "
+            status = L.t("Photo not found");
+            msg = L.t("The photo is not on the server: unused for a day, or used in another chat. Add it again; "
                     + "your message is kept as a draft.");
             image = "";
         } else if ("too_large".equals(st)) {
-            status = L.s("Mesaj uzun", "Too long");
-            msg = L.s("Mesaj çok uzun.", "The message is too long.");
+            status = L.t("Too long");
+            msg = L.t("The message is too long.");
         } else {
-            status = L.s("Yanıt alınamadı", "No reply");
-            msg = L.s("Yanıt alınamadı (", "No reply (") + (st.length() > 0 ? st : "?") + ").";
+            status = L.t("No reply");
+            msg = L.t("No reply (") + (st.length() > 0 ? st : "?") + ").";
         }
         note(KIND_ERROR, status, msg);
         // definite answer: forget the id, keep the draft (and the photo)
@@ -887,12 +873,11 @@ final class ChatSession implements Runnable, Net.Listener {
             } else if (i >= 0 && m != null && "not_found".equals(m.field("status"))) {
                 // the server no longer has the stored reply (kept 7 days): stop offering "more"
                 entries.setElementAt(e.cutOff(), i);
-                note(KIND_INFO, L.s("Devamı sunucuda yok", "The rest is gone"),
-                        L.s("Yanıtın devamı sunucuda artık yok (yanıtlar 7 gün saklanır).",
-                                "The rest of this reply is no longer on the server (kept for 7 days)."));
+                note(KIND_INFO, L.t("The rest is gone"),
+                        L.t("The rest of this reply is no longer on the server (kept for 7 days)."));
             } else if (i >= 0) {
-                status = L.s("Devamı alınamadı", "Could not load more");
-                note(KIND_ERROR, status, L.f("0 tuşuyla tekrar deneyin (ücretsiz; {0} tekrar çağrılmaz).\n\n", "Press 0 to try again (free; {0} is not asked again).\n\n", ai())
+                status = L.t("Could not load more");
+                note(KIND_ERROR, status, L.f("Press 0 to try again (free; {0} is not asked again).\n\n", ai())
                         + (r.ok() ? (m == null ? "?" : m.field("status")) : Net.explain(r)));
             }
             jobEntry = null;
@@ -911,18 +896,16 @@ final class ChatSession implements Runnable, Net.Listener {
                 resetLocal();
                 conversation = conv;
                 if (m.flag("older")) {
-                    note(KIND_INFO, L.s("Eski mesajlar gizli", "Older messages hidden"),
-                            L.s("Daha eski mesajlar telefonda gösterilmiyor; model onları hâlâ görüyor.",
-                                    "Older messages are not shown on the phone; the model still sees them."));
+                    note(KIND_INFO, L.t("Older messages hidden"),
+                            L.t("Older messages are not shown on the phone; the model still sees them."));
                 }
                 parseHistory(m.text, r.bodyCut);
-                note(KIND_INFO, L.s("Sohbet açıldı", "Chat opened"), "");
+                note(KIND_INFO, L.t("Chat opened"), "");
             } else if ("conversation_not_found".equals(st)) {
-                status = L.s("Sohbet yok", "Chat not found");
-                note(KIND_ERROR, status, L.s("Sohbet sunucuda bulunamadı (silinmiş veya süresi dolmuş olabilir).",
-                        "Chat not found on the server (deleted or expired)."));
+                status = L.t("Chat not found");
+                note(KIND_ERROR, status, L.t("Chat not found on the server (deleted or expired)."));
             } else {
-                status = L.s("Yüklenemedi", "Not loaded");
+                status = L.t("Not loaded");
                 note(KIND_ERROR, status, r.ok() ? (st.length() > 0 ? st : "?") : Net.explain(r));
             }
             jobConversation = null;
@@ -977,7 +960,7 @@ final class ChatSession implements Runnable, Net.Listener {
             pos = start + len + 1;
         }
         if (bodyCut) {
-            note(KIND_INFO, L.s("Sohbetin sonu yüklenemedi", "The end did not load"), "");
+            note(KIND_INFO, L.t("The end did not load"), "");
         }
         trim();
     }
@@ -990,9 +973,9 @@ final class ChatSession implements Runnable, Net.Listener {
             if (r.ok() && ("deleted".equals(st) || "conversation_not_found".equals(st))) {
                 resetLocal();
                 ChatStore.delete();
-                note(KIND_INFO, L.s("Sohbet silindi", "Chat deleted"), "");
+                note(KIND_INFO, L.t("Chat deleted"), "");
             } else {
-                status = L.s("Silinemedi", "Not deleted");
+                status = L.t("Not deleted");
                 note(KIND_ERROR, status, r.ok() ? st : Net.explain(r));
             }
             version++;

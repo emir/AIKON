@@ -28,8 +28,8 @@ final class CalendarForm implements CommandListener, Runnable {
     private final ChoiceGroup kind;
     private final DateField when;
     private final ChoiceGroup alarm;
-    private final Command saveCmd = new Command(L.s("Kaydet", "Save"), Command.OK, 1);
-    private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command saveCmd = new Command(L.t("Save"), Command.OK, 1);
+    private final Command cancelCmd = new Command(L.t("Cancel"), Command.BACK, 1);
     private boolean saving;
 
     // what run() writes
@@ -42,17 +42,17 @@ final class CalendarForm implements CommandListener, Runnable {
         this.midlet = midlet;
         this.back = back;
         Cal c = Cal.parse(e.text);
-        form = new Form(L.s("Takvime ekle", "Add to calendar"));
-        title = new TextField(L.s("Başlık", "Title"), c != null ? c.title : ClaudeS40MIDlet.quote(e.text), 100,
+        form = new Form(L.t("Add to calendar"));
+        title = new TextField(L.t("Title"), c != null ? c.title : ClaudeS40MIDlet.quote(e.text), 100,
                 TextField.ANY);
-        kind = new ChoiceGroup(L.s("Nereye", "Where"), ChoiceGroup.EXCLUSIVE,
-                new String[] { L.s("Takvim", "Calendar"), L.s("Yapılacaklar", "To-do list") }, null);
+        kind = new ChoiceGroup(L.t("Where"), ChoiceGroup.EXCLUSIVE,
+                new String[] { L.t("Calendar"), L.t("To-do list") }, null);
         kind.setSelectedIndex(c != null && c.todo ? 1 : 0, true);
-        when = new DateField(L.s("Tarih ve saat", "Date and time"), DateField.DATE_TIME);
+        when = new DateField(L.t("Date and time"), DateField.DATE_TIME);
         when.setDate(new Date(c != null ? c.when : nextHour()));
-        alarm = new ChoiceGroup(L.s("Hatırlatma (takvim)", "Alarm (calendar)"), ChoiceGroup.EXCLUSIVE,
-                new String[] { L.s("Yok", "None"), L.s("Başlarken", "At the start"), L.s("15 dakika önce", "15 minutes before"),
-                    L.s("1 saat önce", "1 hour before"), L.s("1 gün önce", "1 day before") }, null);
+        alarm = new ChoiceGroup(L.t("Alarm (calendar)"), ChoiceGroup.EXCLUSIVE,
+                new String[] { L.t("None"), L.t("At the start"), L.t("15 minutes before"),
+                    L.t("1 hour before"), L.t("1 day before") }, null);
         alarm.setSelectedIndex(2, true);
         form.append(title);
         form.append(kind);
@@ -87,7 +87,7 @@ final class CalendarForm implements CommandListener, Runnable {
         String t = title.getString().trim();
         Date date = when.getDate();
         if (t.length() == 0 || date == null) {
-            midlet.info(L.s("Başlık ve tarih gerekli.", "A title and a date are needed."), form);
+            midlet.info(L.t("A title and a date are needed."), form);
             return;
         }
         synchronized (this) {
@@ -122,8 +122,8 @@ final class CalendarForm implements CommandListener, Runnable {
         if (err != null) {
             midlet.info(err, form);
         } else {
-            midlet.info((t ? L.s("Yapılacaklara eklendi: ", "Added to the to-do list: ") + Text.local(a, false)
-                    : L.s("Takvime eklendi: ", "Added to the calendar: ") + Text.local(a, true)) + "\n" + w, back);
+            midlet.info((t ? L.t("Added to the to-do list: ") + Text.local(a, false)
+                    : L.t("Added to the calendar: ") + Text.local(a, true)) + "\n" + w, back);
         }
     }
 }

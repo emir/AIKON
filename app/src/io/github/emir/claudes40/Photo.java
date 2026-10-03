@@ -23,9 +23,9 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
     private RowList source;
     private final TextPage form;
     private final int status;
-    private final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.OK, 1);
-    private final Command otherCmd = new Command(L.s("Başka fotoğraf", "Another photo"), Command.SCREEN, 2);
-    private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command retryCmd = new Command(L.t("Retry"), Command.OK, 1);
+    private final Command otherCmd = new Command(L.t("Another photo"), Command.SCREEN, 2);
+    private final Command cancelCmd = new Command(L.t("Cancel"), Command.BACK, 1);
     private final Command helpCmd = Help.command();
     private Command[] shownCmds = new Command[0];
 
@@ -37,7 +37,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
     Photo(ClaudeS40MIDlet midlet, boolean fromComposer) {
         this.midlet = midlet;
         this.fromComposer = fromComposer;
-        form = new TextPage(L.s("Fotoğraf ekle", "Add a photo"));
+        form = new TextPage(L.t("Add a photo"));
         status = form.append(null, "");
         form.addCommand(helpCmd);
         form.setCommandListener(this);
@@ -48,9 +48,9 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         boolean cam = ClaudeS40MIDlet.hasCamera();
         boolean files = ClaudeS40MIDlet.hasFiles();
         if (cam && files) {
-            source = new RowList(L.s("Fotoğraf ekle", "Add a photo"));
-            source.add(L.s("Kamerayla çek", "Take a photo"), null, -1, 0);
-            source.add(L.s("Telefondan seç", "Choose from the phone"), null, -1, 0);
+            source = new RowList(L.t("Add a photo"));
+            source.add(L.t("Take a photo"), null, -1, 0);
+            source.add(L.t("Choose from the phone"), null, -1, 0);
             source.addCommand(cancelCmd);
             source.setCommandListener(this);
             midlet.display().setCurrent(source);
@@ -97,7 +97,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
 
     private synchronized void upload() {
         generation++;
-        show(L.s("Gönderiliyor (", "Sending (") + (data.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd });
+        show(L.t("Sending (") + (data.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd });
         midlet.display().setCurrent(form);
         new Thread(this).start();
     }
@@ -132,24 +132,20 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
             msg = Net.explain(r);
             retry = true;
         } else if (m == null) {
-            msg = L.f("Sunucu yanıtı tanınmadı (HTTP {0}).", "Unrecognised server reply (HTTP {0}).", String.valueOf(r.httpCode));
+            msg = L.f("Unrecognised server reply (HTTP {0}).", String.valueOf(r.httpCode));
             retry = true;
         } else if ("bad_image".equals(st)) {
-            msg = L.s("Sunucu bu fotoğrafı okuyamadı (JPEG veya PNG olmalı).",
-                    "The server could not read this photo (it must be JPEG or PNG).");
+            msg = L.t("The server could not read this photo (it must be JPEG or PNG).");
         } else if ("too_large".equals(st)) {
-            msg = L.s("Fotoğraf çok büyük.", "The photo is too large.");
+            msg = L.t("The photo is too large.");
         } else if ("limit".equals(st)) {
-            msg = L.s("Bugünkü fotoğraf hakkınız bitti. Yarın (UTC) yenilenir.",
-                    "No photos left today. More tomorrow (UTC).");
+            msg = L.t("No photos left today. More tomorrow (UTC).");
         } else if ("unauthorized".equals(st)) {
-            msg = L.s("Eşleştirme geçersiz. Ayarlar > Seçenekler > 'Cihazı eşleştir'.",
-                    "The pairing is not valid. Settings > Options > 'Pair this phone'.");
+            msg = L.t("The pairing is not valid. Settings > Options > 'Pair this phone'.");
         } else if ("not_found".equals(st)) {
-            msg = L.s("Sunucu fotoğrafları desteklemiyor (eski sürüm).",
-                    "The server does not take photos (older version).");
+            msg = L.t("The server does not take photos (older version).");
         } else {
-            msg = L.s("Sunucu: ", "Server: ") + st;
+            msg = L.t("Server: ") + st;
             retry = true;
         }
         synchronized (this) {
@@ -166,7 +162,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 if (!closed) {
-                    form.setText(status, L.s("Sunucu fotoğrafı hazırlıyor...", "The server is preparing the photo..."));
+                    form.setText(status, L.t("The server is preparing the photo..."));
                 }
             }
         }
@@ -231,12 +227,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
             return;
         }
         if (c == helpCmd) {
-            Help.show(midlet.display(), L.s("Fotoğraf", "Photo"), L.s(
-                    "Fotoğraf sunucuya gider ve bu sohbetin modeline gösterilir; sonraki mesajlarda da görünür."
-                    + "\n\nSohbetle birlikte sunucuda kalır (30 gün ya da sohbeti silene kadar). Kullanılmayan "
-                    + "fotoğraf bir gün sonra silinir.\n\nFotoğraf tek başına gönderilmez: mesajını yazıp "
-                    + "Gönder'e basınca gider.",
-                    "The photo goes to the server and is shown to this chat's model, also with later messages."
+            Help.show(midlet.display(), L.t("Photo"), L.t("The photo goes to the server and is shown to this chat's model, also with later messages."
                     + "\n\nIt stays on the server with the chat (30 days, or until you delete the chat). An unused "
                     + "photo is deleted after a day.\n\nThe photo is never sent by itself: it goes with your "
                     + "message when you press Send."), form);

@@ -14,11 +14,11 @@ final class Help implements CommandListener {
 
     private final Display display;
     private final Displayable back;
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
 
     /** The "Bilgi" / "Info" command for a screen (Command.HELP: the phone puts it under Options). */
     static Command command() {
-        return new Command(L.s("Bilgi", "Info"), Command.HELP, 8);
+        return new Command(L.t("Info"), Command.HELP, 8);
     }
 
     private Help(Display display, Displayable back) {

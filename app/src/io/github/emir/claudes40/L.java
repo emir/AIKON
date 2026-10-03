@@ -6,15 +6,14 @@ import java.util.Hashtable;
 
 /**
  * UI language, chosen at start-up (and again when Settings > Language
- * changes). Turkish and English are written side by side where they are
- * used: L.s("Türkçe", "English"). Other languages come from /lang/xx.txt in
- * the JAR: one line per string, the English text, a TAB, the translation
- * (a backslash-n stands for a line break, backslash-t for a tab). A string
- * without a line there stays English, so a half-done translation never
- * breaks a screen. Texts with values in them use {0}, {1} (L.f).
+ * changes). The code is written in English: L.t("Save"), or L.f("{0}
+ * credits", n) for texts with values. Every other language, Turkish too,
+ * comes from app/lang/xx.txt (the English text, a TAB, the translation),
+ * packed into the JAR by tools/strings.py. A text without a translation
+ * stays English, so a half-done translation never breaks a screen.
  *
- * "Same as phone" follows microedition.locale: "tr..." Turkish, a language
- * of LANGS by its two letters, anything else English.
+ * "Same as phone" follows microedition.locale: a language we have by its
+ * two letters, anything else English (the default).
  */
 final class L {
 
@@ -24,11 +23,10 @@ final class L {
     /** Settings.lang of LANGS[i] is FIRST + i. */
     static final int FIRST = 3;
 
-    /** Two-letter codes of the languages in /lang, and their own names. */
+    /** Two-letter codes of the languages in /lang besides Turkish (Settings.lang 1), and their own names. */
     static final String[] LANGS = { "es", "pt", "fr", "de", "ru", "id" };
     static final String[] NAMES = { "Español", "Português", "Français", "Deutsch", "Русский", "Bahasa Indonesia" };
 
-    private static boolean tr;
     private static String code = "en";
     private static Hashtable table;
 
@@ -51,8 +49,7 @@ final class L {
             }
         }
         code = c;
-        tr = c.equals("tr");
-        table = tr || c.equals("en") ? null : load(c);
+        table = c.equals("en") ? null : load(c);
     }
 
     /** The language now in use, as two letters ("tr", "en", "es", ...). */
@@ -60,18 +57,7 @@ final class L {
         return code;
     }
 
-    static boolean turkish() {
-        return tr;
-    }
-
-    static String s(String turkish, String english) {
-        if (tr) {
-            return turkish;
-        }
-        return t(english);
-    }
-
-    /** An English text (a key of the language files) in the language now in use (not Turkish). */
+    /** An English text (a key of the language files) in the language now in use. */
     static String t(String english) {
         if (table == null) {
             return english;
@@ -80,9 +66,9 @@ final class L {
         return v != null ? v : english;
     }
 
-    /** L.s with values: {0}, {1} in the patterns are replaced by args[0], args[1]. */
-    static String f(String turkish, String english, String[] args) {
-        String p = s(turkish, english);
+    /** L.t with values: {0}, {1} in the text are replaced by args[0], args[1] after translating. */
+    static String f(String english, String[] args) {
+        String p = t(english);
         for (int i = 0; i < args.length; i++) {
             String mark = "{" + i + "}";
             int at;
@@ -93,12 +79,12 @@ final class L {
         return p;
     }
 
-    static String f(String turkish, String english, String a) {
-        return f(turkish, english, new String[] { a });
+    static String f(String english, String a) {
+        return f(english, new String[] { a });
     }
 
-    static String f(String turkish, String english, String a, String b) {
-        return f(turkish, english, new String[] { a, b });
+    static String f(String english, String a, String b) {
+        return f(english, new String[] { a, b });
     }
 
     private static int index(String c) {

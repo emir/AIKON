@@ -59,7 +59,7 @@ final class RowList extends Canvas {
     RowList(String title) {
         this.title = title;
         // a centre-key command, as an IMPLICIT List has; setSelectCommand replaces it
-        defaultSelect = new Command(L.s("Seç", "Select"), Command.OK, 1);
+        defaultSelect = new Command(L.t("Select"), Command.OK, 1);
         selectCommand = defaultSelect;
         addCommand(selectCommand);
         full = fullScreen;

@@ -8,8 +8,9 @@
                                          keys, one per line) and OUT/xx.txt (the translations in
                                          the same order; an empty line = not translated)
 
-Keys are the English arguments of L.s / L.f that are string literals (or
-literals joined with +), and the entries of PROMPTS_EN / TITLES_EN. A
+Keys are the first arguments of L.t / L.f that are string literals (or
+literals joined with +; the code is written in English), and the entries of
+PROMPTS_EN / TITLES_EN. A
 language file has one line per key: the key, a TAB, the translation;
 backslash-n is a line break, backslash-t a tab, backslash-backslash a
 backslash; lines starting with # are comments. check fails on a malformed
@@ -147,13 +148,11 @@ def keys(src_dir):
     found = []
     for f in sorted(glob.glob(os.path.join(src_dir, "**", "*.java"), recursive=True)):
         src = strip_comments(open(f, encoding="utf-8").read())
-        for name in ("L.s", "L.f"):
+        for name in ("L.t", "L.f"):
             for inner in calls(src, name):
-                args = split_top(inner, ",")
-                if len(args) >= 2:
-                    en = literal(args[1])
-                    if en is not None:
-                        found.append(en)
+                en = literal(split_top(inner, ",")[0])
+                if en is not None:
+                    found.append(en)
         for arr in ("PROMPTS_EN", "TITLES_EN"):
             m = re.search(arr + r"\s*=\s*\{(.*?)\};", src, re.S)
             if m:

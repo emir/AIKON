@@ -45,7 +45,7 @@ final class TextPage extends Canvas {
     /** A message with "Tamam" (OK) that returns to next; in place of an Alert. */
     static void notice(final Display display, String title, String text, final Displayable next) {
         TextPage p = message(title, text);
-        final Command ok = new Command(L.s("Tamam", "OK"), Command.OK, 1);
+        final Command ok = new Command(L.t("OK"), Command.OK, 1);
         p.addCommand(ok);
         p.setCommandListener(new CommandListener() {
             public void commandAction(Command c, Displayable d) {

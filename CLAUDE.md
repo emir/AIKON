@@ -33,11 +33,13 @@ is only a stub: `make -C app JAVA=/opt/homebrew/opt/openjdk/bin/java`.
   beyond the user's own use, infrastructure/firewall changes, pushing to
   GitHub.
 - Phone app: CLDC 1.1 / MIDP 2.0 API only (no StringBuilder, generics,
-  String.format); every user-visible string is bilingual `L.s("Türkçe",
-  "English")` (`L.f` with {0} for values); other languages are app/lang/xx.txt
-  (English key TAB translation, `make -C app langs`), so a new or changed
-  English text needs its line in every language file; sizes from
-  getWidth()/getHeight(), softkeys as Commands, arrows via getGameAction(); networking only on worker threads; HTTPS only.
+  String.format); the code is written in English: every user-visible
+  string goes through `L.t("Save")` (`L.f("{0} credits", n)` for values);
+  every other language, Turkish too, is app/lang/xx.txt (English key TAB
+  translation; `make -C app langs`), so a new or changed English text needs
+  its line in every language file, at least lang/tr.txt; sizes from
+  getWidth()/getHeight(), softkeys as Commands, arrows via getGameAction();
+  networking only on worker threads; HTTPS only.
   Optional JSR 75 (files, calendar/to-do) only inside Files/Pim, called
   after hasFiles()/hasPim() and from worker threads (check.py enforces the
   first part); nothing is written to the calendar without the user's Save.

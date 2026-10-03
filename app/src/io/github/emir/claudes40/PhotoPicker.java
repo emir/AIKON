@@ -22,8 +22,8 @@ final class PhotoPicker implements CommandListener, Runnable {
     private final ClaudeS40MIDlet midlet;
     private final Photo photo;
     private final RowList list;
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-    private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.SCREEN, 2);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final Command cancelCmd = new Command(L.t("Cancel"), Command.SCREEN, 2);
 
     /** Folder URL shown, null for the drive list. */
     private String dir;
@@ -37,7 +37,7 @@ final class PhotoPicker implements CommandListener, Runnable {
     PhotoPicker(ClaudeS40MIDlet midlet, Photo photo) {
         this.midlet = midlet;
         this.photo = photo;
-        list = new RowList(L.s("Fotoğraf seç", "Choose a photo"));
+        list = new RowList(L.t("Choose a photo"));
         list.addCommand(backCmd);
         list.addCommand(cancelCmd);
         list.setCommandListener(this);
@@ -91,12 +91,11 @@ final class PhotoPicker implements CommandListener, Runnable {
             }
         } catch (SecurityException e) {
             done();
-            photo.failed(L.s("Dosya erişimi izni verilmedi. Telefon sorduğunda 'Evet' deyin.",
-                    "File access was denied. Answer 'Yes' when the phone asks."));
+            photo.failed(L.t("File access was denied. Answer 'Yes' when the phone asks."));
             return;
         } catch (RuntimeException e) {
             done();
-            photo.failed(L.s("Klasör okunamadı: ", "Could not read the folder: ") + e.getMessage());
+            photo.failed(L.t("Could not read the folder: ") + e.getMessage());
             return;
         }
         synchronized (this) {
@@ -109,7 +108,7 @@ final class PhotoPicker implements CommandListener, Runnable {
             list.deleteAll();
             if (dir != null) {
                 targets.addElement("");
-                list.add(L.s(".. (üst klasör)", ".. (up)"), null, -1, 0);
+                list.add(L.t(".. (up)"), null, -1, 0);
             }
             int photos = 0;
             for (int i = 0; i < names.size(); i++) {
@@ -125,7 +124,7 @@ final class PhotoPicker implements CommandListener, Runnable {
                     }
                 }
             }
-            list.title(dir == null ? L.s("Sürücüler", "Drives") : title(dir) + " (" + photos + ")");
+            list.title(dir == null ? L.t("Drives") : title(dir) + " (" + photos + ")");
         }
     }
 
@@ -136,15 +135,14 @@ final class PhotoPicker implements CommandListener, Runnable {
             b = Files.readBytes(url, Photo.MAX_BYTES);
             if (b == null) {
                 long size = Files.size(url);
-                err = L.f("Fotoğraf çok büyük ({0} KB). En fazla {1} KB; uygulamadaki kamerayla çekin.", "The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.", String.valueOf(size / 1024), String.valueOf(Photo.MAX_BYTES / 1024));
+                err = L.f("The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.", String.valueOf(size / 1024), String.valueOf(Photo.MAX_BYTES / 1024));
             }
         } catch (IOException e) {
-            err = L.s("Dosya okunamadı: ", "Could not read the file: ") + e.getMessage();
+            err = L.t("Could not read the file: ") + e.getMessage();
         } catch (SecurityException e) {
-            err = L.s("Dosya erişimi izni verilmedi.", "File access was denied.");
+            err = L.t("File access was denied.");
         } catch (OutOfMemoryError e) {
-            err = L.s("Fotoğraf telefonun belleğine sığmadı. Uygulamadaki kamerayla çekin.",
-                    "The photo does not fit in the phone's memory. Take it with the app's camera.");
+            err = L.t("The photo does not fit in the phone's memory. Take it with the app's camera.");
         }
         synchronized (this) {
             busy = false;
@@ -202,7 +200,7 @@ final class PhotoPicker implements CommandListener, Runnable {
                     job = JOB_READ;
                     jobUrl = t;
                 }
-                list.title(L.s("Okunuyor...", "Reading..."));
+                list.title(L.t("Reading..."));
                 new Thread(this).start();
             }
         } else if (c == backCmd && dir != null) {

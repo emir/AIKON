@@ -62,12 +62,11 @@ final class Pim {
             }
             return null;
         } catch (PIMException e) {
-            return L.s("Telefon kaydı kabul etmedi: ", "The phone did not accept it: ") + e.getMessage();
+            return L.t("The phone did not accept it: ") + e.getMessage();
         } catch (SecurityException e) {
-            return L.s("İzin verilmedi. Takvime ekleme için telefonun sorusuna 'Evet' deyin.",
-                    "Permission denied. Answer 'Yes' when the phone asks, to add it.");
+            return L.t("Permission denied. Answer 'Yes' when the phone asks, to add it.");
         } catch (RuntimeException e) {
-            return L.s("Eklenemedi: ", "Could not add it: ") + e.getClass().getName() + ": " + e.getMessage();
+            return L.t("Could not add it: ") + e.getClass().getName() + ": " + e.getMessage();
         } finally {
             if (list != null) {
                 try {

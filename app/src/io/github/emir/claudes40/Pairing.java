@@ -31,37 +31,34 @@ final class Pairing implements CommandListener, Runnable {
     private final TextPage form;
     private final int codeItem;
     private final int statusItem;
-    private final Command cancelCmd = new Command(L.s("İptal", "Cancel"), Command.BACK, 1);
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-    private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
+    private final Command cancelCmd = new Command(L.t("Cancel"), Command.BACK, 1);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final Command finishCmd = new Command(L.t("Finish"), Command.OK, 1);
     private final Command helpCmd = Help.command();
     private volatile boolean cancelled;
 
     Pairing(ClaudeS40MIDlet midlet, Setup setup) {
         this.midlet = midlet;
         this.setup = setup;
-        form = new TextPage(setup != null ? Setup.title(Setup.STEPS) : L.s("Cihazı eşleştir", "Pair this phone"));
-        codeItem = form.append(L.s("Eşleştirme kodu", "Pairing code"), "-");
+        form = new TextPage(setup != null ? Setup.title(Setup.STEPS) : L.t("Pair this phone"));
+        codeItem = form.append(L.t("Pairing code"), "-");
         form.setBig(codeItem);
-        statusItem = form.append(L.s("Durum", "Status"), "");
-        form.append(null, L.s("Bu kodu sunucunun sahibine ilet.", "Give this code to the server's owner."));
+        statusItem = form.append(L.t("Status"), "");
+        form.append(null, L.t("Give this code to the server's owner."));
         form.addCommand(cancelCmd);
         form.addCommand(helpCmd);
         form.setCommandListener(this);
     }
 
     void start(Display d) {
-        status(L.s("Kod isteniyor...", "Requesting a code..."));
+        status(L.t("Requesting a code..."));
         d.setCurrent(form);
         new Thread(this).start();
     }
 
     public void commandAction(Command c, Displayable d) {
         if (c == helpCmd) {
-            Help.show(midlet.display(), L.s("Eşleştirme", "Pairing"), L.s(
-                    "Sunucunun sahibi kodu sunucuda onaylar:\nadmin.sh SUNUCU pair <kod>\n\nOnaydan sonra telefon "
-                    + "erişim kodunu kendisi alır; bu ekran açık kalsın. Kod 10 dakika geçerlidir.",
-                    "The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter "
+            Help.show(midlet.display(), L.t("Pairing"), L.t("The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter "
                     + "approval the phone fetches its access code by itself; keep this screen open. The code is valid "
                     + "for 10 minutes."), form);
         } else if (c == cancelCmd || c == backCmd) {
@@ -98,20 +95,19 @@ final class Pairing implements CommandListener, Runnable {
         Net.Result r = Net.request(s.url + "/v1/pair/start", "POST", null,
                 S40Message.format(new String[0], new String[0], ""), midlet.userAgent(), null);
         if (!r.ok()) {
-            finish(L.s("Başlatılamadı. ", "Could not start. ") + Net.explain(r));
+            finish(L.t("Could not start. ") + Net.explain(r));
             return;
         }
         if (r.msg == null || !"ok".equals(r.msg.field("status"))) {
             String st = r.msg == null ? "HTTP " + r.httpCode : r.msg.field("status");
-            finish("pair_busy".equals(st) ? L.s("Bekleyen eşleştirme çok fazla; birkaç dakika sonra deneyin.",
-                    "Too many pending pairings; try again in a few minutes.")
-                    : L.s("Başlatılamadı (", "Could not start (") + st + ").");
+            finish("pair_busy".equals(st) ? L.t("Too many pending pairings; try again in a few minutes.")
+                    : L.t("Could not start (") + st + ").");
             return;
         }
         String pair = r.msg.field("pair");
         String code = r.msg.field("code");
         form.setText(codeItem, code.length() == 6 ? code.substring(0, 3) + " " + code.substring(3) : code);
-        status(L.s("Onay bekleniyor...", "Waiting for approval..."));
+        status(L.t("Waiting for approval..."));
 
         long deadline = System.currentTimeMillis() + MAX_MS;
         int netErrors = 0;
@@ -129,10 +125,10 @@ final class Pairing implements CommandListener, Runnable {
             if (!c.ok() || c.msg == null) {
                 netErrors++;
                 if (netErrors >= MAX_NET_ERRORS) {
-                    finish(L.s("Bağlantı sorunu, eşleştirme durdu. ", "Connection problem, pairing stopped. ") + (c.ok() ? "" : Net.explain(c)));
+                    finish(L.t("Connection problem, pairing stopped. ") + (c.ok() ? "" : Net.explain(c)));
                     return;
                 }
-                status(L.s("Bağlantı sorunu, tekrar deneniyor (", "Connection problem, trying again (") + netErrors + "/" + MAX_NET_ERRORS + ")...");
+                status(L.t("Connection problem, trying again (") + netErrors + "/" + MAX_NET_ERRORS + ")...");
                 continue;
             }
             netErrors = 0;
@@ -143,20 +139,20 @@ final class Pairing implements CommandListener, Runnable {
                 String err = s.save();
                 form.setText(codeItem, "OK");
                 finish(err != null ? err
-                        : L.s("Eşleştirildi (", "Paired (") + c.msg.field("device")
-                                + L.s("). Erişim kodu kaydedildi; sohbet kullanılabilir.", "). Access code saved; chat is ready."),
+                        : L.t("Paired (") + c.msg.field("device")
+                                + L.t("). Access code saved; chat is ready."),
                         err == null);
                 return;
             }
             if ("pending".equals(st)) {
-                status(L.s("Onay bekleniyor...", "Waiting for approval..."));
+                status(L.t("Waiting for approval..."));
                 continue;
             }
-            finish(L.s("Eşleştirme süresi doldu. Yeniden başlatın.", "Pairing expired. Start again."));
+            finish(L.t("Pairing expired. Start again."));
             return;
         }
         if (!cancelled) {
-            finish(L.s("Eşleştirme süresi doldu. Yeniden başlatın.", "Pairing expired. Start again."));
+            finish(L.t("Pairing expired. Start again."));
         }
     }
 }

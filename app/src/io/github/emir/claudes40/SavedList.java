@@ -21,11 +21,11 @@ final class SavedList implements CommandListener, Runnable {
 
     private final ClaudeS40MIDlet midlet;
     private final RowList list;
-    private final Command openCmd = new Command(L.s("Aç", "Open"), Command.OK, 1);
-    private final Command deleteCmd = new Command(L.s("Sil", "Delete"), Command.SCREEN, 2);
-    private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
-    private final Command yesCmd = new Command(L.s("Sil", "Delete"), Command.OK, 1);
-    private final Command noCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command openCmd = new Command(L.t("Open"), Command.OK, 1);
+    private final Command deleteCmd = new Command(L.t("Delete"), Command.SCREEN, 2);
+    private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final Command yesCmd = new Command(L.t("Delete"), Command.OK, 1);
+    private final Command noCmd = new Command(L.t("Cancel"), Command.BACK, 1);
     private TextPage viewer;
     private TextPage confirm;
 
@@ -39,7 +39,7 @@ final class SavedList implements CommandListener, Runnable {
 
     SavedList(ClaudeS40MIDlet midlet) {
         this.midlet = midlet;
-        list = new RowList(L.s("Kaydedilenler", "Saved"));
+        list = new RowList(L.t("Saved"));
         list.setSelectCommand(openCmd);
         list.addCommand(deleteCmd);
         list.addCommand(backCmd);
@@ -55,7 +55,7 @@ final class SavedList implements CommandListener, Runnable {
     void save(ChatSession.Entry e, Displayable back) {
         synchronized (this) {
             if (busy) {
-                midlet.info(L.s("Önceki kayıt işlemi sürüyor.", "Still busy with the previous file."), back);
+                midlet.info(L.t("Still busy with the previous file."), back);
                 return;
             }
             String t = e.time > 0 ? Text.local(e.time, true) : Text.local(System.currentTimeMillis(), true);
@@ -105,19 +105,18 @@ final class SavedList implements CommandListener, Runnable {
                 found = Files.list();
             }
         } catch (IOException e) {
-            err = L.s("Dosya işlemi başarısız: ", "File error: ") + e.getMessage();
+            err = L.t("File error: ") + e.getMessage();
         } catch (SecurityException e) {
-            err = L.s("İzin verilmedi. Telefon dosya erişimini sorduğunda 'Evet' deyin.",
-                    "Permission denied. Answer 'Yes' when the phone asks about file access.");
+            err = L.t("Permission denied. Answer 'Yes' when the phone asks about file access.");
         } catch (RuntimeException e) {
-            err = L.s("Dosya işlemi başarısız: ", "File error: ") + e.getClass().getName() + ": " + e.getMessage();
+            err = L.t("File error: ") + e.getClass().getName() + ": " + e.getMessage();
         }
         synchronized (this) {
             busy = false;
         }
         if (j == JOB_SAVE) {
-            midlet.info(err != null ? err : L.s("Telefona kaydedildi:\n", "Saved on the phone:\n") + Files.where() + file
-                    + L.s("\n\nAna menü > Kaydedilenler'den internetsiz okunur.", "\n\nRead it offline: main menu > Saved."),
+            midlet.info(err != null ? err : L.t("Saved on the phone:\n") + Files.where() + file
+                    + L.t("\n\nRead it offline: main menu > Saved."),
                     jobBack);
             return;
         }
@@ -132,7 +131,7 @@ final class SavedList implements CommandListener, Runnable {
         }
         if (err != null) {
             if (j == JOB_LIST) {
-                list.note(L.s("Hata: ", "Error: ") + err);
+                list.note(L.t("Error: ") + err);
             } else {
                 midlet.info(err, list);
             }
@@ -148,8 +147,7 @@ final class SavedList implements CommandListener, Runnable {
         }
         list.deleteAll();
         if (found.size() == 0) {
-            list.note(L.s("Henüz kayıt yok. Sohbette bir yanıtı seçin (1/3), orta tuş > Telefona kaydet.",
-                    "Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone."));
+            list.note(L.t("Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone."));
         }
         for (int i = 0; i < found.size(); i++) {
             String l = label((String) found.elementAt(i));
@@ -225,7 +223,7 @@ final class SavedList implements CommandListener, Runnable {
             synchronized (this) {
                 jobFile = f;
             }
-            confirm = TextPage.message(L.s("Sil", "Delete"), L.s("Bu kayıt telefondan silinsin mi?\n", "Delete this file from the phone?\n")
+            confirm = TextPage.message(L.t("Delete"), L.t("Delete this file from the phone?\n")
                     + label(f));
             confirm.addCommand(yesCmd);
             confirm.addCommand(noCmd);

@@ -37,11 +37,11 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     private final TextPage form;
     private final int status;
     private final int gauge;
-    private final Command doneCmd = new Command(L.s("Bitir", "Done"), Command.OK, 1);
-    private final Command retryCmd = new Command(L.s("Tekrar dene", "Retry"), Command.OK, 1);
-    private final Command resendCmd = new Command(L.s("Yeniden gönder", "Send again"), Command.SCREEN, 2);
-    private final Command againCmd = new Command(L.s("Yeniden kaydet", "Record again"), Command.SCREEN, 3);
-    private final Command cancelCmd = new Command(L.s("Vazgeç", "Cancel"), Command.BACK, 1);
+    private final Command doneCmd = new Command(L.t("Done"), Command.OK, 1);
+    private final Command retryCmd = new Command(L.t("Retry"), Command.OK, 1);
+    private final Command resendCmd = new Command(L.t("Send again"), Command.SCREEN, 2);
+    private final Command againCmd = new Command(L.t("Record again"), Command.SCREEN, 3);
+    private final Command cancelCmd = new Command(L.t("Cancel"), Command.BACK, 1);
     private final Command helpCmd = Help.command();
 
     private Rec rec;
@@ -57,7 +57,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     Dictation(ClaudeS40MIDlet midlet, boolean fromComposer) {
         this.midlet = midlet;
         this.fromComposer = fromComposer;
-        form = new TextPage(L.s("Sesle yaz", "Dictate"));
+        form = new TextPage(L.t("Dictate"));
         status = form.append(null, "");
         gauge = form.append("", "");
         form.setProgress(gauge, 0, MAX_SECONDS);
@@ -78,15 +78,15 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         requestId = null;
         seconds = 0;
         form.setProgress(gauge, 0, MAX_SECONDS);
-        form.setLabel(gauge, "0 / " + MAX_SECONDS + L.s(" sn", " s"));
-        show(L.s("Mikrofon açılıyor...", "Opening the microphone..."), new Command[] { cancelCmd });
+        form.setLabel(gauge, "0 / " + MAX_SECONDS + L.t(" s"));
+        show(L.t("Opening the microphone..."), new Command[] { cancelCmd });
         job = JOB_START;
         new Thread(this).start();
     }
 
     /** Recording started (worker): count up to MAX_SECONDS, then stop on our own. */
     private synchronized void recording() {
-        show(L.s("Konuşun. Bitince 'Bitir'e basın.", "Speak now. Press 'Done' when you finish."),
+        show(L.t("Speak now. Press 'Done' when you finish."),
                 new Command[] { doneCmd, cancelCmd });
         timer = new Timer();
         timer.schedule(new TimerTask() {
@@ -104,7 +104,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
             }
             seconds++;
             form.setProgress(gauge, Math.min(seconds, MAX_SECONDS), MAX_SECONDS);
-            form.setLabel(gauge, seconds + " / " + MAX_SECONDS + L.s(" sn", " s"));
+            form.setLabel(gauge, seconds + " / " + MAX_SECONDS + L.t(" s"));
             stop = seconds >= MAX_SECONDS;
         }
         if (stop) {
@@ -118,7 +118,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         }
         timer.cancel();
         timer = null;
-        show(L.s("Kayıt bitiyor...", "Finishing the recording..."), new Command[] { cancelCmd });
+        show(L.t("Finishing the recording..."), new Command[] { cancelCmd });
         job = JOB_STOP;
         new Thread(this).start();
     }
@@ -129,7 +129,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         if (!sameRequest || requestId == null) {
             requestId = Text.requestId();
         }
-        show(L.s("Gönderiliyor (", "Sending (") + (audio.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd });
+        show(L.t("Sending (") + (audio.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd });
         job = JOB_SEND;
         new Thread(this).start();
     }
@@ -166,7 +166,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                     return;
                 }
                 if (b == null || b.length < MIN_BYTES) {
-                    fail(L.s("Kayıt boş ya da çok kısa.", "The recording is empty or too short.") + deviceInfo(),
+                    fail(L.t("The recording is empty or too short.") + deviceInfo(),
                             false, false);
                     return;
                 }
@@ -192,9 +192,8 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
             } catch (InterruptedException e) {
                 // ignore
             }
-            done(gen, L.s("[Test modu] Bu gerçek bir yazıya dökme değil; ağ kullanılmadı. Kayıt: ",
-                    "[Test mode] This is not a real transcription; no network was used. Recording: ")
-                    + a.length + L.s(" bayt.", " bytes."));
+            done(gen, L.t("[Test mode] This is not a real transcription; no network was used. Recording: ")
+                    + a.length + L.t(" bytes."));
             return;
         }
         String url = s.url + "/v1/transcribe?request=" + id + (L.code().equals("tr") || L.code().equals("en") ? "&lang=" + L.code() : "");
@@ -204,12 +203,11 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                 return;
             }
             if (!r.ok()) {
-                fail(Net.explain(r) + L.s("\n'Tekrar dene' aynı kaydı sorar; ikinci kez ücretlendirilmez.",
-                        "\n'Retry' asks about the same recording; it is not charged twice."), true, false);
+                fail(Net.explain(r) + L.t("\n'Retry' asks about the same recording; it is not charged twice."), true, false);
                 return;
             }
             if (r.msg == null) {
-                fail(L.f("Sunucu yanıtı tanınmadı (HTTP {0}).", "Unrecognised server reply (HTTP {0}).", String.valueOf(r.httpCode)), true, false);
+                fail(L.f("Unrecognised server reply (HTTP {0}).", String.valueOf(r.httpCode)), true, false);
                 return;
             }
         }
@@ -227,54 +225,46 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                 return;
             }
             if ("ok".equals(st) || "no_speech".equals(st)) {
-                fail(L.s("Konuşma anlaşılamadı. Yeniden kaydedin.", "No speech was recognised. Record again."),
+                fail(L.t("No speech was recognised. Record again."),
                         false, false);
             } else if ("pending".equals(st)) {
-                fail(L.s("Sunucu hâlâ yazıya döküyor. Birkaç saniye sonra 'Tekrar dene'.",
-                        "The server is still working on it. 'Retry' in a few seconds."), true, false);
+                fail(L.t("The server is still working on it. 'Retry' in a few seconds."), true, false);
             } else if ("busy".equals(st)) {
-                fail(L.s("Başka bir ses kaydı işleniyor. Birazdan 'Tekrar dene'.",
-                        "Another recording is being processed. 'Retry' in a moment."), true, false);
+                fail(L.t("Another recording is being processed. 'Retry' in a moment."), true, false);
             } else if ("limit".equals(st)) {
-                fail(L.s("Bugünkü sesle yazma hakkınız bitti. Yarın (UTC) yenilenir.",
-                        "No voice messages left today. More tomorrow (UTC)."), false, false);
+                fail(L.t("No voice messages left today. More tomorrow (UTC)."), false, false);
             } else if ("unavailable".equals(st)) {
-                fail(L.s("Sunucuda sesle yazma açık değil.", "Voice messages are not turned on on the server."),
+                fail(L.t("Voice messages are not turned on on the server."),
                         false, false);
             } else if ("too_long".equals(st)) {
-                fail(L.f("Kayıt çok uzun. En fazla {0} saniye.", "The recording is too long. At most {0} seconds.", String.valueOf(MAX_SECONDS)), false, false);
+                fail(L.f("The recording is too long. At most {0} seconds.", String.valueOf(MAX_SECONDS)), false, false);
             } else if ("too_short".equals(st)) {
-                fail(L.s("Kayıt çok kısa.", "The recording is too short."), false, false);
+                fail(L.t("The recording is too short."), false, false);
             } else if ("bad_audio".equals(st) || "too_large".equals(st)) {
-                fail(L.s("Sunucu bu ses kaydını okuyamadı.", "The server could not read this recording.")
+                fail(L.t("The server could not read this recording.")
                         + "\n" + clipInfo(bytes) + deviceInfo(), false, false);
             } else if ("uncertain".equals(st)) {
-                fail(L.s("Sonuç belirsiz: yazıya dökme servisi zamanında yanıt vermedi. 'Yeniden gönder' yeni "
-                        + "(ücretli) bir istek olur.",
-                        "Unknown result: the speech service did not answer in time. 'Send again' is a new "
+                fail(L.t("Unknown result: the speech service did not answer in time. 'Send again' is a new "
                                 + "(paid) request."), false, true);
             } else if ("rate_limited".equals(st) || "overloaded".equals(st) || "upstream_error".equals(st)) {
-                fail(L.f("Yazıya dökme servisi şu an yanıt vermiyor ({0}). Biraz sonra 'Yeniden gönder'.", "The speech service is not answering right now ({0}). 'Send again' later.", st), false,
+                fail(L.f("The speech service is not answering right now ({0}). 'Send again' later.", st), false,
                         true);
             } else if ("billing".equals(st) || "config_error".equals(st)) {
-                fail(L.f("Sunucudaki yazıya dökme ayarında sorun var ({0}).", "The server's speech-to-text setup has a problem ({0}).", st), false, false);
+                fail(L.f("The server's speech-to-text setup has a problem ({0}).", st), false, false);
             } else if ("credit".equals(st)) {
-                fail(L.s("Kredi yetersiz. Ayarlar > Seçenekler > 'Kredi' ile yeni kod gir.",
-                        "Not enough credits. Add a code in Settings > Options > 'Credits'."), false, false);
+                fail(L.t("Not enough credits. Add a code in Settings > Options > 'Credits'."), false, false);
             } else if ("account_disabled".equals(st)) {
-                fail(L.s("Hesap kapatılmış. Sunucunun destek adresine yaz.",
-                        "The account is closed. Write to the server's support address."), false, false);
+                fail(L.t("The account is closed. Write to the server's support address."), false, false);
             } else if ("unauthorized".equals(st)) {
-                fail(L.s("Eşleştirme geçersiz. Ayarlar > Seçenekler > 'Cihazı eşleştir'.",
-                        "The pairing is not valid. Settings > Options > 'Pair this phone'."), false, false);
+                fail(L.t("The pairing is not valid. Settings > Options > 'Pair this phone'."), false, false);
             } else {
-                fail(L.s("Sunucu: ", "Server: ") + st, true, false);
+                fail(L.t("Server: ") + st, true, false);
             }
         }
     }
 
     private String clipInfo(int bytes) {
-        return L.s("Kayıt: ", "Recording: ") + bytes + L.s(" bayt", " bytes")
+        return L.t("Recording: ") + bytes + L.t(" bytes")
                 + (audio != null && audio.length >= 4 ? ", " + contentType(audio) : "");
     }
 
@@ -342,7 +332,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 if (!closed && job == JOB_SEND) {
-                    form.setText(status, L.s("Yazıya dökülüyor...", "Turning speech into text..."));
+                    form.setText(status, L.t("Turning speech into text..."));
                 }
             }
         }
@@ -351,10 +341,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     public void commandAction(Command c, Displayable d) {
         midlet.userActive();
         if (c == helpCmd) {
-            Help.show(midlet.display(), L.s("Sesle yaz", "Dictate"), L.s(
-                    "En fazla 30 saniye konuş. Ses sunucuya gider ve yazıya dökülür; metin yazma kutusuna gelir, "
-                    + "göndermeden önce düzeltebilirsin.\n\nKayıt sunucuda saklanmaz.",
-                    "Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text "
+            Help.show(midlet.display(), L.t("Dictate"), L.t("Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text "
                     + "opens in the editor so you can fix it before sending.\n\nThe recording is not kept on the "
                     + "server."), form);
         } else if (c == doneCmd) {

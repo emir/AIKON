@@ -47,8 +47,7 @@ final class Rec {
                     }
                 } catch (SecurityException e) {
                     close();
-                    return L.s("Mikrofon izni verilmedi. Telefon sorduğunda 'Evet' deyin.",
-                            "Microphone access was denied. Answer 'Yes' when the phone asks.");
+                    return L.t("Microphone access was denied. Answer 'Yes' when the phone asks.");
                 } catch (MediaException e) {
                     last = e.getMessage();
                     close();
@@ -61,7 +60,7 @@ final class Rec {
                 }
             }
         }
-        return L.s("Ses kaydı başlatılamadı. ", "Could not start recording. ") + (last == null ? "" : last);
+        return L.t("Could not start recording. ") + (last == null ? "" : last);
     }
 
     private boolean open(String loc, int maxBytes) throws MediaException, IOException {

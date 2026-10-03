@@ -79,8 +79,8 @@ final class DataUsage {
 
     /** "12 requests · 34,5 KB (sent 8,1 KB, received 26,4 KB)". */
     static String describe(long[] v) {
-        return v[0] + L.s(" istek · ", " requests · ") + Text.bytes(v[1] + v[2]) + L.s(" (gönderilen ", " (sent ")
-                + Text.bytes(v[1]) + L.s(", alınan ", ", received ") + Text.bytes(v[2]) + ")";
+        return v[0] + L.t(" requests · ") + Text.bytes(v[1] + v[2]) + L.t(" (sent ")
+                + Text.bytes(v[1]) + L.t(", received ") + Text.bytes(v[2]) + ")";
     }
 
     private static int today(long ms) {
