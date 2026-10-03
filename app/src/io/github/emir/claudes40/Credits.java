@@ -4,8 +4,7 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import javax.microedition.lcdui.Form;
-import javax.microedition.lcdui.StringItem;
+import javax.microedition.lcdui.TextBox;
 import javax.microedition.lcdui.TextField;
 
 /**
@@ -32,14 +31,17 @@ final class Credits implements CommandListener, Runnable {
     private final Setup setup;
     private final Displayable back;
     private int mode;
-    /** The code form (a TextField) or the balance page. */
+    /** The code page or the balance page (the same TextPage). */
     private Displayable form;
     private TextPage page;
-    private TextField codeField;
-    private StringItem statusItem;
+    /** The status item of the page: under the code, or the balance itself. */
+    private int statusItem;
+    /** The phone's own number box for typing the code. */
+    private TextBox codeBox;
     private String code = "";
     private boolean busy;
-    private final Command sendCmd = new Command(L.s("Gönder", "Send"), Command.OK, 1);
+    private final Command enterCmd = new Command(L.s("Kodu yaz", "Type the code"), Command.OK, 1);
+    private final Command okCmd = new Command(L.s("Tamam", "OK"), Command.OK, 1);
     private final Command backCmd = new Command(L.s("Geri", "Back"), Command.BACK, 1);
     private final Command finishCmd = new Command(L.s("Bitir", "Finish"), Command.OK, 1);
     private final Command topupCmd = new Command(L.s("Kredi yükle", "Add credits"), Command.SCREEN, 2);
@@ -57,20 +59,20 @@ final class Credits implements CommandListener, Runnable {
         mode = PAIR;
         String shop = midlet.shopLine();
         codeForm(setup != null ? Setup.title(Setup.STEPS) : L.s("Kredi kodu", "Credit code"),
-                L.s("16 haneli kredi kodunu gir.", "Type the 16-digit credit code.") + (shop.length() > 0 ? "\n\n" + shop : ""));
+                L.s("Orta tuşla 16 haneli kredi kodunu yaz.", "Centre key: type the 16-digit credit code.") + (shop.length() > 0 ? "\n\n" + shop : ""));
     }
 
     void showTopup() {
         mode = TOPUP;
-        codeForm(L.s("Kredi yükle", "Add credits"), L.s("Yeni kredi kodunu gir.", "Type the new credit code."));
+        codeForm(L.s("Kredi yükle", "Add credits"), L.s("Orta tuşla yeni kredi kodunu yaz.", "Centre key: type the new credit code."));
     }
 
     void showBalance() {
         mode = BALANCE;
         page = new TextPage(L.s("Kredi", "Credits"));
         form = page;
-        page.append(L.s("Bakiye", "Balance"), L.s("Yükleniyor...", "Loading..."));
-        page.setBig(0);
+        statusItem = page.append(L.s("Bakiye", "Balance"), L.s("Yükleniyor...", "Loading..."));
+        page.setBig(statusItem);
         String shop = midlet.shopLine();
         page.append(null, (shop.length() > 0 ? shop + "\n" : "")
                 + L.s("Kodu Seçenekler > 'Kredi yükle' ile gir.", "Enter the code with Options > 'Add credits'."));
@@ -83,21 +85,63 @@ final class Credits implements CommandListener, Runnable {
         start();
     }
 
+    /**
+     * The code page: the code large in four groups (blanks until typed), a
+     * status line, how to get a code. The centre key opens the phone's number
+     * box; OK there checks the check digit and sends at once.
+     */
     private void codeForm(String title, String line) {
-        Form f = new Form(title);
-        form = f;
-        codeField = new TextField(L.s("Kredi kodu", "Credit code"), "", 16, TextField.NUMERIC);
-        statusItem = new StringItem(null, line);
-        f.append(codeField);
-        f.append(statusItem);
-        form.addCommand(sendCmd);
+        page = new TextPage(title);
+        form = page;
+        int c = page.append(L.s("Kredi kodu", "Credit code"), grouped(""));
+        page.setBig(c);
+        page.append(null, line);
+        statusItem = page.append(null, ""); // sending, the result, a mistyped digit
+        form.addCommand(enterCmd);
         form.addCommand(backCmd);
         form.addCommand(helpCmd);
         form.setCommandListener(this);
         midlet.display().setCurrent(form);
     }
 
+    /** "1234 5678 9012 3456", with "_" for digits not typed yet. */
+    private static String grouped(String digits) {
+        StringBuffer b = new StringBuffer();
+        for (int i = 0; i < 16; i++) {
+            if (i > 0 && i % 4 == 0) {
+                b.append(' ');
+            }
+            b.append(i < digits.length() ? digits.charAt(i) : '_');
+        }
+        return b.toString();
+    }
+
+    private void typeCode() {
+        codeBox = new TextBox(L.s("Kredi kodu", "Credit code"), code, 16, TextField.NUMERIC);
+        codeBox.addCommand(okCmd);
+        codeBox.addCommand(backCmd);
+        codeBox.setCommandListener(this);
+        midlet.display().setCurrent(codeBox);
+    }
+
     public void commandAction(Command c, Displayable d) {
+        if (d == codeBox && d != null) {
+            String v = codeBox.getString().trim();
+            midlet.display().setCurrent(form);
+            if (c != okCmd) {
+                return;
+            }
+            code = v;
+            page.setText(0, grouped(v));
+            if (!valid(v)) {
+                status(v.length() < 16 ? L.s("Kod 16 rakam. Orta tuşla tamamla.", "The code has 16 digits. Centre key to finish it.")
+                        : L.s("Bir rakam yanlış yazılmış olabilir; kodu kontrol et.", "A digit may be mistyped; check the code."));
+                return;
+            }
+            status(L.s("Gönderiliyor...", "Sending..."));
+            start();
+            return;
+        }
         if (c == helpCmd) {
             Help.show(midlet.display(), form.getTitle(), helpText(), form);
         } else if (c == backCmd) {
@@ -114,16 +158,8 @@ final class Credits implements CommandListener, Runnable {
             new Credits(midlet, null, back).showTopup();
         } else if (c == refreshCmd) {
             start();
-        } else if (c == sendCmd) {
-            String v = codeField.getString().trim();
-            if (!valid(v)) {
-                midlet.info(L.s("Kod 16 rakam olmalı. Bir rakam yanlış yazılmış olabilir; kodu kontrol et.",
-                        "The code has 16 digits. A digit may be mistyped; check the code."), form);
-                return;
-            }
-            code = v;
-            status(L.s("Gönderiliyor...", "Sending..."));
-            start();
+        } else if (c == enterCmd) {
+            typeCode();
         }
     }
 
@@ -173,11 +209,7 @@ final class Credits implements CommandListener, Runnable {
     }
 
     private void status(String s) {
-        if (page != null) {
-            page.setText(0, s);
-        } else {
-            statusItem.setText(s);
-        }
+        page.setText(statusItem, s);
     }
 
     public void run() {
@@ -218,10 +250,9 @@ final class Credits implements CommandListener, Runnable {
                     return;
                 }
             }
-            codeField.setString("");
             status((mode == PAIR ? L.s("Eşleştirildi. ", "Paired. ") : L.s("Yüklendi. ", "Added. "))
                     + L.s("Bakiye: ", "Balance: ") + bal + L.s(" kredi", " credits"));
-            form.removeCommand(sendCmd);
+            form.removeCommand(enterCmd);
             if (mode == PAIR && setup != null) {
                 form.addCommand(finishCmd);
             }

@@ -244,6 +244,17 @@ public class EmuShot {
         save("settings_down");
         command(t("Back", "Geri"));
 
+        // the credit code page (nothing is sent before a code is typed)
+        Class cr = Class.forName("io.github.emir.claudes40.Credits", true, midlet.getClass().getClassLoader());
+        Constructor cc = cr.getDeclaredConstructors()[0];
+        cc.setAccessible(true);
+        Object credits = cc.newInstance(midlet, null, field(midlet, "home"));
+        Method sp = cr.getDeclaredMethod("showPair");
+        sp.setAccessible(true);
+        sp.invoke(credits);
+        save("credit_code");
+        command(t("Back", "Geri"));
+
         call("showDataUsage");                // Settings > Options > Data usage (test mode: no data)
         save("data_usage");
         command(t("Back", "Geri"));
