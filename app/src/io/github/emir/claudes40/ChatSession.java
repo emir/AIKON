@@ -337,9 +337,8 @@ final class ChatSession implements Runnable, Net.Listener {
                 if (modelNote != null && entries.size() > 0 && entries.lastElement() == modelNote) {
                     entries.removeElementAt(entries.size() - 1);
                 }
-                modelNote = new Entry(KIND_INFO, L.s("Sonraki yanıtlar: " + ai(), "Next replies: " + ai()),
-                        L.s(ai() + " bir sonraki mesajından itibaren yanıtlar ve bu sohbetin geçmişini de görür.",
-                                ai() + " answers from your next message on and sees this chat's history too."));
+                modelNote = new Entry(KIND_INFO, L.f("Sonraki yanıtlar: {0}", "Next replies: {0}", ai()),
+                        L.f("{0} bir sonraki mesajından itibaren yanıtlar ve bu sohbetin geçmişini de görür.", "{0} answers from your next message on and sees this chat's history too.", ai()));
                 add(modelNote);
             }
         }
@@ -360,8 +359,7 @@ final class ChatSession implements Runnable, Net.Listener {
                 return L.s("Mesaj boş.", "The message is empty.");
             }
             if (t.length() > MAX_MESSAGE) {
-                return L.s("Mesaj en fazla " + MAX_MESSAGE + " karakter olabilir.",
-                        "Messages can be at most " + MAX_MESSAGE + " characters.");
+                return L.f("Mesaj en fazla {0} karakter olabilir.", "Messages can be at most {0} characters.", String.valueOf(MAX_MESSAGE));
             }
             draft = t;
             pendingId = Text.requestId();
@@ -680,12 +678,7 @@ final class ChatSession implements Runnable, Net.Listener {
                     prior++;
                 }
             }
-            String reply = L.s("[Test modu] Bu gerçek bir " + ai() + " yanıtı değildir. Ağ kullanılmadı.\n"
-                    + "Mesajın " + text.length() + " karakter; bu sohbette önceki mesaj sayısı: " + (prior - 1)
-                    + ".\nAldığım metin: \"" + text + "\"",
-                    "[Test mode] This is not a real " + ai() + " reply. No network was used.\n"
-                    + "Your message has " + text.length() + " characters; earlier messages in this chat: "
-                    + (prior - 1) + ".\nI received: \"" + text + "\"");
+            String reply = L.f("[Test modu] Bu gerçek bir {0} yanıtı değildir. Ağ kullanılmadı.\nMesajın {1} karakter; bu sohbette önceki mesaj sayısı: {2}.\nAldığım metin: \"{3}\"", "[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: \"{3}\"", new String[] { ai(), String.valueOf(text.length()), String.valueOf((prior - 1)), String.valueOf(text) });
             if (photo) {
                 reply += L.s("\nFotoğraf: eklendi (sunucuya gönderilmedi).", "\nPhoto: attached (not sent to a server).");
             }
@@ -710,15 +703,12 @@ final class ChatSession implements Runnable, Net.Listener {
             S40Message m = r.msg;
             if (!r.ok()) {
                 status = r.httpCode < 0 ? L.s("Bağlantı kurulamadı", "Could not connect") : L.s("Yanıt alınamadı", "No reply");
-                note(KIND_ERROR, status, Net.explain(r) + L.s("\n\n'Tekrar dene' aynı isteği sorar; " + ai()
-                        + " ikinci kez çağrılmaz.", "\n\n'Retry' asks about the same request; it is not sent to " + ai()
-                        + " twice."));
+                note(KIND_ERROR, status, Net.explain(r) + L.f("\n\n'Tekrar dene' aynı isteği sorar; {0} ikinci kez çağrılmaz.", "\n\n'Retry' asks about the same request; it is not sent to {0} twice.", ai()));
                 canRetry = true;
             } else if (m == null) {
                 status = L.s("Yanıt alınamadı", "No reply");
                 note(KIND_ERROR, L.s("Sunucu yanıtı tanınmadı", "Unrecognised server reply"),
-                        L.s("HTTP " + r.httpCode + ". Operatör ağı veya yanlış adres olabilir.",
-                                "HTTP " + r.httpCode + ". Carrier network or wrong address?"));
+                        L.f("HTTP {0}. Operatör ağı veya yanlış adres olabilir.", "HTTP {0}. Carrier network or wrong address?", String.valueOf(r.httpCode)));
                 canRetry = true;
             } else {
                 newReply = handle(m, r.bodyCut);
@@ -753,9 +743,8 @@ final class ChatSession implements Runnable, Net.Listener {
             String next = m.flag("more") && !bodyCut && m.field("next").length() > 0 ? m.field("next") : null;
             boolean cut = (m.flag("truncated") && next == null) || bodyCut;
             if (m.flag("refused")) {
-                note(KIND_INFO, L.s(ai() + " yanıt vermedi", ai() + " declined"),
-                        L.s(ai() + " bu isteğe yanıt vermedi. İsteği farklı sorabilir ya da başka bir model seçebilirsiniz.",
-                                ai() + " declined to answer this one. Ask differently or pick another model."));
+                note(KIND_INFO, L.f("{0} yanıt vermedi", "{0} declined", ai()),
+                        L.f("{0} bu isteğe yanıt vermedi. İsteği farklı sorabilir ya da başka bir model seçebilirsiniz.", "{0} declined to answer this one. Ask differently or pick another model.", ai()));
             } else {
                 add(new Entry(m.flag("mock") ? KIND_TEST : KIND_CLAUDE, m.text, cut, System.currentTimeMillis(),
                         Text.parseInt(m.field("searched"), 0), m.field("request"), next, m.field("model-name")));
@@ -784,10 +773,7 @@ final class ChatSession implements Runnable, Net.Listener {
             // gateway may have received it, so keep the id: "Tekrar dene"
             // gets the recorded result instead of a second paid call
             status = L.s("Yanıt alınamadı", "No reply");
-            note(KIND_ERROR, status, L.s("Aracı sunucu AIKON sunucusundan yanıt alamadı (" + st
-                    + "). 'Tekrar dene' aynı isteği sorar; " + ai() + " ikinci kez çağrılmaz.",
-                    "The relay got no answer from the AIKON server (" + st
-                    + "). 'Retry' asks about the same request; it is not sent to " + ai() + " twice."));
+            note(KIND_ERROR, status, L.f("Aracı sunucu AIKON sunucusundan yanıt alamadı ({0}). 'Tekrar dene' aynı isteği sorar; {1} ikinci kez çağrılmaz.", "The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.", st, ai()));
             canRetry = true;
             return false;
         }
@@ -798,10 +784,7 @@ final class ChatSession implements Runnable, Net.Listener {
                     "Daily limit reached. Try again tomorrow (UTC).");
         } else if ("uncertain".equals(st)) {
             status = L.s("Sonuç belirsiz", "Unknown result");
-            msg = L.s("Sonuç belirsiz: istek " + ai() + " tarafına ulaşmış olabilir. Otomatik tekrar yapılmadı. "
-                    + "Mesaj taslakta duruyor; yeniden göndermek yeni bir ücretli istek olur.",
-                    "Unknown result: the request may have reached " + ai() + ". Nothing was re-sent. "
-                    + "Your draft is kept; sending it again is a new (paid) request.");
+            msg = L.f("Sonuç belirsiz: istek {0} tarafına ulaşmış olabilir. Otomatik tekrar yapılmadı. Mesaj taslakta duruyor; yeniden göndermek yeni bir ücretli istek olur.", "Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.", ai());
         } else if ("conversation_full".equals(st)) {
             status = L.s("Sohbet doldu", "Chat full");
             msg = L.s("Bu sohbet çok uzadı. 'Yeni sohbet' ile devam edin.",
@@ -817,10 +800,11 @@ final class ChatSession implements Runnable, Net.Listener {
         } else if ("credit".equals(st)) {
             status = L.s("Kredi yetersiz", "Not enough credits");
             String shop = midlet.shopLine();
-            msg = L.s("Bu mesaj için kredi yetmiyor" + (balance.length() > 0 ? " (bakiye: " + balance + ")" : "")
-                    + ". Ana menü > Kredi'den yeni kod gir; mesajın taslakta duruyor.",
-                    "Not enough credits for this message" + (balance.length() > 0 ? " (balance: " + balance + ")" : "")
-                    + ". Add a code under main menu > Credits; your message is kept as a draft.")
+            msg = (balance.length() > 0
+                    ? L.f("Bu mesaj için kredi yetmiyor (bakiye: {0}).", "Not enough credits for this message (balance: {0}).", balance)
+                    : L.s("Bu mesaj için kredi yetmiyor.", "Not enough credits for this message."))
+                    + L.s(" Ana menü > Kredi'den yeni kod gir; mesajın taslakta duruyor.",
+                            " Add a code under main menu > Credits; your message is kept as a draft.")
                     + (shop.length() > 0 ? "\n\n" + shop : "");
         } else if ("trial_model".equals(st)) {
             status = L.s("Deneme: tek model", "Trial: one model");
@@ -834,11 +818,10 @@ final class ChatSession implements Runnable, Net.Listener {
                     "This account is closed. Write to the server's support address.");
         } else if ("billing".equals(st)) {
             status = L.s("Kredi yok", "No credits");
-            msg = L.s("Sunucunun " + ai() + " API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.",
-                    "The server's " + ai() + " API account is out of credits. Send again once it is topped up.");
+            msg = L.f("Sunucunun {0} API hesabında kredi kalmamış. Sunucu sahibi kredi yükleyince tekrar gönderin.", "The server's {0} API account is out of credits. Send again once it is topped up.", ai());
         } else if ("rate_limited".equals(st) || "overloaded".equals(st)) {
-            status = L.s(ai() + " meşgul", ai() + " is busy");
-            msg = L.s(ai() + " şu an meşgul. Birazdan yeniden gönderin.", ai() + " is busy right now. Send again shortly.");
+            status = L.f("{0} meşgul", "{0} is busy", ai());
+            msg = L.f("{0} şu an meşgul. Birazdan yeniden gönderin.", "{0} is busy right now. Send again shortly.", ai());
         } else if ("model_unavailable".equals(st)) {
             status = L.s("Model yok", "Model not offered");
             msg = L.s("Seçilen model sunucuda artık yok. Menü > Model ile başka birini seçin; mesajınız taslakta duruyor.",
@@ -909,9 +892,7 @@ final class ChatSession implements Runnable, Net.Listener {
                                 "The rest of this reply is no longer on the server (kept for 7 days)."));
             } else if (i >= 0) {
                 status = L.s("Devamı alınamadı", "Could not load more");
-                note(KIND_ERROR, status, L.s("0 tuşuyla tekrar deneyin (ücretsiz; " + ai()
-                        + " tekrar çağrılmaz).\n\n", "Press 0 to try again (free; " + ai()
-                        + " is not asked again).\n\n")
+                note(KIND_ERROR, status, L.f("0 tuşuyla tekrar deneyin (ücretsiz; {0} tekrar çağrılmaz).\n\n", "Press 0 to try again (free; {0} is not asked again).\n\n", ai())
                         + (r.ok() ? (m == null ? "?" : m.field("status")) : Net.explain(r)));
             }
             jobEntry = null;

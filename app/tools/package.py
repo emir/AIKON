@@ -109,8 +109,11 @@ def main():
     files.sort()
     resources = []
     if res_dir:
-        for f in sorted(os.listdir(res_dir)):
-            resources.append(f)
+        # the icon at the top, the language files under lang/
+        for dp, dn, fn in os.walk(res_dir):
+            for f in fn:
+                resources.append(os.path.relpath(os.path.join(dp, f), res_dir).replace(os.sep, "/"))
+        resources.sort()
 
     # a ZIP comment of a few spaces moves the size off a stalling length
     for pad in range(3):

@@ -227,7 +227,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         actionList = null;
         savedList = null;
         viewer = null;
-        promptTexts = L.turkish() ? PROMPTS_TR : PROMPTS_EN;
+        promptTexts = L.turkish() ? PROMPTS_TR : translated(PROMPTS_EN);
         chat = new ChatCanvas(this, session);
         home = new HomeCanvas(this);
         applyFullScreen();
@@ -376,8 +376,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         String upd = updateVersion();
         String bal = session.balance();
         if (upd.length() > 0) {
-            return bal.length() > 0 ? L.s(bal + " kredi · Yeni sürüm " + upd, bal + " credits · New version " + upd)
-                    : L.s("Yeni sürüm " + upd + " · Güncelle", "New version " + upd + " · Update");
+            return bal.length() > 0 ? L.f("{0} kredi · Yeni sürüm {1}", "{0} credits · New version {1}", bal, upd)
+                    : L.f("Yeni sürüm {0} · Güncelle", "New version {0} · Update", upd);
         }
         if (bal.length() > 0) {
             int b = Text.tenths(bal);
@@ -385,12 +385,12 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                 return L.s("Kredi bitti · Kredi'den kod gir", "No credits left · add a code under Credits");
             }
             if (b < lowCredits()) {
-                return L.s("Kredi azaldı · " + bal + " kredi", "Credits low · " + bal + " left");
+                return L.f("Kredi azaldı · {0} kredi", "Credits low · {0} left", bal);
             }
-            return L.s("Hazır · " + bal + " kredi", "Ready · " + bal + " credits");
+            return L.f("Hazır · {0} kredi", "Ready · {0} credits", bal);
         }
         String left = session.remainingToday();
-        return left.length() > 0 ? L.s("Hazır · bugün " + left + " hak kaldı", "Ready · " + left + " left today")
+        return left.length() > 0 ? L.f("Hazır · bugün {0} hak kaldı", "Ready · {0} left today", left)
                 : L.s("Hazır · eski Nokia'da yeni yapay zekâ", "Ready · new AI on an old Nokia");
     }
 
@@ -642,10 +642,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         if (v.length() == 0) {
             return;
         }
-        updateConfirm = TextPage.message(L.s("Güncelle", "Update"), L.s("AIKON " + v + " indirilecek. Telefon kurulumu soracak "
-                + "ve AIKON kapanacak; ayarların ve eşleşmen korunur.",
-                "AIKON " + v + " will be downloaded. The phone asks to install it and AIKON closes; your settings "
-                + "and pairing are kept."));
+        updateConfirm = TextPage.message(L.s("Güncelle", "Update"), L.f("AIKON {0} indirilecek. Telefon kurulumu soracak ve AIKON kapanacak; ayarların ve eşleşmen korunur.", "AIKON {0} will be downloaded. The phone asks to install it and AIKON closes; your settings and pairing are kept.", v));
         updateConfirm.addCommand(updateYesCmd);
         updateConfirm.addCommand(resetNoCmd);
         updateConfirm.setCommandListener(this);
@@ -722,7 +719,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         if (title == null) {
             title = photo ? L.s("Fotoğraflı mesaj", "Message with a photo")
-                    : L.s("Mesaj · " + session.ai(), "Message " + session.ai());
+                    : L.f("Mesaj · {0}", "Message {0}", session.ai());
         }
         composer.setTitle(title);
         String value = text != null ? text : session.draft();
@@ -772,13 +769,22 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         savedList.show();
     }
 
+    /** English texts in the language now in use (the language files; Turkish has its own arrays). */
+    private static String[] translated(String[] en) {
+        String[] out = new String[en.length];
+        for (int i = 0; i < en.length; i++) {
+            out[i] = L.t(en[i]);
+        }
+        return out;
+    }
+
     void showPrompts() {
         if (!chatReady()) {
             return;
         }
         if (prompts == null) {
             prompts = new RowList(L.s("Hızlı sorular", "Quick prompts"));
-            String[] titles = L.turkish() ? TITLES_TR : TITLES_EN;
+            String[] titles = L.turkish() ? TITLES_TR : translated(TITLES_EN);
             for (int i = 0; i < titles.length; i++) {
                 String sub = promptTexts[i].trim();
                 sub = sub.endsWith(":") ? sub.substring(0, sub.length() - 1) + "..." : sub;
@@ -1083,6 +1089,22 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             }
         } else if (c == helpCmd && d != null) {
             Help.show(display, d.getTitle(), helpFor(d), d);
+        } else if (d == languageList && d != null) {
+            if (c == List.SELECT_COMMAND) {
+                int lg = languageList.getSelectedIndex();
+                if (lg >= 0 && lg != settings.lang) {
+                    settings.lang = lg;
+                    String err = settings.save();
+                    rebuildUi();
+                    showSettings(); // its rows and commands in the new language
+                    fillSettings(S_LANG);
+                    if (err != null) {
+                        info(err, settingsForm);
+                    }
+                    return;
+                }
+            }
+            display.setCurrent(settingsForm);
         } else if (d == editBox) {
             if (c == editOkCmd) {
                 saveEdit();
@@ -1236,7 +1258,6 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         int sel = -1;
         String[] sizes = { L.s("Küçük", "Small"), L.s("Orta", "Medium"), L.s("Büyük", "Large") };
         String[] themes = { L.s("Gündüz", "Light"), L.s("Gece", "Dark"), L.s("Otomatik: akşam 19-07 gece", "Automatic: dark 19-07") };
-        String[] langs = { L.s("Telefona göre", "Same as phone"), "Türkçe", "English" };
         String notes = settings.instructions.length() > 0 ? settings.instructions : L.s("yok", "none");
         for (int k = 0; k < 14; k++) {
             if (k == S_SIZE) {
@@ -1280,7 +1301,7 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
                         -1, sw(settings.lightReply));
                 break;
             case S_LANG:
-                row = l.add(L.s("Dil", "Language"), langs[Math.max(0, Math.min(2, settings.lang))], -1, 0);
+                row = l.add(L.s("Dil", "Language"), languageName(settings.lang), -1, 0);
                 break;
             case S_URL:
                 row = l.add(L.s("Sunucu adresi", "Server address"),
@@ -1311,13 +1332,41 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
     }
 
+    /** The name of a Settings.lang value, each language in its own words. */
+    private static String languageName(int lang) {
+        if (lang == L.TURKISH) {
+            return "Türkçe";
+        }
+        if (lang == L.ENGLISH) {
+            return "English";
+        }
+        if (lang >= L.FIRST && lang < L.FIRST + L.LANGS.length) {
+            return L.NAMES[lang - L.FIRST];
+        }
+        return L.s("Telefona göre", "Same as phone");
+    }
+
+    private RowList languageList;
+
+    /** Settings > Language: every language in its own words; the centre key picks one at once. */
+    private void showLanguages() {
+        languageList = new RowList(L.s("Dil", "Language"));
+        int n = L.FIRST + L.LANGS.length;
+        for (int i = 0; i < n; i++) {
+            languageList.add(languageName(i), null, Icons.GLOBE, i == settings.lang ? RowList.CHECK : 0);
+        }
+        languageList.setSelectedIndex(Math.max(0, Math.min(n - 1, settings.lang)), true);
+        languageList.addCommand(listBackCmd);
+        languageList.setCommandListener(this);
+        display.setCurrent(languageList);
+    }
+
     private static int sw(boolean on) {
         return RowList.SWITCH | (on ? RowList.ON : 0);
     }
 
     /** Centre key on a settings row: cycles or toggles and saves, or opens what edits it. */
     private void changeSetting(int k) {
-        boolean langChanged = false;
         switch (k) {
         case S_SIZE:
             settings.fontSize = (settings.fontSize + 1) % 3;
@@ -1350,9 +1399,8 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
             settings.lightReply = !settings.lightReply;
             break;
         case S_LANG:
-            settings.lang = (settings.lang + 1) % 3;
-            langChanged = true;
-            break;
+            showLanguages();
+            return;
         case S_TEST:
             settings.testMode = !settings.testMode;
             break;
@@ -1368,10 +1416,6 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
         }
         String err = settings.save();
         applyLook();
-        if (langChanged) {
-            rebuildUi();
-            showSettings(); // its commands are new
-        }
         fillSettings(k);
         if (err != null) {
             info(err, settingsForm);

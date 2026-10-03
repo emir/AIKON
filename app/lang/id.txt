@@ -1,0 +1,554 @@
+# AIKON UI, Indonesian (id). Line: English key, TAB, translation.
+To-do: 	Tugas: 
+Calendar: 	Kalender: 
+Save	Simpan
+Cancel	Batal
+Add to calendar	Tambah ke kalender
+Title	Judul
+Where	Lokasi
+Calendar	Kalender
+To-do list	Daftar tugas
+Date and time	Tanggal dan waktu
+Alarm (calendar)	Alarm (kalender)
+None	Tidak ada
+At the start	Saat mulai
+15 minutes before	15 menit sebelum
+1 hour before	1 jam sebelum
+1 day before	1 hari sebelum
+A title and a date are needed.	Judul dan tanggal diperlukan.
+Added to the to-do list: 	Ditambahkan ke daftar tugas: 
+Added to the calendar: 	Ditambahkan ke kalender: 
+Capture	Ambil
+Opening the camera...	Membuka kamera...
+Centre key or 'Capture': take the photo	Tombol tengah atau 'Ambil': foto
+Camera access was denied. Answer 'Yes' when the phone asks.	Akses kamera ditolak. Jawab 'Ya' saat ponsel bertanya.
+Could not take the photo.	Tidak bisa mengambil foto.
+Could not open the camera. 	Tidak bisa membuka kamera. 
+Taking the photo...	Mengambil foto...
+Write	Tulis
+Dictate	Dikte
+Add a photo	Tambah foto
+Show the rest	Tampilkan sisanya
+Reading mode	Mode baca
+Quick prompts	Perintah cepat
+Retry	Coba lagi
+Chats	Obrolan
+New chat	Obrolan baru
+Model	Model
+Delete chat	Hapus obrolan
+Shortcuts	Pintasan
+Message actions	Aksi pesan
+Menu	Menu
+Close	Tutup
+A request is still running.	Permintaan masih berjalan.
+Centre key: add to calendar	Tombol tengah: tambah ke kalender
+Text: 	Teks: 
+Small	Kecil
+Large	Besar
+Medium	Sedang
+You	Kamu
+Test mode · fake	Mode uji · palsu
+Reply shortened	Balasan dipersingkat
+0 · Show the rest	0 · Tampilkan sisanya
+Centre key · Retry	Tombol tengah · Coba lagi
+No reply to read yet	Belum ada balasan untuk dibaca
+Loading the rest...	Memuat sisanya...
+Web searches can take a while	Pencarian web bisa agak lama
+Sending	Mengirim
+ s	 dtk
+Centre key to write	Tombol tengah untuk menulis
+ left	 lagi
+Draft: 	Draf: 
+Write a message	Tulis pesan
+Centre key: details · 1/3: select	Tombol tengah: detail · 1/3: pilih
+Centre key: actions · 1/3: select	Tombol tengah: aksi · 1/3: pilih
+Centre key: retry · 5: write	Tombol tengah: coba lagi · 5: tulis
+0: the rest · 7: reading mode	0: sisanya · 7: mode baca
+7: reading mode · 5: write	7: mode baca · 5: tulis
+New reply · press 3	Balasan baru · tekan 3
+0 or centre key: the rest	0 atau tombol tengah: sisanya
+0: the rest	0: sisanya
+{0} is typing	{0} sedang mengetik
+Open	Buka
+Search chats	Cari obrolan
+Pin / unpin	Sematkan / lepas
+Delete	Hapus
+All chats	Semua obrolan
+Refresh	Segarkan
+Back	Kembali
+Search	Cari
+Search: 	Cari: 
+Could not pin (	Tidak bisa menyematkan (
+Could not delete (	Tidak bisa menghapus (
+The server cannot search (needs server 0.4.0).	Server tidak bisa mencari (perlu server 0.4.0).
+Could not get the list (	Tidak bisa mengambil daftar (
+Error: 	Galat: 
+Nothing found. Plain letters are fine: 'sise' finds 'şişe'.	Tidak ditemukan. Huruf biasa tidak masalah: 'sise' menemukan 'şişe'.
+No chats yet. The server keeps chats for 30 days, pinned ones until unpinned.	Belum ada obrolan. Server menyimpan obrolan 30 hari, yang disematkan sampai dilepas.
+Pinned	Disematkan
+Recent	Terbaru
+Type at least 2 letters.	Ketik minimal 2 huruf.
+Delete this chat from the server? This cannot be undone.	Hapus obrolan ini dari server? Tidak bisa dibatalkan.
+At most {0} chats can be pinned. Unpin one first.	Maksimal {0} obrolan yang bisa disematkan. Lepas satu dulu.
+[Photo] 	[Foto] 
+The message is empty.	Pesan kosong.
+Nothing to retry.	Tidak ada yang diulang.
+There is no more to this reply.	Balasan ini tidak ada lanjutannya.
+Saved on this phone	Tersimpan di ponsel ini
+This chat is kept on the phone and readable offline. Write to continue it on the server.	Obrolan ini disimpan di ponsel dan bisa dibaca offline. Tulis untuk melanjutkannya di server.
+The previous chat stays on the server for 30 days; open it again from Chats.	Obrolan sebelumnya tetap di server selama 30 hari; buka lagi dari Obrolan.
+Chat cleared	Obrolan dikosongkan
+Chat deleted	Obrolan dihapus
+Deleting...	Menghapus...
+Loading more...	Memuat lagi...
+Loading chat...	Memuat obrolan...
+Sending...	Mengirim...
+Waiting for reply...	Menunggu balasan...
+\nPhoto: attached (not sent to a server).	\nFoto: terlampir (tidak dikirim ke server).
+Test mode event	Peristiwa mode uji
+Could not connect	Tidak bisa terhubung
+No reply	Tak ada balasan
+Unrecognised server reply	Balasan server tak dikenal
+Still working	Masih diproses
+Still working on it	Masih diproses
+Choose 'Retry' in a moment; it asks about the same request and is not charged again.	Pilih 'Coba lagi' sebentar lagi; itu menanyakan permintaan yang sama dan tidak ditagih lagi.
+Busy	Sibuk
+Another request is running	Permintaan lain sedang berjalan
+Choose 'Retry' in a moment.	Pilih 'Coba lagi' sebentar lagi.
+Limit reached	Batas tercapai
+Daily limit reached. Try again tomorrow (UTC).	Batas harian tercapai. Coba lagi besok (UTC).
+Unknown result	Hasil tak diketahui
+Chat full	Obrolan penuh
+This chat got too long. Continue with 'New chat'.	Obrolan ini terlalu panjang. Lanjutkan dengan 'Obrolan baru'.
+Chat not found	Obrolan tak ditemukan
+Chat not found on the server (it may have expired). Continue with 'New chat'.	Obrolan tidak ditemukan di server (mungkin sudah kedaluwarsa). Lanjutkan dengan 'Obrolan baru'.
+Not authorised	Tidak berwenang
+Access code invalid or revoked. Settings > Pair this phone.	Kode akses tidak valid atau dicabut. Pengaturan > Pasangkan ponsel ini.
+Not enough credits	Kredit tidak cukup
+Not enough credits for this message.	Kredit tidak cukup untuk pesan ini.
+ Add a code under main menu > Credits; your message is kept as a draft.	 Tambah kode di menu utama > Kredit; pesanmu disimpan sebagai draf.
+Trial: one model	Uji coba: satu model
+The free trial works with one model only. Pick it in the Model menu; a credit code opens every model (main menu > Credits). Your message is kept as a draft.	Uji coba gratis hanya untuk satu model. Pilih di menu Model; kode kredit membuka semua model (menu utama > Kredit). Pesanmu disimpan sebagai draf.
+Account closed	Akun ditutup
+This account is closed. Write to the server's support address.	Akun ini ditutup. Hubungi alamat dukungan server.
+No credits	Tak ada kredit
+Model not offered	Model tidak tersedia
+The chosen model is no longer offered by the server. Pick another with Menu > Model; your message is kept as a draft.	Model yang dipilih tidak lagi disediakan server. Pilih yang lain lewat Menu > Model; pesanmu disimpan sebagai draf.
+Photo not found	Foto tak ditemukan
+The photo is not on the server: unused for a day, or used in another chat. Add it again; your message is kept as a draft.	Foto tidak ada di server: tidak dipakai sehari, atau dipakai di obrolan lain. Tambahkan lagi; pesanmu disimpan sebagai draf.
+Too long	Terlalu panjang
+The message is too long.	Pesan terlalu panjang.
+No reply (	Tak ada balasan (
+The rest is gone	Sisanya hilang
+The rest of this reply is no longer on the server (kept for 7 days).	Sisa balasan ini tidak ada lagi di server (disimpan 7 hari).
+Could not load more	Tidak bisa memuat lagi
+Older messages hidden	Pesan lama disembunyikan
+Older messages are not shown on the phone; the model still sees them.	Pesan lama tidak ditampilkan di ponsel; model tetap melihatnya.
+Chat opened	Obrolan dibuka
+Chat not found on the server (deleted or expired).	Obrolan tidak ditemukan di server (dihapus atau kedaluwarsa).
+Not loaded	Tidak dimuat
+The end did not load	Bagian akhir tidak termuat
+Not deleted	Tidak dihapus
+Next replies: {0}	Balasan berikutnya: {0}
+{0} answers from your next message on and sees this chat's history too.	{0} menjawab mulai pesan berikutnya dan juga melihat riwayat obrolan ini.
+Messages can be at most {0} characters.	Pesan maksimal {0} karakter.
+[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: "{3}"	[Test mode] Ini bukan balasan {0} yang asli. Tidak ada jaringan yang dipakai.\nPesanmu berisi {1} karakter; pesan sebelumnya di obrolan ini: {2}.\nAku menerima: "{3}"
+\n\n'Retry' asks about the same request; it is not sent to {0} twice.	\n\n'Coba lagi' menanyakan permintaan yang sama; tidak dikirim ke {0} dua kali.
+HTTP {0}. Carrier network or wrong address?	HTTP {0}. Jaringan operator atau alamat salah?
+{0} declined	{0} menolak
+{0} declined to answer this one. Ask differently or pick another model.	{0} menolak menjawab ini. Tanyakan dengan cara lain atau pilih model lain.
+The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.	Relay tidak mendapat jawaban dari server AIKON ({0}). 'Coba lagi' menanyakan permintaan yang sama; tidak dikirim ke {1} dua kali.
+Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.	Hasil tak diketahui: permintaan mungkin sudah sampai ke {0}. Tidak ada yang dikirim ulang. Drafmu disimpan; mengirim lagi adalah permintaan baru (berbayar).
+Not enough credits for this message (balance: {0}).	Kredit tidak cukup untuk pesan ini (saldo: {0}).
+The server's {0} API account is out of credits. Send again once it is topped up.	Akun API {0} milik server kehabisan kredit. Kirim lagi setelah diisi ulang.
+{0} is busy	{0} sibuk
+{0} is busy right now. Send again shortly.	{0} sedang sibuk. Kirim lagi sebentar lagi.
+Press 0 to try again (free; {0} is not asked again).\n\n	Tekan 0 untuk mencoba lagi (gratis; {0} tidak ditanya lagi).\n\n
+Send	Kirim
+Remove the photo	Hapus foto
+Change	Ubah
+OK	OK
+Pair this phone	Pasangkan ponsel ini
+Credits	Kredit
+Setup wizard	Panduan setelan
+Play the jingle	Putar jingle
+Replay the intro	Putar ulang intro
+Data usage	Pemakaian data
+Reset setup	Reset setelan
+Reset	Reset
+Update	Perbarui
+Your earlier setup was restored: server, pairing and your notes. To start over: Settings > Options > Reset setup.	Setelan sebelumnya dipulihkan: server, pemasangan, dan catatanmu. Untuk mulai ulang: Pengaturan > Pilihan > Reset setelan.
+Test mode: fake replies	Mode uji: balasan palsu
+Setup: server address needed	Setelan: perlu alamat server
+Setup: run the connection test	Setelan: jalankan tes koneksi
+Setup: pair this phone	Setelan: pasangkan ponsel ini
+No credits left · add a code under Credits	Kredit habis · tambah kode di Kredit
+Ready · new AI on an old Nokia	Siap · AI baru di Nokia lama
+Buy a credit code (on a computer or smartphone): 	Beli kode kredit (di komputer atau ponsel pintar): 
+ credits	 kredit
+Last: 	Terakhir: 
+This phone does not let apps use the camera or files.	Ponsel ini tidak mengizinkan aplikasi memakai kamera atau file.
+What is in this photo?	Apa isi foto ini?
+This phone does not let apps record audio.	Ponsel ini tidak mengizinkan aplikasi merekam audio.
+Check, then send	Periksa, lalu kirim
+The phone could not open the link. Open this in the browser: 	Ponsel tidak bisa membuka tautan. Buka ini di browser: 
+Message	Pesan
+Message with a photo	Pesan dengan foto
+Server chats are not shown in test mode.	Obrolan server tidak ditampilkan di mode uji.
+This phone does not let apps save files.	Ponsel ini tidak mengizinkan aplikasi menyimpan file.
+Chat	Obrolan
+Centre key or 5: write\nUp / down: one line\n2 / 8, left / right: one page\n1 / 3: select a message; centre key: shorten, translate, edit...\n* / #: top / end\n0: the rest of a reply\n7: reading mode\n9: text size\nAfter an error, centre key: retry\n	Tombol tengah atau 5: tulis\nAtas / bawah: satu baris\n2 / 8, kiri / kanan: satu halaman\n1 / 3: pilih pesan; tombol tengah: persingkat, terjemahkan, ubah...\n* / #: awal / akhir\n0: sisa balasan\n7: mode baca\n9: ukuran teks\nSetelah galat, tombol tengah: coba lagi\n
+Shows one reply page by page, full width.\nCentre key, 8 or right: next page\n2 or left: previous page\nUp / down: one line\n1 / 3: previous / next reply\n* / #: top / end\n0: the rest of a reply\n9: text size\n7 or Close: back to the chat\n	Menampilkan satu balasan per halaman, selebar layar.\nTombol tengah, 8 atau kanan: halaman berikut\n2 atau kiri: halaman sebelumnya\nAtas / bawah: satu baris\n1 / 3: balasan sebelumnya / berikutnya\n* / #: awal / akhir\n0: sisa balasan\n9: ukuran teks\n7 atau Tutup: kembali ke obrolan\n
+Main menu and lists	Menu utama dan daftar
+1-9: opens that row directly (in lists the first nine rows; not in Settings)	1-9: langsung membuka baris itu (di daftar sembilan baris pertama; tidak di Pengaturan)
+QWERTY keyboard	Keyboard QWERTY
+Digits sit on letter keys: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: same as the centre key\nOn the main menu, N only moves to Exit (does not quit)\n	Angka ada di tombol huruf: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: sama dengan tombol tengah\nDi menu utama, N hanya pindah ke Keluar (tidak menutup)\n
+Actions like shorten or translate never send by themselves: the editor opens with the text ready and you press Send.	Aksi seperti persingkat atau terjemahkan tidak pernah mengirim sendiri: editor terbuka dengan teks siap dan kamu menekan Kirim.
+Loading the rest of a reply is free: it comes from the server, the model is not asked again.	Memuat sisa balasan itu gratis: berasal dari server, model tidak ditanya lagi.
+Reply	Balasan
+Your message	Pesanmu
+Open in reading mode	Buka di mode baca
+Make it shorter	Persingkat
+Explain it more simply	Jelaskan lebih sederhana
+Translate to Turkish	Terjemahkan ke Turki
+Translate to English	Terjemahkan ke Inggris
+Ask about this	Tanya soal ini
+Edit and send again	Ubah dan kirim lagi
+Save to phone (.txt)	Simpan ke ponsel (.txt)
+Add to calendar / to-do	Tambah ke kalender / tugas
+Open in editor	Buka di editor
+Make this reply shorter, 3 sentences at most: 	Persingkat balasan ini, maksimal 3 kalimat: 
+Explain this reply more simply: 	Jelaskan balasan ini dengan lebih sederhana: 
+Translate all of this reply to Turkish: 	Terjemahkan seluruh balasan ini ke bahasa Turki: 
+Translate all of this reply to English: 	Terjemahkan seluruh balasan ini ke bahasa Inggris: 
+About this part: 	Tentang bagian ini: 
+Text	Teks
+First enter the server address (https://...) in Settings.	Masukkan dulu alamat server (https://...) di Pengaturan.
+Run the 'Connection test' first. Nothing is sent before the secure connection is verified.	Jalankan 'Tes koneksi' dulu. Tidak ada yang dikirim sebelum koneksi aman terverifikasi.
+Pair this phone first: Settings > Options > 'Pair this phone'.	Pasangkan ponsel ini dulu: Pengaturan > Pilihan > 'Pasangkan ponsel ini'.
+Delete the server address, pairing and your notes from this phone and from the backup file? The setup wizard opens next.	Hapus alamat server, pemasangan, dan catatanmu dari ponsel ini dan dari file cadangan? Panduan setelan terbuka berikutnya.
+Settings	Pengaturan
+Light	Terang
+Dark	Gelap
+Automatic: dark 19-07	Otomatis: gelap 19-07
+none	tidak ada
+Look	Tampilan
+Replies	Balasan
+Sound and screen	Suara dan layar
+Language and server	Bahasa dan server
+Text size	Ukuran teks
+May search the web	Boleh mencari di web
+news, weather...	berita, cuaca...
+Keep last chat on phone	Simpan obrolan terakhir di ponsel
+Your notes for the AI	Catatanmu untuk AI
+Jingle and reply sound	Jingle dan suara balasan
+Vibrate on reply	Getar saat ada balasan
+Full screen	Layar penuh
+Light up for a reply	Nyalakan saat ada balasan
+if the screen went dark	jika layar sudah gelap
+Language	Bahasa
+Server address	Alamat server
+(not set)	(belum diatur)
+Access code	Kode akses
+Connection test	Tes koneksi
+passed	lulus
+not passed yet	belum lulus
+Test mode	Mode uji
+fake replies, no network	balasan palsu, tanpa jaringan
+Same as phone	Sama dengan ponsel
+Server address (https://...)	Alamat server (https://...)
+The address must start with https://. HTTP is not supported.	Alamat harus diawali https://. HTTP tidak didukung.
+The access code must be 16-64 letters/digits.	Kode akses harus 16-64 huruf/angka.
+Today	Hari ini
+Total since 	Total sejak 
+Save the server address (https://...) first.	Simpan dulu alamat server (https://...).
+Run the 'Connection test' first. Pairing only runs over a verified connection.	Jalankan 'Tes koneksi' dulu. Pemasangan hanya berjalan lewat koneksi terverifikasi.
+Estimates: messages are counted exactly, HTTP headers roughly.\n\nThe encrypted connection set-up is not counted, so your operator counts more.\n\nTest mode uses no data.	Perkiraan: pesan dihitung tepat, header HTTP kira-kira.\n\nPembuatan koneksi terenkripsi tidak dihitung, jadi operatormu menghitung lebih banyak.\n\nMode uji tidak memakai data.
+The AI does not run on the phone: messages travel over an encrypted link to the server and on to the chosen model's provider (Anthropic, OpenAI, Google, xAI). Not an official app of these providers or of Nokia.\n\nThe server deletes chats 30 days after the last message; pinned ones stay until unpinned. The phone keeps the last chat only if 'Keep last chat on phone' is on; saved replies and calendar entries stay on the phone only.\n\nWeb search runs on the server with the model provider's search tool, not the phone's browser.	AI tidak berjalan di ponsel: pesan dikirim lewat tautan terenkripsi ke server lalu ke penyedia model yang dipilih (Anthropic, OpenAI, Google, xAI). Bukan aplikasi resmi penyedia tersebut atau Nokia.\n\nServer menghapus obrolan 30 hari setelah pesan terakhir; yang disematkan tetap sampai dilepas. Ponsel menyimpan obrolan terakhir hanya jika 'Simpan obrolan terakhir di ponsel' aktif; balasan tersimpan dan entri kalender hanya ada di ponsel.\n\nPencarian web berjalan di server dengan alat pencarian penyedia model, bukan browser ponsel.
+Your notes for the AI: say briefly who you are and how you like answers, e.g. "I'm Emir, I live in Istanbul, keep it short." Sent to the server with every message.\n\nInstead of typing the access code, use Options > 'Pair this phone'. The code is stored on this phone and (so a reinstall needs no setup) in the setup backup on the memory card, and sent only to the https:// address.\n\nThe connection test must pass again whenever the address changes; nothing is sent before.\n\nTest mode gives fake replies and uses no network.	Catatanmu untuk AI: ceritakan singkat siapa kamu dan jawaban seperti apa yang kamu suka, mis. "Aku Emir, tinggal di Istanbul, jawab singkat." Dikirim ke server bersama setiap pesan.\n\nAlih-alih mengetik kode akses, pakai Pilihan > 'Pasangkan ponsel ini'. Kode disimpan di ponsel ini dan (agar pemasangan ulang tak perlu setelan) di cadangan setelan pada kartu memori, dan hanya dikirim ke alamat https://.\n\nTes koneksi harus lulus lagi setiap alamat berubah; tidak ada yang dikirim sebelumnya.\n\nMode uji memberi balasan palsu dan tidak memakai jaringan.
+About	Tentang
+Version 	Versi 
+ (build 	 (build 
+New version	Versi baru
+ · Update on the home screen	 · Perbarui di layar utama
+AI chat for Nokia S40 and S60 phones.	Obrolan AI untuk ponsel Nokia S40 dan S60.
+Made by: 	Dibuat oleh: 
+Platform	Platform
+Voice recording	Rekam suara
+yes	ya
+no	tidak
+Camera	Kamera
+{0} credits · New version {1}	{0} kredit · Versi baru {1}
+New version {0} · Update	Versi baru {0} · Perbarui
+Credits low · {0} left	Kredit menipis · sisa {0}
+Ready · {0} credits	Siap · {0} kredit
+Ready · {0} left today	Siap · sisa {0} hari ini
+AIKON {0} will be downloaded. The phone asks to install it and AIKON closes; your settings and pairing are kept.	AIKON {0} akan diunduh. Ponsel akan meminta memasangnya dan AIKON menutup; pengaturan dan pemasanganmu tetap tersimpan.
+Message {0}	Pesan {0}
+Search the web and answer briefly: 	Cari di web dan jawab singkat: 
+Weather today and tomorrow in: 	Cuaca hari ini dan besok di: 
+Search the web: the most important news today, 5 short lines.	Cari di web: berita terpenting hari ini, 5 baris singkat.
+Current exchange rate, search the web, numbers first: 	Kurs terkini, cari di web, angka dulu: 
+Translate to English: 	Terjemahkan ke bahasa Inggris: 
+Translate to Turkish: 	Terjemahkan ke bahasa Turki: 
+Write a short, friendly reply to this message: 	Tulis balasan singkat yang ramah untuk pesan ini: 
+Write a short text message that says: 	Tulis SMS singkat yang berbunyi: 
+Add to my calendar: 	Tambahkan ke kalenderku: 
+Add to my to-do list: 	Tambahkan ke daftar tugasku: 
+Fix the spelling and grammar, keep my tone: 	Perbaiki ejaan dan tata bahasa, pertahankan gayaku: 
+Summarize in 3 short lines: 	Ringkas dalam 3 baris pendek: 
+Answer in 2 sentences: 	Jawab dalam 2 kalimat: 
+Explain simply, like I'm new to it: 	Jelaskan dengan sederhana, aku pemula: 
+Calculate or convert, result first: 	Hitung atau konversi, hasil dulu: 
+What does this word or phrase mean? One example: 	Apa arti kata atau frasa ini? Satu contoh: 
+What can I cook with: 	Apa yang bisa kumasak dengan: 
+Help me decide, short pros and cons: 	Bantu aku memutuskan, untung rugi singkat: 
+Step by step, at most 5 steps: how do I 	Langkah demi langkah, maksimal 5 langkah: bagaimana cara 
+Roast this phone. It's an old Nokia and it's talking to you.	Ledek ponsel ini. Ini Nokia tua yang sedang bicara denganmu.
+Search the web	Cari di web
+Weather	Cuaca
+Today's news	Berita hari ini
+Exchange rates	Kurs
+Reply to a message	Balas pesan
+Write a text for me	Tulis teks untukku
+Add to my calendar	Tambah ke kalenderku
+Add a to-do	Tambah tugas
+Fix my writing	Perbaiki tulisanku
+Summarize	Ringkas
+Quick answer	Jawaban cepat
+Explain simply	Jelaskan sederhana
+Calculate / convert	Hitung / konversi
+What does it mean?	Apa artinya?
+What can I cook?	Masak apa ya?
+Help me decide	Bantu memutuskan
+How do I...?	Bagaimana cara...?
+Roast this phone	Ledek ponsel ini
+Start	Mulai
+Test again	Tes lagi
+Details	Detail
+Next	Lanjut
+Server	Server
+This address was verified before.	Alamat ini sudah diverifikasi sebelumnya.
+Press Start to check the secure connection and Turkish characters.	Tekan Mulai untuk memeriksa koneksi aman dan karakter Turki.
+Testing...	Menguji...
+failed	gagal
+The address must start with https://. Set it in Settings.	Alamat harus diawali https://. Atur di Pengaturan.
+Reaching the server	Menghubungi server
+, TEST MODE (fake replies)	, MODE UJI (balasan palsu)
+This phone's TLS connection	Koneksi TLS ponsel ini
+(no info)	(tak ada info)
+TLS seen by the server	TLS yang dilihat server
+this server works with credit codes	server ini memakai kode kredit
+Turkish characters	Karakter Turki
+UTF-8 upload	Unggah UTF-8
+the server got it right	server menerimanya dengan benar
+the server got different bytes: 	server menerima byte yang berbeda: 
+UTF-8 download	Unduh UTF-8
+correct: 	benar: 
+different: 	berbeda: 
+Rendering on this phone	Tampilan di ponsel ini
+Character encoding error.	Galat penyandian karakter.
+Note	Catatan
+A working connection alone does not prove a current security level; check the TLS version and cipher above.	Koneksi yang berfungsi saja tidak membuktikan tingkat keamanan terkini; periksa versi TLS dan cipher di atas.
+Ready, chat can be used.	Siap, obrolan bisa dipakai.
+: not this server's reply (carrier network, wrong address?).	: bukan balasan server ini (jaringan operator, alamat salah?).
+, status: 	, status: 
+OK (HTTP 200)	OK (HTTP 200)
+Result	Hasil
+Failed	Gagal
+ Chat is locked.	 Obrolan terkunci.
+Type the code	Ketik kodenya
+Try for free	Coba gratis
+Finish	Selesai
+Add credits	Tambah kredit
+Credit code	Kode kredit
+Centre key: type the 16-digit credit code.	Tombol tengah: ketik kode kredit 16 digit.
+\n\nNo code? Options > Try for free: a few messages with one model.	\n\nTak punya kode? Pilihan > Coba gratis: beberapa pesan dengan satu model.
+Centre key: type the new credit code.	Tombol tengah: ketik kode kredit baru.
+Balance	Saldo
+Loading...	Memuat...
+Enter the code with Options > 'Add credits'.	Masukkan kode lewat Pilihan > 'Tambah kredit'.
+The code has 16 digits. Centre key to finish it.	Kode terdiri dari 16 digit. Tombol tengah untuk menyelesaikan.
+A digit may be mistyped; check the code.	Mungkin ada digit yang salah ketik; periksa kodenya.
+Starting the trial...	Memulai uji coba...
+Credits are used according to the length of the message and the chosen model. Failed requests and requests with an unknown result cost nothing.\n\nAdd a new code with 'Add credits'.	Kredit dipakai sesuai panjang pesan dan model yang dipilih. Permintaan gagal dan permintaan dengan hasil tak diketahui tidak dikenai biaya.\n\nTambah kode baru dengan 'Tambah kredit'.
+You get the code from the shop of the server that sells credits. It has 16 digits; the last one is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once.	Kamu mendapat kode dari toko server yang menjual kredit. Kode terdiri dari 16 digit; digit terakhir adalah digit cek, jadi kode yang salah ketik terdeteksi sebelum dikirim.\n\nSatu kode hanya berlaku sekali.
+ This phone is paired with the code; no approval by the server's owner.	 Ponsel ini dipasangkan dengan kode; tanpa persetujuan pemilik server.
+Could not send. 	Tidak bisa mengirim. 
+Paired. 	Terpasang. 
+Added. 	Ditambahkan. 
+Balance: 	Saldo: 
+Today's free trials are used up. Try again tomorrow, or get a credit code.	Uji coba gratis hari ini sudah habis. Coba lagi besok, atau dapatkan kode kredit.
+Enough trials were started from this network today. Try again tomorrow.	Terlalu banyak uji coba dimulai dari jaringan ini hari ini. Coba lagi besok.
+This server has no free trial.	Server ini tidak punya uji coba gratis.
+The code is not valid or was cancelled.	Kode tidak valid atau dibatalkan.
+This code was already used.	Kode ini sudah dipakai.
+Too many wrong codes. Try again in 15 minutes.	Terlalu banyak kode salah. Coba lagi dalam 15 menit.
+The pairing is not valid. Settings > Options > 'Pair this phone'.	Pemasangan tidak valid. Pengaturan > Pilihan > 'Pasangkan ponsel ini'.
+This server does not sell credits.	Server ini tidak menjual kredit.
+Server: 	Server: 
+This phone runs without credits.	Ponsel ini berjalan tanpa kredit.
+Voice	Suara
+Code	Kode
+Free trial	Uji coba gratis
+Adjustment	Penyesuaian
+Trial started: {0} credits. A credit code opens every model.	Uji coba dimulai: {0} kredit. Kode kredit membuka semua model.
+ requests · 	 permintaan · 
+ (sent 	 (terkirim 
+, received 	, diterima 
+Done	Selesai
+Send again	Kirim lagi
+Record again	Rekam lagi
+Opening the microphone...	Membuka mikrofon...
+Speak now. Press 'Done' when you finish.	Bicaralah sekarang. Tekan 'Selesai' bila sudah.
+Finishing the recording...	Menyelesaikan rekaman...
+Sending (	Mengirim (
+The recording is empty or too short.	Rekaman kosong atau terlalu pendek.
+[Test mode] This is not a real transcription; no network was used. Recording: 	[Test mode] Ini bukan transkripsi asli; tidak ada jaringan yang dipakai. Rekaman: 
+ bytes.	 byte.
+\n'Retry' asks about the same recording; it is not charged twice.	\n'Coba lagi' menanyakan rekaman yang sama; tidak ditagih dua kali.
+No speech was recognised. Record again.	Tidak ada ucapan yang dikenali. Rekam lagi.
+The server is still working on it. 'Retry' in a few seconds.	Server masih memprosesnya. 'Coba lagi' dalam beberapa detik.
+Another recording is being processed. 'Retry' in a moment.	Rekaman lain sedang diproses. 'Coba lagi' sebentar lagi.
+No voice messages left today. More tomorrow (UTC).	Pesan suara hari ini habis. Besok ada lagi (UTC).
+Voice messages are not turned on on the server.	Pesan suara tidak diaktifkan di server.
+The recording is too short.	Rekaman terlalu pendek.
+The server could not read this recording.	Server tidak bisa membaca rekaman ini.
+Unknown result: the speech service did not answer in time. 'Send again' is a new (paid) request.	Hasil tak diketahui: layanan ucapan tidak menjawab tepat waktu. 'Kirim lagi' adalah permintaan baru (berbayar).
+Not enough credits. Add a code in Settings > Options > 'Credits'.	Kredit tidak cukup. Tambah kode di Pengaturan > Pilihan > 'Kredit'.
+The account is closed. Write to the server's support address.	Akun ditutup. Hubungi alamat dukungan server.
+Recording: 	Rekaman: 
+ bytes	 byte
+Turning speech into text...	Mengubah ucapan menjadi teks...
+Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text opens in the editor so you can fix it before sending.\n\nThe recording is not kept on the server.	Bicara hingga 30 detik. Audio dikirim ke server dan diubah menjadi teks; teks terbuka di editor sehingga bisa kamu perbaiki sebelum dikirim.\n\nRekaman tidak disimpan di server.
+Unrecognised server reply (HTTP {0}).	Balasan server tak dikenal (HTTP {0}).
+The recording is too long. At most {0} seconds.	Rekaman terlalu panjang. Maksimal {0} detik.
+The speech service is not answering right now ({0}). 'Send again' later.	Layanan ucapan tidak menjawab sekarang ({0}). 'Kirim lagi' nanti.
+The server's speech-to-text setup has a problem ({0}).	Pengaturan speech-to-text server bermasalah ({0}).
+no folder found	folder tidak ditemukan
+no free file name	tidak ada nama file bebas
+no lasting folder	tidak ada folder permanen
+Info	Info
+Saved	Tersimpan
+Exit	Keluar
+Pick up where you left off	Lanjutkan dari terakhir
+Open earlier chats	Buka obrolan lama
+Search the web, translate...	Cari di web, terjemahkan...
+Start fresh	Mulai baru
+Replies on the phone, offline	Balasan di ponsel, offline
+Can we reach the server?	Bisakah server dijangkau?
+Text size, look, sound, language	Ukuran teks, tampilan, suara, bahasa
+What is AIKON?	Apa itu AIKON?
+See you soon	Sampai jumpa
+Balance, add a code, buy	Saldo, tambah kode, beli
+Select	Pilih
+The server has no model choice (needs server 0.7.0).	Server tidak punya pilihan model (perlu server 0.7.0).
+The server listed no models.	Server tidak mencantumkan model.
+Choose	Pilih
+Refresh the list	Segarkan daftar
+now	sekarang
+last used	terakhir dipakai
+default	default
+In test mode the list cannot come from the server.	Di mode uji daftar tidak bisa berasal dari server.
+No list yet. Choose 'Refresh the list'.	Belum ada daftar. Pilih 'Segarkan daftar'.
+Other	Lainnya
+1 model	1 model
+Test mode uses no network.	Mode uji tidak memakai jaringan.
+{0} models	{0} model
+~{0} credits a message	~{0} kredit per pesan
+UTF-8 not supported	UTF-8 tidak didukung
+The address must start with https://	Alamat harus diawali https://
+Java network access denied	Akses jaringan Java ditolak
+Connection type not supported: 	Jenis koneksi tidak didukung: 
+Certificate: 	Sertifikat: 
+\nCipher: 	\nCipher: 
+\nCertificate: 	\nSertifikat: 
+\nIssuer: 	\nPenerbit: 
+\nSignature: 	\nTanda tangan: 
+\nValid until: 	\nBerlaku hingga: 
+\nSubject: 	\nSubjek: 
+unknown certificate authority (root not on the phone)	otoritas sertifikat tak dikenal (root tidak ada di ponsel)
+expired or not yet valid (phone date / time zone?)	kedaluwarsa atau belum berlaku (tanggal / zona waktu ponsel?)
+not yet valid (phone clock?)	belum berlaku (jam ponsel?)
+host name mismatch	nama host tidak cocok
+broken certificate chain	rantai sertifikat rusak
+root certificate expired	sertifikat root kedaluwarsa
+signature not verified (root missing or algorithm unsupported)	tanda tangan tidak terverifikasi (root hilang atau algoritma tak didukung)
+missing signature	tanda tangan tidak ada
+unsupported extension	ekstensi tidak didukung
+inappropriate key usage	penggunaan kunci tidak sesuai
+code 	kode 
+The server address must start with https://.	Alamat server harus diawali https://.
+Java network access was denied. Allow it in the application settings.	Akses jaringan Java ditolak. Izinkan di pengaturan aplikasi.
+Could not open HTTPS. Check the Java access point (mobile data / WLAN).	Tidak bisa membuka HTTPS. Periksa access point Java (data seluler / WLAN).
+Secure connection failed (certificate/TLS). 	Koneksi aman gagal (sertifikat/TLS). 
+Character encoding error: 	Galat penyandian karakter: 
+Could not connect or no reply (access point, DNS, network or TLS). 	Tidak bisa terhubung atau tak ada balasan (access point, DNS, jaringan atau TLS). 
+Could not read the reply (HTTP 	Tidak bisa membaca balasan (HTTP 
+(maybe DNS) 	(mungkin DNS) 
+(timeout) 	(waktu habis) 
+(maybe TLS) 	(mungkin TLS) 
+Pairing code	Kode pemasangan
+Status	Status
+Give this code to the server's owner.	Berikan kode ini kepada pemilik server.
+Requesting a code...	Meminta kode...
+Pairing	Pemasangan
+The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter approval the phone fetches its access code by itself; keep this screen open. The code is valid for 10 minutes.	Pemilik server menyetujui kode di server:\nadmin.sh SERVER pair <code>\n\nSetelah disetujui, ponsel mengambil kode aksesnya sendiri; biarkan layar ini terbuka. Kode berlaku 10 menit.
+Could not start. 	Tidak bisa memulai. 
+Too many pending pairings; try again in a few minutes.	Terlalu banyak pemasangan tertunda; coba lagi beberapa menit lagi.
+Could not start (	Tidak bisa memulai (
+Waiting for approval...	Menunggu persetujuan...
+Connection problem, pairing stopped. 	Masalah koneksi, pemasangan dihentikan. 
+Connection problem, trying again (	Masalah koneksi, mencoba lagi (
+Paired (	Terpasang (
+). Access code saved; chat is ready.	). Kode akses tersimpan; obrolan siap.
+Pairing expired. Start again.	Pemasangan kedaluwarsa. Mulai lagi.
+Another photo	Foto lain
+Take a photo	Ambil foto
+Choose from the phone	Pilih dari ponsel
+The server could not read this photo (it must be JPEG or PNG).	Server tidak bisa membaca foto ini (harus JPEG atau PNG).
+The photo is too large.	Foto terlalu besar.
+No photos left today. More tomorrow (UTC).	Foto hari ini habis. Besok ada lagi (UTC).
+The server does not take photos (older version).	Server tidak menerima foto (versi lama).
+The server is preparing the photo...	Server menyiapkan foto...
+Photo	Foto
+The photo goes to the server and is shown to this chat's model, also with later messages.\n\nIt stays on the server with the chat (30 days, or until you delete the chat). An unused photo is deleted after a day.\n\nThe photo is never sent by itself: it goes with your message when you press Send.	Foto dikirim ke server dan ditampilkan ke model obrolan ini, juga untuk pesan berikutnya.\n\nFoto tetap di server bersama obrolan (30 hari, atau sampai kamu menghapus obrolan). Foto yang tak dipakai dihapus setelah sehari.\n\nFoto tidak pernah dikirim sendiri: foto ikut pesanmu saat kamu menekan Kirim.
+Choose a photo	Pilih foto
+File access was denied. Answer 'Yes' when the phone asks.	Akses file ditolak. Jawab 'Ya' saat ponsel bertanya.
+Could not read the folder: 	Tidak bisa membaca folder: 
+.. (up)	.. (naik)
+Drives	Drive
+Could not read the file: 	Tidak bisa membaca file: 
+File access was denied.	Akses file ditolak.
+The photo does not fit in the phone's memory. Take it with the app's camera.	Foto tidak muat di memori ponsel. Ambil dengan kamera aplikasi.
+Reading...	Membaca...
+The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.	Foto terlalu besar ({0} KB). Maksimal {1} KB; ambil dengan kamera aplikasi.
+The phone did not accept it: 	Ponsel tidak menerimanya: 
+Permission denied. Answer 'Yes' when the phone asks, to add it.	Izin ditolak. Jawab 'Ya' saat ponsel bertanya, untuk menambahkannya.
+Could not add it: 	Tidak bisa menambahkan: 
+Microphone access was denied. Answer 'Yes' when the phone asks.	Akses mikrofon ditolak. Jawab 'Ya' saat ponsel bertanya.
+Could not start recording. 	Tidak bisa memulai perekaman. 
+Still busy with the previous file.	Masih sibuk dengan file sebelumnya.
+File error: 	Galat file: 
+Permission denied. Answer 'Yes' when the phone asks about file access.	Izin ditolak. Jawab 'Ya' saat ponsel bertanya soal akses file.
+Saved on the phone:\n	Tersimpan di ponsel:\n
+\n\nRead it offline: main menu > Saved.	\n\nBaca offline: menu utama > Tersimpan.
+Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone.	Belum ada yang tersimpan. Di obrolan pilih balasan (1/3), tombol tengah > Simpan ke ponsel.
+Delete this file from the phone?\n	Hapus file ini dari ponsel?\n
+Could not save settings: 	Tidak bisa menyimpan pengaturan: 
+Setup	Setelan
+Setup 	Setelan 
+Skip setup	Lewati setelan
+Pair again	Pasangkan lagi
+This phone is already paired. Setup is complete.	Ponsel ini sudah dipasangkan. Setelan selesai.
+Last step: press Start and type your credit code.	Langkah terakhir: tekan Mulai dan ketik kode kreditmu.
+Last step: press Start; the server's owner approves the code shown.	Langkah terakhir: tekan Mulai; pemilik server menyetujui kode yang tampil.
+Welcome! Three steps: server address, connection test, pairing. Every step can be left with 'Skip setup'; come back later from Settings > Options > Setup wizard. The language follows the phone; change it in Settings.\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).\n\nThe server's owner gives you its address.\n\nIt must start with https://; unencrypted connections are never used. The next step tests the secure connection.	Selamat datang! Tiga langkah: alamat server, tes koneksi, pemasangan. Setiap langkah bisa ditinggalkan dengan 'Lewati setelan'; kembali nanti dari Pengaturan > Pilihan > Panduan setelan. Bahasa mengikuti ponsel; ubah di Pengaturan.\n\nHanya mau mencoba? Lewati setelan, lalu Pengaturan > Mode uji (balasan palsu, tanpa jaringan).\n\nPemilik server memberimu alamatnya.\n\nHarus diawali https://; koneksi tanpa enkripsi tidak pernah dipakai. Langkah berikutnya menguji koneksi aman.
+This server works with credit codes: press Start and type the 16-digit code you bought. The phone is paired with the code; no approval by the server's owner.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Server ini memakai kode kredit: tekan Mulai dan ketik kode 16 digit yang kamu beli. Ponsel dipasangkan dengan kode; tanpa persetujuan pemilik server.\n\nKode akses disimpan di ponsel ini dan di cadangan setelan pada kartu memori, dan hanya dikirim ke alamat https://.
+Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Tekan Mulai dan kode 6 digit muncul. Setelah pemilik server menyetujuinya, ponsel mengambil kode aksesnya sendiri; tidak perlu mengetik yang panjang.\n\nKode akses disimpan di ponsel ini dan di cadangan setelan pada kartu memori, dan hanya dikirim ke alamat https://.
+The address must start with https://, for example https://your-server. HTTP is not supported.	Alamat harus diawali https://, misalnya https://server-kamu. HTTP tidak didukung.
+All set!	Semua siap!
+Setup saved. Finish the missing steps from Settings.	Setelan tersimpan. Selesaikan langkah yang belum lewat Pengaturan.
+Setup skipped. Settings > Options > Setup wizard.	Setelan dilewati. Pengaturan > Pilihan > Panduan setelan.
+Yesterday	Kemarin
+.	.

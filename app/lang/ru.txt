@@ -1,0 +1,554 @@
+# AIKON UI, Russian (ru). Line: English key, TAB, translation.
+To-do: 	Задача: 
+Calendar: 	Календарь: 
+Save	Сохранить
+Cancel	Отмена
+Add to calendar	В календарь
+Title	Название
+Where	Место
+Calendar	Календарь
+To-do list	Список задач
+Date and time	Дата и время
+Alarm (calendar)	Напоминание (календарь)
+None	Нет
+At the start	В начале
+15 minutes before	За 15 минут
+1 hour before	За 1 час
+1 day before	За 1 день
+A title and a date are needed.	Нужны название и дата.
+Added to the to-do list: 	Добавлено в список задач: 
+Added to the calendar: 	Добавлено в календарь: 
+Capture	Снять
+Opening the camera...	Открываю камеру...
+Centre key or 'Capture': take the photo	Центр. клавиша или 'Снять': фото
+Camera access was denied. Answer 'Yes' when the phone asks.	Доступ к камере запрещён. Ответь 'Да', когда телефон спросит.
+Could not take the photo.	Не удалось сделать фото.
+Could not open the camera. 	Не удалось открыть камеру. 
+Taking the photo...	Делаю фото...
+Write	Написать
+Dictate	Диктовать
+Add a photo	Добавить фото
+Show the rest	Показать остальное
+Reading mode	Режим чтения
+Quick prompts	Быстрые запросы
+Retry	Повтор
+Chats	Чаты
+New chat	Новый чат
+Model	Модель
+Delete chat	Удалить чат
+Shortcuts	Клавиши
+Message actions	Действия
+Menu	Меню
+Close	Закрыть
+A request is still running.	Запрос ещё выполняется.
+Centre key: add to calendar	Центр. клавиша: в календарь
+Text: 	Текст: 
+Small	Мелкий
+Large	Крупный
+Medium	Средний
+You	Ты
+Test mode · fake	Тестовый режим · имитация
+Reply shortened	Ответ сокращён
+0 · Show the rest	0 · Показать остальное
+Centre key · Retry	Центр. клавиша · Повтор
+No reply to read yet	Пока нет ответа для чтения
+Loading the rest...	Загружаю остальное...
+Web searches can take a while	Веб-поиск может занять время
+Sending	Отправка
+ s	 с
+Centre key to write	Центр. клавиша: писать
+ left	 осталось
+Draft: 	Черновик: 
+Write a message	Напиши сообщение
+Centre key: details · 1/3: select	Центр. клавиша: детали · 1/3: выбор
+Centre key: actions · 1/3: select	Центр. клавиша: действия · 1/3: выбор
+Centre key: retry · 5: write	Центр. клавиша: повтор · 5: писать
+0: the rest · 7: reading mode	0: остальное · 7: режим чтения
+7: reading mode · 5: write	7: режим чтения · 5: писать
+New reply · press 3	Новый ответ · нажми 3
+0 or centre key: the rest	0 или центр. клавиша: остальное
+0: the rest	0: остальное
+{0} is typing	{0} печатает
+Open	Открыть
+Search chats	Поиск по чатам
+Pin / unpin	Закрепить / открепить
+Delete	Удалить
+All chats	Все чаты
+Refresh	Обновить
+Back	Назад
+Search	Поиск
+Search: 	Поиск: 
+Could not pin (	Не удалось закрепить (
+Could not delete (	Не удалось удалить (
+The server cannot search (needs server 0.4.0).	Сервер не умеет искать (нужен сервер 0.4.0).
+Could not get the list (	Не удалось получить список (
+Error: 	Ошибка: 
+Nothing found. Plain letters are fine: 'sise' finds 'şişe'.	Ничего не найдено. Можно обычными буквами: 'sise' найдёт 'şişe'.
+No chats yet. The server keeps chats for 30 days, pinned ones until unpinned.	Чатов пока нет. Сервер хранит чаты 30 дней, закреплённые до открепления.
+Pinned	Закреплённые
+Recent	Недавние
+Type at least 2 letters.	Введи минимум 2 буквы.
+Delete this chat from the server? This cannot be undone.	Удалить этот чат с сервера? Это нельзя отменить.
+At most {0} chats can be pinned. Unpin one first.	Лимит закреплённых чатов: {0}. Сначала открепи один.
+[Photo] 	[Фото] 
+The message is empty.	Сообщение пустое.
+Nothing to retry.	Нечего повторять.
+There is no more to this reply.	Продолжения этого ответа нет.
+Saved on this phone	Сохранено в телефоне
+This chat is kept on the phone and readable offline. Write to continue it on the server.	Этот чат хранится в телефоне и читается без сети. Напиши, чтобы продолжить его на сервере.
+The previous chat stays on the server for 30 days; open it again from Chats.	Предыдущий чат остаётся на сервере 30 дней; открой его снова из раздела Чаты.
+Chat cleared	Чат очищен
+Chat deleted	Чат удалён
+Deleting...	Удаляю...
+Loading more...	Загружаю ещё...
+Loading chat...	Загружаю чат...
+Sending...	Отправляю...
+Waiting for reply...	Жду ответ...
+\nPhoto: attached (not sent to a server).	\nФото: прикреплено (на сервер не отправлено).
+Test mode event	Событие тестового режима
+Could not connect	Нет соединения
+No reply	Нет ответа
+Unrecognised server reply	Неизвестный ответ сервера
+Still working	Ещё работает
+Still working on it	Ещё в работе
+Choose 'Retry' in a moment; it asks about the same request and is not charged again.	Через минуту выбери 'Повтор'; он спросит про тот же запрос, плата повторно не списывается.
+Busy	Занято
+Another request is running	Выполняется другой запрос
+Choose 'Retry' in a moment.	Через минуту выбери 'Повтор'.
+Limit reached	Лимит исчерпан
+Daily limit reached. Try again tomorrow (UTC).	Дневной лимит исчерпан. Попробуй завтра (UTC).
+Unknown result	Результат неизвестен
+Chat full	Чат заполнен
+This chat got too long. Continue with 'New chat'.	Этот чат стал слишком длинным. Продолжи в 'Новый чат'.
+Chat not found	Чат не найден
+Chat not found on the server (it may have expired). Continue with 'New chat'.	Чат не найден на сервере (возможно, истёк срок). Продолжи в 'Новый чат'.
+Not authorised	Нет доступа
+Access code invalid or revoked. Settings > Pair this phone.	Код доступа недействителен или отозван. Настройки > Привязать телефон.
+Not enough credits	Недостаточно кредитов
+Not enough credits for this message.	Недостаточно кредитов для этого сообщения.
+ Add a code under main menu > Credits; your message is kept as a draft.	 Добавь код в главном меню > Кредиты; сообщение сохранено как черновик.
+Trial: one model	Пробный: одна модель
+The free trial works with one model only. Pick it in the Model menu; a credit code opens every model (main menu > Credits). Your message is kept as a draft.	Бесплатный пробный период работает только с одной моделью. Выбери её в меню Модель; код кредитов открывает все модели (главное меню > Кредиты). Сообщение сохранено как черновик.
+Account closed	Аккаунт закрыт
+This account is closed. Write to the server's support address.	Этот аккаунт закрыт. Напиши в поддержку сервера.
+No credits	Нет кредитов
+Model not offered	Модель недоступна
+The chosen model is no longer offered by the server. Pick another with Menu > Model; your message is kept as a draft.	Выбранная модель больше не предлагается сервером. Выбери другую: Меню > Модель; сообщение сохранено как черновик.
+Photo not found	Фото не найдено
+The photo is not on the server: unused for a day, or used in another chat. Add it again; your message is kept as a draft.	Фото нет на сервере: не использовалось сутки или использовано в другом чате. Добавь его снова; сообщение сохранено как черновик.
+Too long	Слишком длинно
+The message is too long.	Сообщение слишком длинное.
+No reply (	Нет ответа (
+The rest is gone	Остаток недоступен
+The rest of this reply is no longer on the server (kept for 7 days).	Остаток этого ответа больше не хранится на сервере (хранится 7 дней).
+Could not load more	Не удалось загрузить ещё
+Older messages hidden	Старые сообщения скрыты
+Older messages are not shown on the phone; the model still sees them.	Старые сообщения не показаны на телефоне; модель их по-прежнему видит.
+Chat opened	Чат открыт
+Chat not found on the server (deleted or expired).	Чат не найден на сервере (удалён или истёк срок).
+Not loaded	Не загружено
+The end did not load	Конец не загрузился
+Not deleted	Не удалено
+Next replies: {0}	Следующие ответы: {0}
+{0} answers from your next message on and sees this chat's history too.	Со следующего сообщения отвечает {0}; он видит и историю этого чата.
+Messages can be at most {0} characters.	Максимум символов в сообщении: {0}.
+[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: "{3}"	[Test mode] Это не настоящий ответ {0}. Сеть не использовалась.\nСимволов в сообщении: {1}; ранее в этом чате сообщений: {2}.\nПолучено: "{3}"
+\n\n'Retry' asks about the same request; it is not sent to {0} twice.	\n\n'Повтор' спрашивает про тот же запрос; он не отправляется в {0} дважды.
+HTTP {0}. Carrier network or wrong address?	HTTP {0}. Сеть оператора или неверный адрес?
+{0} declined	{0}: отказ
+{0} declined to answer this one. Ask differently or pick another model.	{0} не стал отвечать на это. Спроси иначе или выбери другую модель.
+The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.	Ретранслятор не получил ответ от сервера AIKON ({0}). 'Повтор' спрашивает про тот же запрос; он не отправляется в {1} дважды.
+Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.	Результат неизвестен: запрос мог дойти до {0}. Ничего не отправлялось повторно. Черновик сохранён; повторная отправка это новый (платный) запрос.
+Not enough credits for this message (balance: {0}).	Недостаточно кредитов для этого сообщения (баланс: {0}).
+The server's {0} API account is out of credits. Send again once it is topped up.	На API-аккаунте {0} на сервере закончились кредиты. Отправь снова после пополнения.
+{0} is busy	{0} занят
+{0} is busy right now. Send again shortly.	{0} сейчас занят. Отправь снова чуть позже.
+Press 0 to try again (free; {0} is not asked again).\n\n	Нажми 0, чтобы повторить (бесплатно; {0} повторно не спрашивается).\n\n
+Send	Отправить
+Remove the photo	Убрать фото
+Change	Изменить
+OK	OK
+Pair this phone	Привязать телефон
+Credits	Кредиты
+Setup wizard	Мастер настройки
+Play the jingle	Играть мелодию
+Replay the intro	Повторить вступление
+Data usage	Трафик
+Reset setup	Сброс настройки
+Reset	Сброс
+Update	Обновить
+Your earlier setup was restored: server, pairing and your notes. To start over: Settings > Options > Reset setup.	Прежняя настройка восстановлена: сервер, привязка и твои заметки. Начать заново: Настройки > Функции > Сброс настройки.
+Test mode: fake replies	Тестовый режим: имитация ответов
+Setup: server address needed	Настройка: нужен адрес сервера
+Setup: run the connection test	Настройка: проверка соединения
+Setup: pair this phone	Настройка: привязка телефона
+No credits left · add a code under Credits	Кредитов нет · добавь код в разделе Кредиты
+Ready · new AI on an old Nokia	Готово · новый ИИ на старой Nokia
+Buy a credit code (on a computer or smartphone): 	Купи код кредитов (на компьютере или смартфоне): 
+ credits	 кр.
+Last: 	Последнее: 
+This phone does not let apps use the camera or files.	Этот телефон не разрешает приложениям камеру или файлы.
+What is in this photo?	Что на этом фото?
+This phone does not let apps record audio.	Этот телефон не разрешает приложениям записывать звук.
+Check, then send	Проверь и отправь
+The phone could not open the link. Open this in the browser: 	Телефон не смог открыть ссылку. Открой её в браузере: 
+Message	Сообщение
+Message with a photo	Сообщение с фото
+Server chats are not shown in test mode.	В тестовом режиме чаты сервера не показываются.
+This phone does not let apps save files.	Этот телефон не разрешает приложениям сохранять файлы.
+Chat	Чат
+Centre key or 5: write\nUp / down: one line\n2 / 8, left / right: one page\n1 / 3: select a message; centre key: shorten, translate, edit...\n* / #: top / end\n0: the rest of a reply\n7: reading mode\n9: text size\nAfter an error, centre key: retry\n	Центр. клавиша или 5: писать\nВверх / вниз: на строку\n2 / 8, влево / вправо: на страницу\n1 / 3: выбор сообщения; центр. клавиша: сократить, перевести, изменить...\n* / #: к началу / концу\n0: остаток ответа\n7: режим чтения\n9: размер текста\nПосле ошибки центр. клавиша: повтор\n
+Shows one reply page by page, full width.\nCentre key, 8 or right: next page\n2 or left: previous page\nUp / down: one line\n1 / 3: previous / next reply\n* / #: top / end\n0: the rest of a reply\n9: text size\n7 or Close: back to the chat\n	Показывает один ответ постранично, на всю ширину.\nЦентр. клавиша, 8 или вправо: следующая страница\n2 или влево: предыдущая страница\nВверх / вниз: на строку\n1 / 3: предыдущий / следующий ответ\n* / #: к началу / концу\n0: остаток ответа\n9: размер текста\n7 или Закрыть: назад в чат\n
+Main menu and lists	Главное меню и списки
+1-9: opens that row directly (in lists the first nine rows; not in Settings)	1-9: открывает эту строку сразу (в списках первые девять строк; не в Настройках)
+QWERTY keyboard	Клавиатура QWERTY
+Digits sit on letter keys: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: same as the centre key\nOn the main menu, N only moves to Exit (does not quit)\n	Цифры на буквенных клавишах: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: как центр. клавиша\nВ главном меню N лишь переходит к пункту Выход (не закрывает)\n
+Actions like shorten or translate never send by themselves: the editor opens with the text ready and you press Send.	Действия вроде сокращения или перевода сами ничего не отправляют: редактор открывается с готовым текстом, и ты нажимаешь Отправить.
+Loading the rest of a reply is free: it comes from the server, the model is not asked again.	Загрузка остатка ответа бесплатна: он берётся с сервера, модель повторно не спрашивается.
+Reply	Ответ
+Your message	Твоё сообщение
+Open in reading mode	Открыть в режиме чтения
+Make it shorter	Сделать короче
+Explain it more simply	Объяснить проще
+Translate to Turkish	Перевести на турецкий
+Translate to English	Перевести на английский
+Ask about this	Спросить об этом
+Edit and send again	Изменить и отправить снова
+Save to phone (.txt)	Сохранить в телефон (.txt)
+Add to calendar / to-do	В календарь / задачи
+Open in editor	Открыть в редакторе
+Make this reply shorter, 3 sentences at most: 	Сократи этот ответ, максимум 3 предложения: 
+Explain this reply more simply: 	Объясни этот ответ проще: 
+Translate all of this reply to Turkish: 	Переведи весь этот ответ на турецкий: 
+Translate all of this reply to English: 	Переведи весь этот ответ на английский: 
+About this part: 	Об этой части: 
+Text	Текст
+First enter the server address (https://...) in Settings.	Сначала введи адрес сервера (https://...) в Настройках.
+Run the 'Connection test' first. Nothing is sent before the secure connection is verified.	Сначала запусти 'Проверку соединения'. Ничего не отправляется, пока защищённое соединение не проверено.
+Pair this phone first: Settings > Options > 'Pair this phone'.	Сначала привяжи телефон: Настройки > Функции > 'Привязать телефон'.
+Delete the server address, pairing and your notes from this phone and from the backup file? The setup wizard opens next.	Удалить адрес сервера, привязку и твои заметки из телефона и из файла резервной копии? Затем откроется мастер настройки.
+Settings	Настройки
+Light	Светлая
+Dark	Тёмная
+Automatic: dark 19-07	Авто: тёмная 19-07
+none	нет
+Look	Вид
+Replies	Ответы
+Sound and screen	Звук и экран
+Language and server	Язык и сервер
+Text size	Размер текста
+May search the web	Может искать в сети
+news, weather...	новости, погода...
+Keep last chat on phone	Хранить последний чат
+Your notes for the AI	Твои заметки для ИИ
+Jingle and reply sound	Мелодия и звук ответа
+Vibrate on reply	Вибро при ответе
+Full screen	Весь экран
+Light up for a reply	Подсветка при ответе
+if the screen went dark	если экран погас
+Language	Язык
+Server address	Адрес сервера
+(not set)	(не задан)
+Access code	Код доступа
+Connection test	Проверка соединения
+passed	пройдена
+not passed yet	ещё не пройдена
+Test mode	Тестовый режим
+fake replies, no network	имитация ответов, без сети
+Same as phone	Как в телефоне
+Server address (https://...)	Адрес сервера (https://...)
+The address must start with https://. HTTP is not supported.	Адрес должен начинаться с https://. HTTP не поддерживается.
+The access code must be 16-64 letters/digits.	Код доступа: 16-64 букв или цифр.
+Today	Сегодня
+Total since 	Всего с 
+Save the server address (https://...) first.	Сначала сохрани адрес сервера (https://...).
+Run the 'Connection test' first. Pairing only runs over a verified connection.	Сначала запусти 'Проверку соединения'. Привязка работает только по проверенному соединению.
+Estimates: messages are counted exactly, HTTP headers roughly.\n\nThe encrypted connection set-up is not counted, so your operator counts more.\n\nTest mode uses no data.	Оценка: сообщения считаются точно, заголовки HTTP приблизительно.\n\nУстановка шифрованного соединения не учитывается, поэтому оператор насчитает больше.\n\nТестовый режим не использует трафик.
+The AI does not run on the phone: messages travel over an encrypted link to the server and on to the chosen model's provider (Anthropic, OpenAI, Google, xAI). Not an official app of these providers or of Nokia.\n\nThe server deletes chats 30 days after the last message; pinned ones stay until unpinned. The phone keeps the last chat only if 'Keep last chat on phone' is on; saved replies and calendar entries stay on the phone only.\n\nWeb search runs on the server with the model provider's search tool, not the phone's browser.	ИИ работает не в телефоне: сообщения идут по шифрованному каналу на сервер и дальше к поставщику выбранной модели (Anthropic, OpenAI, Google, xAI). Это не официальное приложение этих поставщиков или Nokia.\n\nСервер удаляет чаты через 30 дней после последнего сообщения; закреплённые остаются до открепления. Телефон хранит последний чат, только если включено 'Хранить последний чат'; сохранённые ответы и записи календаря остаются только в телефоне.\n\nВеб-поиск работает на сервере через поисковый инструмент поставщика модели, а не через браузер телефона.
+Your notes for the AI: say briefly who you are and how you like answers, e.g. "I'm Emir, I live in Istanbul, keep it short." Sent to the server with every message.\n\nInstead of typing the access code, use Options > 'Pair this phone'. The code is stored on this phone and (so a reinstall needs no setup) in the setup backup on the memory card, and sent only to the https:// address.\n\nThe connection test must pass again whenever the address changes; nothing is sent before.\n\nTest mode gives fake replies and uses no network.	Твои заметки для ИИ: коротко напиши, кто ты и какие ответы любишь, например: "Я Эмир, живу в Стамбуле, отвечай коротко." Отправляются на сервер с каждым сообщением.\n\nВместо ввода кода доступа используй Функции > 'Привязать телефон'. Код хранится в телефоне и (чтобы после переустановки не настраивать заново) в резервной копии настроек на карте памяти, и отправляется только по адресу https://.\n\nПроверка соединения должна пройти снова при каждой смене адреса; до этого ничего не отправляется.\n\nТестовый режим даёт имитацию ответов и не использует сеть.
+About	О программе
+Version 	Версия 
+ (build 	 (сборка 
+New version	Новая версия
+ · Update on the home screen	 · Обновление на главном экране
+AI chat for Nokia S40 and S60 phones.	Чат с ИИ для телефонов Nokia S40 и S60.
+Made by: 	Автор: 
+Platform	Платформа
+Voice recording	Запись голоса
+yes	да
+no	нет
+Camera	Камера
+{0} credits · New version {1}	Кредиты: {0} · Новая версия {1}
+New version {0} · Update	Новая версия {0} · Обновить
+Credits low · {0} left	Мало кредитов · осталось {0}
+Ready · {0} credits	Готово · кредиты: {0}
+Ready · {0} left today	Готово · сегодня осталось: {0}
+AIKON {0} will be downloaded. The phone asks to install it and AIKON closes; your settings and pairing are kept.	Будет загружена AIKON {0}. Телефон предложит установить её, AIKON закроется; настройки и привязка сохранятся.
+Message {0}	Сообщение {0}
+Search the web and answer briefly: 	Найди в сети и ответь кратко: 
+Weather today and tomorrow in: 	Погода сегодня и завтра в городе: 
+Search the web: the most important news today, 5 short lines.	Найди в сети: главные новости сегодня, 5 коротких строк.
+Current exchange rate, search the web, numbers first: 	Текущий курс валют, найди в сети, сначала цифры: 
+Translate to English: 	Переведи на английский: 
+Translate to Turkish: 	Переведи на турецкий: 
+Write a short, friendly reply to this message: 	Напиши короткий дружелюбный ответ на это сообщение: 
+Write a short text message that says: 	Напиши короткое текстовое сообщение: 
+Add to my calendar: 	Добавь в мой календарь: 
+Add to my to-do list: 	Добавь в мой список задач: 
+Fix the spelling and grammar, keep my tone: 	Исправь орфографию и грамматику, сохрани мой тон: 
+Summarize in 3 short lines: 	Перескажи в 3 коротких строках: 
+Answer in 2 sentences: 	Ответь в 2 предложениях: 
+Explain simply, like I'm new to it: 	Объясни просто, как новичку: 
+Calculate or convert, result first: 	Посчитай или переведи в другие единицы, сначала результат: 
+What does this word or phrase mean? One example: 	Что значит это слово или выражение? Один пример: 
+What can I cook with: 	Что можно приготовить из: 
+Help me decide, short pros and cons: 	Помоги решить, коротко плюсы и минусы: 
+Step by step, at most 5 steps: how do I 	Пошагово, не больше 5 шагов: как 
+Roast this phone. It's an old Nokia and it's talking to you.	Подколи этот телефон. Это старая Nokia, и она с тобой разговаривает.
+Search the web	Поиск в сети
+Weather	Погода
+Today's news	Новости дня
+Exchange rates	Курсы валют
+Reply to a message	Ответить на сообщение
+Write a text for me	Напиши мне текст
+Add to my calendar	В мой календарь
+Add a to-do	Добавить задачу
+Fix my writing	Исправить текст
+Summarize	Кратко
+Quick answer	Быстрый ответ
+Explain simply	Объяснить просто
+Calculate / convert	Расчёт / перевод величин
+What does it mean?	Что это значит?
+What can I cook?	Что приготовить?
+Help me decide	Помоги выбрать
+How do I...?	Как...?
+Roast this phone	Подколоть телефон
+Start	Старт
+Test again	Ещё раз
+Details	Подробно
+Next	Далее
+Server	Сервер
+This address was verified before.	Этот адрес уже проверялся.
+Press Start to check the secure connection and Turkish characters.	Нажми Старт, чтобы проверить защищённое соединение и турецкие символы.
+Testing...	Проверка...
+failed	сбой
+The address must start with https://. Set it in Settings.	Адрес должен начинаться с https://. Задай его в Настройках.
+Reaching the server	Связь с сервером
+, TEST MODE (fake replies)	, ТЕСТОВЫЙ РЕЖИМ (имитация)
+This phone's TLS connection	TLS-соединение этого телефона
+(no info)	(нет данных)
+TLS seen by the server	TLS по данным сервера
+this server works with credit codes	этот сервер работает с кодами кредитов
+Turkish characters	Турецкие символы
+UTF-8 upload	Выгрузка UTF-8
+the server got it right	сервер получил верно
+the server got different bytes: 	сервер получил другие байты: 
+UTF-8 download	Загрузка UTF-8
+correct: 	верно: 
+different: 	иначе: 
+Rendering on this phone	Отображение на этом телефоне
+Character encoding error.	Ошибка кодировки.
+Note	Заметка
+A working connection alone does not prove a current security level; check the TLS version and cipher above.	Одно лишь рабочее соединение не доказывает актуальный уровень защиты; проверь версию TLS и шифр выше.
+Ready, chat can be used.	Готово, чат можно использовать.
+: not this server's reply (carrier network, wrong address?).	: это не ответ этого сервера (сеть оператора, неверный адрес?).
+, status: 	, статус: 
+OK (HTTP 200)	OK (HTTP 200)
+Result	Результат
+Failed	Сбой
+ Chat is locked.	 Чат заблокирован.
+Type the code	Введи код
+Try for free	Попробовать бесплатно
+Finish	Завершить
+Add credits	Добавить кредиты
+Credit code	Код кредитов
+Centre key: type the 16-digit credit code.	Центр. клавиша: введи 16-значный код кредитов.
+\n\nNo code? Options > Try for free: a few messages with one model.	\n\nНет кода? Функции > Попробовать бесплатно: несколько сообщений с одной моделью.
+Centre key: type the new credit code.	Центр. клавиша: введи новый код кредитов.
+Balance	Баланс
+Loading...	Загрузка...
+Enter the code with Options > 'Add credits'.	Введи код через Функции > 'Добавить кредиты'.
+The code has 16 digits. Centre key to finish it.	В коде 16 цифр. Центр. клавиша, чтобы завершить.
+A digit may be mistyped; check the code.	Возможно, цифра введена неверно; проверь код.
+Starting the trial...	Запускаю пробный период...
+Credits are used according to the length of the message and the chosen model. Failed requests and requests with an unknown result cost nothing.\n\nAdd a new code with 'Add credits'.	Кредиты расходуются по длине сообщения и выбранной модели. Неудачные запросы и запросы с неизвестным результатом ничего не стоят.\n\nНовый код добавляется через 'Добавить кредиты'.
+You get the code from the shop of the server that sells credits. It has 16 digits; the last one is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once.	Код ты получаешь в магазине сервера, который продаёт кредиты. В нём 16 цифр; последняя контрольная, поэтому опечатка в коде обнаруживается до отправки.\n\nКод действует один раз.
+ This phone is paired with the code; no approval by the server's owner.	 Этот телефон привязан по коду; одобрение владельца сервера не нужно.
+Could not send. 	Не удалось отправить. 
+Paired. 	Привязано. 
+Added. 	Добавлено. 
+Balance: 	Баланс: 
+Today's free trials are used up. Try again tomorrow, or get a credit code.	Сегодняшние бесплатные пробы закончились. Попробуй завтра или получи код кредитов.
+Enough trials were started from this network today. Try again tomorrow.	С этой сети сегодня запущено слишком много проб. Попробуй завтра.
+This server has no free trial.	На этом сервере нет бесплатного пробного периода.
+The code is not valid or was cancelled.	Код недействителен или аннулирован.
+This code was already used.	Этот код уже использован.
+Too many wrong codes. Try again in 15 minutes.	Слишком много неверных кодов. Повтори через 15 минут.
+The pairing is not valid. Settings > Options > 'Pair this phone'.	Привязка недействительна. Настройки > Функции > 'Привязать телефон'.
+This server does not sell credits.	Этот сервер не продаёт кредиты.
+Server: 	Сервер: 
+This phone runs without credits.	Этот телефон работает без кредитов.
+Voice	Голос
+Code	Код
+Free trial	Бесплатная проба
+Adjustment	Корректировка
+Trial started: {0} credits. A credit code opens every model.	Проба запущена, кредиты: {0}. Код кредитов открывает все модели.
+ requests · 	 запр. · 
+ (sent 	 (отпр. 
+, received 	, получ. 
+Done	Готово
+Send again	Отправить снова
+Record again	Записать снова
+Opening the microphone...	Открываю микрофон...
+Speak now. Press 'Done' when you finish.	Говори. Нажми 'Готово', когда закончишь.
+Finishing the recording...	Завершаю запись...
+Sending (	Отправка (
+The recording is empty or too short.	Запись пустая или слишком короткая.
+[Test mode] This is not a real transcription; no network was used. Recording: 	[Test mode] Это не настоящая расшифровка; сеть не использовалась. Запись: 
+ bytes.	 байт.
+\n'Retry' asks about the same recording; it is not charged twice.	\n'Повтор' спрашивает про ту же запись; плата повторно не списывается.
+No speech was recognised. Record again.	Речь не распознана. Запиши снова.
+The server is still working on it. 'Retry' in a few seconds.	Сервер ещё работает. 'Повтор' через несколько секунд.
+Another recording is being processed. 'Retry' in a moment.	Обрабатывается другая запись. 'Повтор' через минуту.
+No voice messages left today. More tomorrow (UTC).	Голосовых сообщений на сегодня не осталось. Завтра будут ещё (UTC).
+Voice messages are not turned on on the server.	Голосовые сообщения на сервере не включены.
+The recording is too short.	Запись слишком короткая.
+The server could not read this recording.	Сервер не смог прочитать эту запись.
+Unknown result: the speech service did not answer in time. 'Send again' is a new (paid) request.	Результат неизвестен: служба распознавания речи не ответила вовремя. 'Отправить снова' это новый (платный) запрос.
+Not enough credits. Add a code in Settings > Options > 'Credits'.	Недостаточно кредитов. Добавь код в Настройки > Функции > 'Кредиты'.
+The account is closed. Write to the server's support address.	Аккаунт закрыт. Напиши в поддержку сервера.
+Recording: 	Запись: 
+ bytes	 байт
+Turning speech into text...	Преобразую речь в текст...
+Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text opens in the editor so you can fix it before sending.\n\nThe recording is not kept on the server.	Говори до 30 секунд. Звук уходит на сервер и превращается в текст; текст откроется в редакторе, чтобы ты мог исправить его перед отправкой.\n\nЗапись на сервере не хранится.
+Unrecognised server reply (HTTP {0}).	Неизвестный ответ сервера (HTTP {0}).
+The recording is too long. At most {0} seconds.	Запись слишком длинная. Максимум секунд: {0}.
+The speech service is not answering right now ({0}). 'Send again' later.	Служба распознавания речи сейчас не отвечает ({0}). Попробуй 'Отправить снова' позже.
+The server's speech-to-text setup has a problem ({0}).	Проблема с настройкой распознавания речи на сервере ({0}).
+no folder found	папка не найдена
+no free file name	нет свободного имени файла
+no lasting folder	нет постоянной папки
+Info	Инфо
+Saved	Сохранённые
+Exit	Выход
+Pick up where you left off	Продолжить с того же места
+Open earlier chats	Открыть прежние чаты
+Search the web, translate...	Поиск в сети, перевод...
+Start fresh	Начать заново
+Replies on the phone, offline	Ответы в телефоне, без сети
+Can we reach the server?	Есть связь с сервером?
+Text size, look, sound, language	Размер текста, вид, звук, язык
+What is AIKON?	Что такое AIKON?
+See you soon	До скорой встречи
+Balance, add a code, buy	Баланс, добавить код, купить
+Select	Выбор
+The server has no model choice (needs server 0.7.0).	На сервере нет выбора модели (нужен сервер 0.7.0).
+The server listed no models.	Сервер не вернул моделей.
+Choose	Выбрать
+Refresh the list	Обновить список
+now	сейчас
+last used	последняя
+default	по умолчанию
+In test mode the list cannot come from the server.	В тестовом режиме список нельзя получить с сервера.
+No list yet. Choose 'Refresh the list'.	Списка пока нет. Выбери 'Обновить список'.
+Other	Другое
+1 model	1 модель
+Test mode uses no network.	Тестовый режим не использует сеть.
+{0} models	Моделей: {0}
+~{0} credits a message	~{0} кр. за сообщение
+UTF-8 not supported	UTF-8 не поддерживается
+The address must start with https://	Адрес должен начинаться с https://
+Java network access denied	Доступ Java к сети запрещён
+Connection type not supported: 	Тип соединения не поддерживается: 
+Certificate: 	Сертификат: 
+\nCipher: 	\nШифр: 
+\nCertificate: 	\nСертификат: 
+\nIssuer: 	\nИздатель: 
+\nSignature: 	\nПодпись: 
+\nValid until: 	\nДействителен до: 
+\nSubject: 	\nСубъект: 
+unknown certificate authority (root not on the phone)	неизвестный центр сертификации (корня нет в телефоне)
+expired or not yet valid (phone date / time zone?)	истёк или ещё не действует (дата / часовой пояс телефона?)
+not yet valid (phone clock?)	ещё не действует (часы телефона?)
+host name mismatch	имя хоста не совпадает
+broken certificate chain	нарушена цепочка сертификатов
+root certificate expired	корневой сертификат истёк
+signature not verified (root missing or algorithm unsupported)	подпись не проверена (нет корня или алгоритм не поддерживается)
+missing signature	нет подписи
+unsupported extension	неподдерживаемое расширение
+inappropriate key usage	недопустимое назначение ключа
+code 	код 
+The server address must start with https://.	Адрес сервера должен начинаться с https://.
+Java network access was denied. Allow it in the application settings.	Доступ Java к сети запрещён. Разреши его в настройках приложения.
+Could not open HTTPS. Check the Java access point (mobile data / WLAN).	Не удалось открыть HTTPS. Проверь точку доступа Java (мобильные данные / WLAN).
+Secure connection failed (certificate/TLS). 	Защищённое соединение не удалось (сертификат/TLS). 
+Character encoding error: 	Ошибка кодировки: 
+Could not connect or no reply (access point, DNS, network or TLS). 	Нет соединения или ответа (точка доступа, DNS, сеть или TLS). 
+Could not read the reply (HTTP 	Не удалось прочитать ответ (HTTP 
+(maybe DNS) 	(возможно, DNS) 
+(timeout) 	(тайм-аут) 
+(maybe TLS) 	(возможно, TLS) 
+Pairing code	Код привязки
+Status	Статус
+Give this code to the server's owner.	Передай этот код владельцу сервера.
+Requesting a code...	Запрашиваю код...
+Pairing	Привязка
+The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter approval the phone fetches its access code by itself; keep this screen open. The code is valid for 10 minutes.	Владелец сервера одобряет код на сервере:\nadmin.sh SERVER pair <code>\n\nПосле одобрения телефон сам получит код доступа; не закрывай этот экран. Код действует 10 минут.
+Could not start. 	Не удалось начать. 
+Too many pending pairings; try again in a few minutes.	Слишком много ожидающих привязок; повтори через несколько минут.
+Could not start (	Не удалось начать (
+Waiting for approval...	Жду одобрения...
+Connection problem, pairing stopped. 	Проблема соединения, привязка остановлена. 
+Connection problem, trying again (	Проблема соединения, пробую снова (
+Paired (	Привязано (
+). Access code saved; chat is ready.	). Код доступа сохранён; чат готов.
+Pairing expired. Start again.	Привязка истекла. Начни снова.
+Another photo	Ещё фото
+Take a photo	Сделать фото
+Choose from the phone	Выбрать из телефона
+The server could not read this photo (it must be JPEG or PNG).	Сервер не смог прочитать это фото (нужен JPEG или PNG).
+The photo is too large.	Фото слишком большое.
+No photos left today. More tomorrow (UTC).	Фото на сегодня не осталось. Завтра будут ещё (UTC).
+The server does not take photos (older version).	Сервер не принимает фото (старая версия).
+The server is preparing the photo...	Сервер готовит фото...
+Photo	Фото
+The photo goes to the server and is shown to this chat's model, also with later messages.\n\nIt stays on the server with the chat (30 days, or until you delete the chat). An unused photo is deleted after a day.\n\nThe photo is never sent by itself: it goes with your message when you press Send.	Фото уходит на сервер и показывается модели этого чата, в том числе при следующих сообщениях.\n\nОно хранится на сервере вместе с чатом (30 дней или пока не удалишь чат). Неиспользованное фото удаляется через сутки.\n\nФото никогда не отправляется само: оно уходит с твоим сообщением, когда ты нажимаешь Отправить.
+Choose a photo	Выбери фото
+File access was denied. Answer 'Yes' when the phone asks.	Доступ к файлам запрещён. Ответь 'Да', когда телефон спросит.
+Could not read the folder: 	Не удалось прочитать папку: 
+.. (up)	.. (вверх)
+Drives	Диски
+Could not read the file: 	Не удалось прочитать файл: 
+File access was denied.	Доступ к файлам запрещён.
+The photo does not fit in the phone's memory. Take it with the app's camera.	Фото не помещается в память телефона. Сними его камерой приложения.
+Reading...	Чтение...
+The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.	Фото слишком большое ({0} КБ). Максимум {1} КБ; сними его камерой приложения.
+The phone did not accept it: 	Телефон не принял: 
+Permission denied. Answer 'Yes' when the phone asks, to add it.	Доступ запрещён. Ответь 'Да', когда телефон спросит, чтобы добавить.
+Could not add it: 	Не удалось добавить: 
+Microphone access was denied. Answer 'Yes' when the phone asks.	Доступ к микрофону запрещён. Ответь 'Да', когда телефон спросит.
+Could not start recording. 	Не удалось начать запись. 
+Still busy with the previous file.	Ещё занят предыдущим файлом.
+File error: 	Ошибка файла: 
+Permission denied. Answer 'Yes' when the phone asks about file access.	Доступ запрещён. Ответь 'Да', когда телефон спросит о доступе к файлам.
+Saved on the phone:\n	Сохранено в телефоне:\n
+\n\nRead it offline: main menu > Saved.	\n\nЧитай без сети: главное меню > Сохранённые.
+Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone.	Пока ничего не сохранено. В чате выбери ответ (1/3), центр. клавиша > Сохранить в телефон.
+Delete this file from the phone?\n	Удалить этот файл из телефона?\n
+Could not save settings: 	Не удалось сохранить настройки: 
+Setup	Настройка
+Setup 	Настройка 
+Skip setup	Пропустить
+Pair again	Привязать снова
+This phone is already paired. Setup is complete.	Этот телефон уже привязан. Настройка завершена.
+Last step: press Start and type your credit code.	Последний шаг: нажми Старт и введи код кредитов.
+Last step: press Start; the server's owner approves the code shown.	Последний шаг: нажми Старт; владелец сервера одобрит показанный код.
+Welcome! Three steps: server address, connection test, pairing. Every step can be left with 'Skip setup'; come back later from Settings > Options > Setup wizard. The language follows the phone; change it in Settings.\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).\n\nThe server's owner gives you its address.\n\nIt must start with https://; unencrypted connections are never used. The next step tests the secure connection.	Добро пожаловать! Три шага: адрес сервера, проверка соединения, привязка. Любой шаг можно оставить через 'Пропустить'; вернуться можно позже из Настройки > Функции > Мастер настройки. Язык следует языку телефона; сменить его можно в Настройках.\n\nПросто хочешь попробовать? Пропусти настройку, затем Настройки > Тестовый режим (имитация ответов, без сети).\n\nАдрес сервера даёт его владелец.\n\nОн должен начинаться с https://; незашифрованные соединения не используются никогда. Следующий шаг проверяет защищённое соединение.
+This server works with credit codes: press Start and type the 16-digit code you bought. The phone is paired with the code; no approval by the server's owner.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Этот сервер работает с кодами кредитов: нажми Старт и введи купленный 16-значный код. Телефон привязывается по коду; одобрение владельца сервера не нужно.\n\nКод доступа хранится в телефоне и в резервной копии настройки на карте памяти и отправляется только по адресу https://.
+Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Нажми Старт, и появится 6-значный код. Когда владелец сервера его одобрит, телефон сам получит код доступа; длинное вводить не нужно.\n\nКод доступа хранится в телефоне и в резервной копии настройки на карте памяти и отправляется только по адресу https://.
+The address must start with https://, for example https://your-server. HTTP is not supported.	Адрес должен начинаться с https://, например https://your-server. HTTP не поддерживается.
+All set!	Всё готово!
+Setup saved. Finish the missing steps from Settings.	Настройка сохранена. Недостающие шаги выполни в Настройках.
+Setup skipped. Settings > Options > Setup wizard.	Настройка пропущена. Настройки > Функции > Мастер настройки.
+Yesterday	Вчера
+.	.

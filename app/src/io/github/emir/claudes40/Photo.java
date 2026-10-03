@@ -132,8 +132,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
             msg = Net.explain(r);
             retry = true;
         } else if (m == null) {
-            msg = L.s("Sunucu yanıtı tanınmadı (HTTP " + r.httpCode + ").", "Unrecognised server reply (HTTP "
-                    + r.httpCode + ").");
+            msg = L.f("Sunucu yanıtı tanınmadı (HTTP {0}).", "Unrecognised server reply (HTTP {0}).", String.valueOf(r.httpCode));
             retry = true;
         } else if ("bad_image".equals(st)) {
             msg = L.s("Sunucu bu fotoğrafı okuyamadı (JPEG veya PNG olmalı).",

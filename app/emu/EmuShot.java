@@ -43,6 +43,8 @@ public class EmuShot {
     static int shot;
     static Object midlet;
     static boolean tr;
+    /** Settings.lang for the run: 1 Turkish, 2 English, 3.. a language file (LANG=es, pt, ...). */
+    static int lang = 2;
 
     /** A long message with paragraphs and lists; the fake reply quotes it back. */
     static final String LIST_EN = "Plan for Saturday, short:\n\n"
@@ -80,7 +82,15 @@ public class EmuShot {
         new File(out, "splash").mkdirs();
         int w = Integer.parseInt(args[2]);
         int h = Integer.parseInt(args[3]);
-        tr = args.length > 4 && "tr".equals(args[4]);
+        String code = args.length > 4 ? args[4] : "en";
+        tr = "tr".equals(code);
+        lang = tr ? 1 : 2;
+        String[] files = { "es", "pt", "fr", "de", "ru", "id" }; // L.LANGS
+        for (int i = 0; i < files.length; i++) {
+            if (files[i].equals(code)) {
+                lang = 3 + i;
+            }
+        }
 
         Mobile.setPlatform(new MobilePlatform(w, h));
         Mobile.getPlatform().setPainter(new Runnable() { public void run() { } });
@@ -98,6 +108,10 @@ public class EmuShot {
             setting("lang", new Integer(1));
             call("rebuildUi");
         }
+        if (lang >= 3) {
+            setting("lang", new Integer(lang));
+            call("rebuildUi");
+        }
 
         // splash animation frames (runs ~2.4 s by itself), then the setup wizard (fresh install)
         for (int i = 0; i < 16; i++) {
@@ -107,7 +121,7 @@ public class EmuShot {
         Thread.sleep(1200);
         save("setup_1_server");               // the wizard starts with the address (language: the phone's)
         // set the language again for the rest of the run (harness)
-        setting("lang", new Integer(tr ? 1 : 2));
+        setting("lang", new Integer(lang));
         call("rebuildUi");
         setting("setupDone", Boolean.TRUE);
         call("showMenu");
@@ -306,8 +320,16 @@ public class EmuShot {
         System.exit(3);
     }
 
+    /** A label as the app shows it now (its L.s: Turkish, English or a language file). */
     static String t(String en, String turkish) {
-        return tr ? turkish : en;
+        try {
+            Class l = Class.forName("io.github.emir.claudes40.L", true, midlet.getClass().getClassLoader());
+            Method s = l.getDeclaredMethod("s", String.class, String.class);
+            s.setAccessible(true);
+            return (String) s.invoke(null, turkish, en);
+        } catch (Exception e) {
+            return tr ? turkish : en;
+        }
     }
 
     /** Harness only: an error note after which "Retry" is offered (never pressed here). */

@@ -58,6 +58,17 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 
 ### Phone app
 
+- UI languages: Turkish and English side by side in the code
+  (`L.s("Türkçe", "English")`, `L.f` with `{0}` for values); Spanish,
+  Portuguese, French, German, Russian and Indonesian from `app/lang/xx.txt`
+  (one line per English text: the text, a TAB, the translation), packed at
+  build time into `/lang/keys.txt` plus one file of translations per
+  language (`tools/strings.py`; `make -C app langs` shows what each file
+  covers). A missing translation shows the English text. "Same as phone"
+  picks the language from `microedition.locale`. Voice messages send the
+  language to the server only for Turkish and English; others are detected
+  there.
+
 - High-level `TextBox`/`Form` only where text is typed (messages, notes,
   server address, access code, setup address, credit code, calendar entry);
   custom `Canvas` screens elsewhere (splash, home, chat, settings and every

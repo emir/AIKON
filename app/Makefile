@@ -6,6 +6,7 @@
 #   make emu       optional FreeJ2ME screenshots (FREEJ2ME=path/to/classes;
 #                  EMU_W/EMU_H screen size, EMU_LANG=en|tr)
 #   make promo     share images/sounds from the emulator screenshots
+#   make langs     what each language file (lang/xx.txt) covers
 #   make clean
 #
 # Needs: a JDK 11+ (only runs the build tools), Python 3 (+ Pillow for the
@@ -41,7 +42,7 @@ SRCS := $(shell find src -name '*.java' | sort)
 STUB_SRCS := $(shell find stubs -name '*.java' | sort)
 STUBS = $(BUILD)/stubs
 
-.PHONY: all build check deps clean emu promo
+.PHONY: all build check deps clean emu promo langs
 
 all: build check
 
@@ -52,6 +53,8 @@ build: deps
 	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS) $(DIST)
 	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS)
 	$(PYTHON) tools/make_art.py icon $(BUILD)/res/icon.png
+	$(PYTHON) tools/strings.py check src lang
+	$(PYTHON) tools/strings.py pack src lang $(BUILD)/res/lang
 	$(JAVA) -jar $(ECJ) -source $(SOURCE_LEVEL) -target $(TARGET_LEVEL) \
 		-bootclasspath $(CLDC):$(MIDP) -encoding UTF-8 -g:none \
 		-failOnWarning -d $(STUBS) $(STUB_SRCS)
@@ -93,6 +96,9 @@ emu:
 promo:
 	@test -d $(BUILD)/emu/shots || { echo "run 'make emu' first" >&2; exit 1; }
 	$(PYTHON) tools/promo.py $(BUILD)/emu/shots $(BUILD)/promo
+
+langs:
+	$(PYTHON) tools/strings.py check src lang
 
 clean:
 	rm -rf $(BUILD) $(DIST)

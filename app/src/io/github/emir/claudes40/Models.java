@@ -368,7 +368,8 @@ final class Models implements CommandListener, Runnable {
                     count += p2[k].equals(g) ? 1 : 0;
                 }
                 list.add(g.length() > 0 ? g : L.s("Diğer", "Other"),
-                        count + L.s(" model", count == 1 ? " model" : " models") + (now ? " · " + mark : ""), -1,
+                        (count == 1 ? L.s("1 model", "1 model") : L.f("{0} model", "{0} models", String.valueOf(count)))
+                                + (now ? " · " + mark : ""), -1,
                         now ? RowList.CHECK : 0);
                 v.addElement(g);
                 if (now) {
@@ -382,7 +383,7 @@ final class Models implements CommandListener, Runnable {
                 }
                 boolean now = i2[i].equals(current);
                 String cost = i < c2.length ? c2[i] : "";
-                String sub = cost.length() > 0 ? L.s("mesaj başı ~" + cost + " kredi", "~" + cost + " credits a message") : "";
+                String sub = cost.length() > 0 ? L.f("mesaj başı ~{0} kredi", "~{0} credits a message", String.valueOf(cost)) : "";
                 list.add(n2[i], now ? (sub.length() > 0 ? sub + " · " : "") + mark : sub, -1, now ? RowList.CHECK : 0);
                 v.addElement(i2[i]);
                 if (now) {

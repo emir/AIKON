@@ -1,0 +1,554 @@
+# AIKON UI, Portuguese (pt). Line: English key, TAB, translation.
+To-do: 	Tarefa: 
+Calendar: 	Agenda: 
+Save	Salvar
+Cancel	Cancelar
+Add to calendar	Adicionar à agenda
+Title	Título
+Where	Local
+Calendar	Agenda
+To-do list	Lista de tarefas
+Date and time	Data e hora
+Alarm (calendar)	Alarme (agenda)
+None	Nenhum
+At the start	No início
+15 minutes before	15 minutos antes
+1 hour before	1 hora antes
+1 day before	1 dia antes
+A title and a date are needed.	Título e data são necessários.
+Added to the to-do list: 	Adicionado à lista de tarefas: 
+Added to the calendar: 	Adicionado à agenda: 
+Capture	Capturar
+Opening the camera...	Abrindo a câmera...
+Centre key or 'Capture': take the photo	Tecla central ou 'Capturar': tirar a foto
+Camera access was denied. Answer 'Yes' when the phone asks.	O acesso à câmera foi negado. Responda 'Sim' quando o celular perguntar.
+Could not take the photo.	Não foi possível tirar a foto.
+Could not open the camera. 	Não foi possível abrir a câmera. 
+Taking the photo...	Tirando a foto...
+Write	Escrever
+Dictate	Ditar
+Add a photo	Adicionar foto
+Show the rest	Mostrar o resto
+Reading mode	Modo leitura
+Quick prompts	Atalhos rápidos
+Retry	Repetir
+Chats	Conversas
+New chat	Nova conversa
+Model	Modelo
+Delete chat	Excluir conversa
+Shortcuts	Atalhos
+Message actions	Ações da mensagem
+Menu	Menu
+Close	Fechar
+A request is still running.	Uma solicitação ainda está em andamento.
+Centre key: add to calendar	Tecla central: adicionar à agenda
+Text: 	Texto: 
+Small	Pequeno
+Large	Grande
+Medium	Médio
+You	Você
+Test mode · fake	Modo teste · falso
+Reply shortened	Resposta resumida
+0 · Show the rest	0 · Mostrar o resto
+Centre key · Retry	Tecla central · Repetir
+No reply to read yet	Nenhuma resposta para ler ainda
+Loading the rest...	Carregando o resto...
+Web searches can take a while	Buscas na web podem demorar
+Sending	Enviando
+ s	 s
+Centre key to write	Tecla central para escrever
+ left	 restantes
+Draft: 	Rascunho: 
+Write a message	Escreva uma mensagem
+Centre key: details · 1/3: select	Tecla central: detalhes · 1/3: selecionar
+Centre key: actions · 1/3: select	Tecla central: ações · 1/3: selecionar
+Centre key: retry · 5: write	Tecla central: repetir · 5: escrever
+0: the rest · 7: reading mode	0: o resto · 7: modo leitura
+7: reading mode · 5: write	7: modo leitura · 5: escrever
+New reply · press 3	Nova resposta · aperte 3
+0 or centre key: the rest	0 ou tecla central: o resto
+0: the rest	0: o resto
+{0} is typing	{0} está digitando
+Open	Abrir
+Search chats	Buscar conversas
+Pin / unpin	Fixar / desafixar
+Delete	Excluir
+All chats	Todas as conversas
+Refresh	Atualizar
+Back	Voltar
+Search	Buscar
+Search: 	Buscar: 
+Could not pin (	Não foi possível fixar (
+Could not delete (	Não foi possível excluir (
+The server cannot search (needs server 0.4.0).	O servidor não pode buscar (precisa do servidor 0.4.0).
+Could not get the list (	Não foi possível obter a lista (
+Error: 	Erro: 
+Nothing found. Plain letters are fine: 'sise' finds 'şişe'.	Nada encontrado. Letras simples bastam: 'sise' encontra 'şişe'.
+No chats yet. The server keeps chats for 30 days, pinned ones until unpinned.	Nenhuma conversa ainda. O servidor guarda as conversas por 30 dias, as fixadas até serem desafixadas.
+Pinned	Fixadas
+Recent	Recentes
+Type at least 2 letters.	Digite pelo menos 2 letras.
+Delete this chat from the server? This cannot be undone.	Excluir esta conversa do servidor? Não dá para desfazer.
+At most {0} chats can be pinned. Unpin one first.	No máximo {0} conversas podem ser fixadas. Desafixe uma antes.
+[Photo] 	[Foto] 
+The message is empty.	A mensagem está vazia.
+Nothing to retry.	Nada para repetir.
+There is no more to this reply.	Não há mais nada nesta resposta.
+Saved on this phone	Salvo neste celular
+This chat is kept on the phone and readable offline. Write to continue it on the server.	Esta conversa fica no celular e pode ser lida offline. Escreva para continuá-la no servidor.
+The previous chat stays on the server for 30 days; open it again from Chats.	A conversa anterior fica no servidor por 30 dias; abra-a de novo em Conversas.
+Chat cleared	Conversa limpa
+Chat deleted	Conversa excluída
+Deleting...	Excluindo...
+Loading more...	Carregando mais...
+Loading chat...	Carregando conversa...
+Sending...	Enviando...
+Waiting for reply...	Aguardando resposta...
+\nPhoto: attached (not sent to a server).	\nFoto: anexada (não enviada a um servidor).
+Test mode event	Evento do modo teste
+Could not connect	Não foi possível conectar
+No reply	Sem resposta
+Unrecognised server reply	Resposta do servidor não reconhecida
+Still working	Ainda em andamento
+Still working on it	Ainda trabalhando nisso
+Choose 'Retry' in a moment; it asks about the same request and is not charged again.	Escolha 'Repetir' em instantes; ele pergunta sobre a mesma solicitação e não é cobrado de novo.
+Busy	Ocupado
+Another request is running	Outra solicitação está em andamento
+Choose 'Retry' in a moment.	Escolha 'Repetir' em instantes.
+Limit reached	Limite atingido
+Daily limit reached. Try again tomorrow (UTC).	Limite diário atingido. Tente de novo amanhã (UTC).
+Unknown result	Resultado desconhecido
+Chat full	Conversa cheia
+This chat got too long. Continue with 'New chat'.	Esta conversa ficou longa demais. Continue com 'Nova conversa'.
+Chat not found	Conversa não encontrada
+Chat not found on the server (it may have expired). Continue with 'New chat'.	Conversa não encontrada no servidor (pode ter expirado). Continue com 'Nova conversa'.
+Not authorised	Não autorizado
+Access code invalid or revoked. Settings > Pair this phone.	Código de acesso inválido ou revogado. Ajustes > Parear este celular.
+Not enough credits	Créditos insuficientes
+Not enough credits for this message.	Créditos insuficientes para esta mensagem.
+ Add a code under main menu > Credits; your message is kept as a draft.	 Adicione um código em menu principal > Créditos; sua mensagem fica como rascunho.
+Trial: one model	Teste: um modelo
+The free trial works with one model only. Pick it in the Model menu; a credit code opens every model (main menu > Credits). Your message is kept as a draft.	O teste grátis funciona com um único modelo. Escolha-o no menu Modelo; um código de crédito libera todos os modelos (menu principal > Créditos). Sua mensagem fica como rascunho.
+Account closed	Conta encerrada
+This account is closed. Write to the server's support address.	Esta conta foi encerrada. Escreva para o e-mail de suporte do servidor.
+No credits	Sem créditos
+Model not offered	Modelo indisponível
+The chosen model is no longer offered by the server. Pick another with Menu > Model; your message is kept as a draft.	O modelo escolhido não é mais oferecido pelo servidor. Escolha outro em Menu > Modelo; sua mensagem fica como rascunho.
+Photo not found	Foto não encontrada
+The photo is not on the server: unused for a day, or used in another chat. Add it again; your message is kept as a draft.	A foto não está no servidor: sem uso por um dia, ou usada em outra conversa. Adicione-a de novo; sua mensagem fica como rascunho.
+Too long	Longa demais
+The message is too long.	A mensagem é longa demais.
+No reply (	Sem resposta (
+The rest is gone	O resto sumiu
+The rest of this reply is no longer on the server (kept for 7 days).	O resto desta resposta não está mais no servidor (guardado por 7 dias).
+Could not load more	Não foi possível carregar mais
+Older messages hidden	Mensagens antigas ocultas
+Older messages are not shown on the phone; the model still sees them.	Mensagens antigas não aparecem no celular; o modelo ainda as vê.
+Chat opened	Conversa aberta
+Chat not found on the server (deleted or expired).	Conversa não encontrada no servidor (excluída ou expirada).
+Not loaded	Não carregado
+The end did not load	O final não carregou
+Not deleted	Não excluído
+Next replies: {0}	Próximas respostas: {0}
+{0} answers from your next message on and sees this chat's history too.	{0} responde a partir da próxima mensagem e também vê o histórico desta conversa.
+Messages can be at most {0} characters.	As mensagens podem ter no máximo {0} caracteres.
+[Test mode] This is not a real {0} reply. No network was used.\nYour message has {1} characters; earlier messages in this chat: {2}.\nI received: "{3}"	[Test mode] Esta não é uma resposta real de {0}. Nenhuma rede foi usada.\nSua mensagem tem {1} caracteres; mensagens anteriores nesta conversa: {2}.\nRecebi: "{3}"
+\n\n'Retry' asks about the same request; it is not sent to {0} twice.	\n\n'Repetir' pergunta sobre a mesma solicitação; ela não é enviada a {0} duas vezes.
+HTTP {0}. Carrier network or wrong address?	HTTP {0}. Rede da operadora ou endereço errado?
+{0} declined	{0} recusou
+{0} declined to answer this one. Ask differently or pick another model.	{0} recusou responder a esta. Pergunte de outro jeito ou escolha outro modelo.
+The relay got no answer from the AIKON server ({0}). 'Retry' asks about the same request; it is not sent to {1} twice.	O relay não recebeu resposta do servidor AIKON ({0}). 'Repetir' pergunta sobre a mesma solicitação; ela não é enviada a {1} duas vezes.
+Unknown result: the request may have reached {0}. Nothing was re-sent. Your draft is kept; sending it again is a new (paid) request.	Resultado desconhecido: a solicitação pode ter chegado a {0}. Nada foi reenviado. Seu rascunho foi mantido; enviar de novo é uma nova solicitação (paga).
+Not enough credits for this message (balance: {0}).	Créditos insuficientes para esta mensagem (saldo: {0}).
+The server's {0} API account is out of credits. Send again once it is topped up.	A conta de API {0} do servidor está sem créditos. Envie de novo quando for recarregada.
+{0} is busy	{0} está ocupado
+{0} is busy right now. Send again shortly.	{0} está ocupado agora. Envie de novo em instantes.
+Press 0 to try again (free; {0} is not asked again).\n\n	Aperte 0 para tentar de novo (grátis; {0} não é consultado de novo).\n\n
+Send	Enviar
+Remove the photo	Remover a foto
+Change	Alterar
+OK	OK
+Pair this phone	Parear este celular
+Credits	Créditos
+Setup wizard	Assistente
+Play the jingle	Tocar a vinheta
+Replay the intro	Rever a introdução
+Data usage	Uso de dados
+Reset setup	Refazer configuração
+Reset	Redefinir
+Update	Atualizar
+Your earlier setup was restored: server, pairing and your notes. To start over: Settings > Options > Reset setup.	Sua configuração anterior foi restaurada: servidor, pareamento e suas notas. Para recomeçar: Ajustes > Opções > Refazer configuração.
+Test mode: fake replies	Modo teste: respostas falsas
+Setup: server address needed	Configuração: endereço do servidor necessário
+Setup: run the connection test	Configuração: faça o teste de conexão
+Setup: pair this phone	Configuração: pareie este celular
+No credits left · add a code under Credits	Sem créditos · adicione um código em Créditos
+Ready · new AI on an old Nokia	Pronto · IA nova em um Nokia antigo
+Buy a credit code (on a computer or smartphone): 	Compre um código de crédito (no computador ou smartphone): 
+ credits	 créditos
+Last: 	Último: 
+This phone does not let apps use the camera or files.	Este celular não permite que apps usem a câmera ou arquivos.
+What is in this photo?	O que há nesta foto?
+This phone does not let apps record audio.	Este celular não permite que apps gravem áudio.
+Check, then send	Confira e envie
+The phone could not open the link. Open this in the browser: 	O celular não conseguiu abrir o link. Abra isto no navegador: 
+Message	Mensagem
+Message with a photo	Mensagem com foto
+Server chats are not shown in test mode.	Conversas do servidor não aparecem no modo teste.
+This phone does not let apps save files.	Este celular não permite que apps salvem arquivos.
+Chat	Conversa
+Centre key or 5: write\nUp / down: one line\n2 / 8, left / right: one page\n1 / 3: select a message; centre key: shorten, translate, edit...\n* / #: top / end\n0: the rest of a reply\n7: reading mode\n9: text size\nAfter an error, centre key: retry\n	Tecla central ou 5: escrever\nCima / baixo: uma linha\n2 / 8, esquerda / direita: uma página\n1 / 3: selecionar uma mensagem; tecla central: resumir, traduzir, editar...\n* / #: início / fim\n0: o resto de uma resposta\n7: modo leitura\n9: tamanho do texto\nApós um erro, tecla central: repetir\n
+Shows one reply page by page, full width.\nCentre key, 8 or right: next page\n2 or left: previous page\nUp / down: one line\n1 / 3: previous / next reply\n* / #: top / end\n0: the rest of a reply\n9: text size\n7 or Close: back to the chat\n	Mostra uma resposta página por página, em largura total.\nTecla central, 8 ou direita: próxima página\n2 ou esquerda: página anterior\nCima / baixo: uma linha\n1 / 3: resposta anterior / próxima\n* / #: início / fim\n0: o resto de uma resposta\n9: tamanho do texto\n7 ou Fechar: voltar à conversa\n
+Main menu and lists	Menu principal e listas
+1-9: opens that row directly (in lists the first nine rows; not in Settings)	1-9: abre essa linha direto (nas listas, as nove primeiras; não em Ajustes)
+QWERTY keyboard	Teclado QWERTY
+Digits sit on letter keys: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: same as the centre key\nOn the main menu, N only moves to Exit (does not quit)\n	Os dígitos ficam em teclas de letras: R T Y = 1 2 3, F G H = 4 5 6, V B N = 7 8 9, M = 0, U = *, J = #\nEnter: igual à tecla central\nNo menu principal, N só vai até Sair (não fecha o app)\n
+Actions like shorten or translate never send by themselves: the editor opens with the text ready and you press Send.	Ações como resumir ou traduzir nunca enviam sozinhas: o editor abre com o texto pronto e você aperta Enviar.
+Loading the rest of a reply is free: it comes from the server, the model is not asked again.	Carregar o resto de uma resposta é grátis: vem do servidor, o modelo não é consultado de novo.
+Reply	Resposta
+Your message	Sua mensagem
+Open in reading mode	Abrir no modo leitura
+Make it shorter	Resumir
+Explain it more simply	Explicar mais simples
+Translate to Turkish	Traduzir para turco
+Translate to English	Traduzir para inglês
+Ask about this	Perguntar sobre isto
+Edit and send again	Editar e reenviar
+Save to phone (.txt)	Salvar no celular (.txt)
+Add to calendar / to-do	Adicionar à agenda / tarefas
+Open in editor	Abrir no editor
+Make this reply shorter, 3 sentences at most: 	Resuma esta resposta em no máximo 3 frases: 
+Explain this reply more simply: 	Explique esta resposta de forma mais simples: 
+Translate all of this reply to Turkish: 	Traduza toda esta resposta para o turco: 
+Translate all of this reply to English: 	Traduza toda esta resposta para o inglês: 
+About this part: 	Sobre esta parte: 
+Text	Texto
+First enter the server address (https://...) in Settings.	Primeiro digite o endereço do servidor (https://...) em Ajustes.
+Run the 'Connection test' first. Nothing is sent before the secure connection is verified.	Faça antes o 'Teste de conexão'. Nada é enviado antes de a conexão segura ser verificada.
+Pair this phone first: Settings > Options > 'Pair this phone'.	Pareie este celular antes: Ajustes > Opções > 'Parear este celular'.
+Delete the server address, pairing and your notes from this phone and from the backup file? The setup wizard opens next.	Apagar o endereço do servidor, o pareamento e suas notas deste celular e do arquivo de backup? O assistente abre em seguida.
+Settings	Ajustes
+Light	Claro
+Dark	Escuro
+Automatic: dark 19-07	Automático: escuro 19-07
+none	nenhum
+Look	Aparência
+Replies	Respostas
+Sound and screen	Som e tela
+Language and server	Idioma e servidor
+Text size	Tamanho do texto
+May search the web	Pode buscar na web
+news, weather...	notícias, clima...
+Keep last chat on phone	Guardar a última conversa
+Your notes for the AI	Suas notas para a IA
+Jingle and reply sound	Vinheta e som de resposta
+Vibrate on reply	Vibrar na resposta
+Full screen	Tela cheia
+Light up for a reply	Acender para uma resposta
+if the screen went dark	se a tela apagou
+Language	Idioma
+Server address	Endereço do servidor
+(not set)	(não definido)
+Access code	Código de acesso
+Connection test	Teste de conexão
+passed	aprovado
+not passed yet	ainda não aprovado
+Test mode	Modo teste
+fake replies, no network	respostas falsas, sem rede
+Same as phone	Igual ao celular
+Server address (https://...)	Endereço do servidor (https://...)
+The address must start with https://. HTTP is not supported.	O endereço deve começar com https://. HTTP não é suportado.
+The access code must be 16-64 letters/digits.	O código de acesso deve ter 16-64 letras/dígitos.
+Today	Hoje
+Total since 	Total desde 
+Save the server address (https://...) first.	Salve antes o endereço do servidor (https://...).
+Run the 'Connection test' first. Pairing only runs over a verified connection.	Faça antes o 'Teste de conexão'. O pareamento só roda numa conexão verificada.
+Estimates: messages are counted exactly, HTTP headers roughly.\n\nThe encrypted connection set-up is not counted, so your operator counts more.\n\nTest mode uses no data.	Estimativas: as mensagens são contadas com exatidão, os cabeçalhos HTTP de forma aproximada.\n\nO estabelecimento da conexão criptografada não é contado, então sua operadora conta mais.\n\nO modo teste não usa dados.
+The AI does not run on the phone: messages travel over an encrypted link to the server and on to the chosen model's provider (Anthropic, OpenAI, Google, xAI). Not an official app of these providers or of Nokia.\n\nThe server deletes chats 30 days after the last message; pinned ones stay until unpinned. The phone keeps the last chat only if 'Keep last chat on phone' is on; saved replies and calendar entries stay on the phone only.\n\nWeb search runs on the server with the model provider's search tool, not the phone's browser.	A IA não roda no celular: as mensagens viajam por um link criptografado até o servidor e daí ao provedor do modelo escolhido (Anthropic, OpenAI, Google, xAI). Não é um app oficial desses provedores nem da Nokia.\n\nO servidor apaga as conversas 30 dias após a última mensagem; as fixadas ficam até serem desafixadas. O celular guarda a última conversa só se 'Guardar a última conversa' estiver ligado; respostas salvas e itens da agenda ficam só no celular.\n\nA busca na web roda no servidor com a ferramenta de busca do provedor do modelo, não no navegador do celular.
+Your notes for the AI: say briefly who you are and how you like answers, e.g. "I'm Emir, I live in Istanbul, keep it short." Sent to the server with every message.\n\nInstead of typing the access code, use Options > 'Pair this phone'. The code is stored on this phone and (so a reinstall needs no setup) in the setup backup on the memory card, and sent only to the https:// address.\n\nThe connection test must pass again whenever the address changes; nothing is sent before.\n\nTest mode gives fake replies and uses no network.	Suas notas para a IA: diga em poucas palavras quem você é e como gosta das respostas, ex.: "Sou o Emir, moro em Istambul, seja breve." Enviadas ao servidor a cada mensagem.\n\nEm vez de digitar o código de acesso, use Opções > 'Parear este celular'. O código fica guardado neste celular e (para que uma reinstalação não precise de configuração) no backup da configuração no cartão de memória, e é enviado só ao endereço https://.\n\nO teste de conexão precisa passar de novo sempre que o endereço mudar; nada é enviado antes.\n\nO modo teste dá respostas falsas e não usa rede.
+About	Sobre
+Version 	Versão 
+ (build 	 (build 
+New version	Nova versão
+ · Update on the home screen	 · Atualizar na tela inicial
+AI chat for Nokia S40 and S60 phones.	Chat de IA para celulares Nokia S40 e S60.
+Made by: 	Feito por: 
+Platform	Plataforma
+Voice recording	Gravação de voz
+yes	sim
+no	não
+Camera	Câmera
+{0} credits · New version {1}	{0} créditos · Nova versão {1}
+New version {0} · Update	Nova versão {0} · Atualizar
+Credits low · {0} left	Poucos créditos · restam {0}
+Ready · {0} credits	Pronto · {0} créditos
+Ready · {0} left today	Pronto · restam {0} hoje
+AIKON {0} will be downloaded. The phone asks to install it and AIKON closes; your settings and pairing are kept.	O AIKON {0} será baixado. O celular pede para instalar e o AIKON fecha; suas configurações e o pareamento são mantidos.
+Message {0}	Mensagem {0}
+Search the web and answer briefly: 	Busque na web e responda brevemente: 
+Weather today and tomorrow in: 	Clima hoje e amanhã em: 
+Search the web: the most important news today, 5 short lines.	Busque na web: as notícias mais importantes de hoje, 5 linhas curtas.
+Current exchange rate, search the web, numbers first: 	Cotação atual, busque na web, números primeiro: 
+Translate to English: 	Traduza para o inglês: 
+Translate to Turkish: 	Traduza para o turco: 
+Write a short, friendly reply to this message: 	Escreva uma resposta curta e simpática para esta mensagem: 
+Write a short text message that says: 	Escreva uma mensagem de texto curta que diga: 
+Add to my calendar: 	Adicione à minha agenda: 
+Add to my to-do list: 	Adicione à minha lista de tarefas: 
+Fix the spelling and grammar, keep my tone: 	Corrija a ortografia e a gramática, mantenha meu tom: 
+Summarize in 3 short lines: 	Resuma em 3 linhas curtas: 
+Answer in 2 sentences: 	Responda em 2 frases: 
+Explain simply, like I'm new to it: 	Explique de forma simples, como se eu fosse iniciante: 
+Calculate or convert, result first: 	Calcule ou converta, resultado primeiro: 
+What does this word or phrase mean? One example: 	O que significa esta palavra ou expressão? Um exemplo: 
+What can I cook with: 	O que posso cozinhar com: 
+Help me decide, short pros and cons: 	Ajude-me a decidir, prós e contras curtos: 
+Step by step, at most 5 steps: how do I 	Passo a passo, no máximo 5 passos: como eu 
+Roast this phone. It's an old Nokia and it's talking to you.	Tire sarro deste celular. É um Nokia velho e está falando com você.
+Search the web	Buscar na web
+Weather	Clima
+Today's news	Notícias de hoje
+Exchange rates	Cotações
+Reply to a message	Responder mensagem
+Write a text for me	Escrever um texto
+Add to my calendar	Adicionar à agenda
+Add a to-do	Adicionar tarefa
+Fix my writing	Corrigir meu texto
+Summarize	Resumir
+Quick answer	Resposta rápida
+Explain simply	Explicar simples
+Calculate / convert	Calcular / converter
+What does it mean?	O que significa?
+What can I cook?	O que cozinhar?
+Help me decide	Ajudar a decidir
+How do I...?	Como faço...?
+Roast this phone	Zoar este celular
+Start	Iniciar
+Test again	Testar de novo
+Details	Detalhes
+Next	Próximo
+Server	Servidor
+This address was verified before.	Este endereço já foi verificado.
+Press Start to check the secure connection and Turkish characters.	Aperte Iniciar para verificar a conexão segura e os caracteres turcos.
+Testing...	Testando...
+failed	falhou
+The address must start with https://. Set it in Settings.	O endereço deve começar com https://. Defina em Ajustes.
+Reaching the server	Alcançando o servidor
+, TEST MODE (fake replies)	, MODO TESTE (respostas falsas)
+This phone's TLS connection	Conexão TLS deste celular
+(no info)	(sem info)
+TLS seen by the server	TLS visto pelo servidor
+this server works with credit codes	este servidor funciona com códigos de crédito
+Turkish characters	Caracteres turcos
+UTF-8 upload	Envio UTF-8
+the server got it right	o servidor recebeu certo
+the server got different bytes: 	o servidor recebeu bytes diferentes: 
+UTF-8 download	Download UTF-8
+correct: 	correto: 
+different: 	diferente: 
+Rendering on this phone	Exibição neste celular
+Character encoding error.	Erro de codificação de caracteres.
+Note	Nota
+A working connection alone does not prove a current security level; check the TLS version and cipher above.	Uma conexão funcionando, por si só, não prova um nível de segurança atual; confira a versão TLS e a cifra acima.
+Ready, chat can be used.	Pronto, o chat pode ser usado.
+: not this server's reply (carrier network, wrong address?).	: não é resposta deste servidor (rede da operadora, endereço errado?).
+, status: 	, status: 
+OK (HTTP 200)	OK (HTTP 200)
+Result	Resultado
+Failed	Falhou
+ Chat is locked.	 O chat está bloqueado.
+Type the code	Digite o código
+Try for free	Testar grátis
+Finish	Concluir
+Add credits	Adicionar créditos
+Credit code	Código de crédito
+Centre key: type the 16-digit credit code.	Tecla central: digite o código de crédito de 16 dígitos.
+\n\nNo code? Options > Try for free: a few messages with one model.	\n\nSem código? Opções > Testar grátis: algumas mensagens com um modelo.
+Centre key: type the new credit code.	Tecla central: digite o novo código de crédito.
+Balance	Saldo
+Loading...	Carregando...
+Enter the code with Options > 'Add credits'.	Digite o código em Opções > 'Adicionar créditos'.
+The code has 16 digits. Centre key to finish it.	O código tem 16 dígitos. Tecla central para concluir.
+A digit may be mistyped; check the code.	Um dígito pode estar errado; confira o código.
+Starting the trial...	Iniciando o teste...
+Credits are used according to the length of the message and the chosen model. Failed requests and requests with an unknown result cost nothing.\n\nAdd a new code with 'Add credits'.	Os créditos são usados conforme o tamanho da mensagem e o modelo escolhido. Solicitações que falham e solicitações com resultado desconhecido não custam nada.\n\nAdicione um novo código com 'Adicionar créditos'.
+You get the code from the shop of the server that sells credits. It has 16 digits; the last one is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once.	Você recebe o código na loja do servidor que vende créditos. Ele tem 16 dígitos; o último é um dígito verificador, então um código digitado errado é detectado antes de ser enviado.\n\nUm código vale uma vez.
+ This phone is paired with the code; no approval by the server's owner.	 Este celular é pareado com o código; sem aprovação do dono do servidor.
+Could not send. 	Não foi possível enviar. 
+Paired. 	Pareado. 
+Added. 	Adicionado. 
+Balance: 	Saldo: 
+Today's free trials are used up. Try again tomorrow, or get a credit code.	Os testes grátis de hoje acabaram. Tente de novo amanhã ou consiga um código de crédito.
+Enough trials were started from this network today. Try again tomorrow.	Testes demais foram iniciados nesta rede hoje. Tente de novo amanhã.
+This server has no free trial.	Este servidor não tem teste grátis.
+The code is not valid or was cancelled.	O código não é válido ou foi cancelado.
+This code was already used.	Este código já foi usado.
+Too many wrong codes. Try again in 15 minutes.	Códigos errados demais. Tente de novo em 15 minutos.
+The pairing is not valid. Settings > Options > 'Pair this phone'.	O pareamento não é válido. Ajustes > Opções > 'Parear este celular'.
+This server does not sell credits.	Este servidor não vende créditos.
+Server: 	Servidor: 
+This phone runs without credits.	Este celular funciona sem créditos.
+Voice	Voz
+Code	Código
+Free trial	Teste grátis
+Adjustment	Ajuste
+Trial started: {0} credits. A credit code opens every model.	Teste iniciado: {0} créditos. Um código de crédito libera todos os modelos.
+ requests · 	 solicitações · 
+ (sent 	 (enviado 
+, received 	, recebido 
+Done	Pronto
+Send again	Enviar de novo
+Record again	Gravar de novo
+Opening the microphone...	Abrindo o microfone...
+Speak now. Press 'Done' when you finish.	Fale agora. Aperte 'Pronto' ao terminar.
+Finishing the recording...	Finalizando a gravação...
+Sending (	Enviando (
+The recording is empty or too short.	A gravação está vazia ou curta demais.
+[Test mode] This is not a real transcription; no network was used. Recording: 	[Test mode] Esta não é uma transcrição real; nenhuma rede foi usada. Gravação: 
+ bytes.	 bytes.
+\n'Retry' asks about the same recording; it is not charged twice.	\n'Repetir' pergunta sobre a mesma gravação; ela não é cobrada duas vezes.
+No speech was recognised. Record again.	Nenhuma fala reconhecida. Grave de novo.
+The server is still working on it. 'Retry' in a few seconds.	O servidor ainda está processando. 'Repetir' em alguns segundos.
+Another recording is being processed. 'Retry' in a moment.	Outra gravação está sendo processada. 'Repetir' em instantes.
+No voice messages left today. More tomorrow (UTC).	Sem mensagens de voz hoje. Mais amanhã (UTC).
+Voice messages are not turned on on the server.	As mensagens de voz não estão ativadas no servidor.
+The recording is too short.	A gravação é curta demais.
+The server could not read this recording.	O servidor não conseguiu ler esta gravação.
+Unknown result: the speech service did not answer in time. 'Send again' is a new (paid) request.	Resultado desconhecido: o serviço de fala não respondeu a tempo. 'Enviar de novo' é uma nova solicitação (paga).
+Not enough credits. Add a code in Settings > Options > 'Credits'.	Créditos insuficientes. Adicione um código em Ajustes > Opções > 'Créditos'.
+The account is closed. Write to the server's support address.	A conta está encerrada. Escreva para o e-mail de suporte do servidor.
+Recording: 	Gravação: 
+ bytes	 bytes
+Turning speech into text...	Transformando fala em texto...
+Speak for up to 30 seconds. The audio goes to the server and is turned into text; the text opens in the editor so you can fix it before sending.\n\nThe recording is not kept on the server.	Fale por até 30 segundos. O áudio vai ao servidor e vira texto; o texto abre no editor para você corrigir antes de enviar.\n\nA gravação não fica guardada no servidor.
+Unrecognised server reply (HTTP {0}).	Resposta do servidor não reconhecida (HTTP {0}).
+The recording is too long. At most {0} seconds.	A gravação é longa demais. No máximo {0} segundos.
+The speech service is not answering right now ({0}). 'Send again' later.	O serviço de fala não está respondendo agora ({0}). 'Enviar de novo' depois.
+The server's speech-to-text setup has a problem ({0}).	A configuração de fala para texto do servidor tem um problema ({0}).
+no folder found	nenhuma pasta encontrada
+no free file name	sem nome de arquivo livre
+no lasting folder	sem pasta permanente
+Info	Info
+Saved	Salvos
+Exit	Sair
+Pick up where you left off	Continue de onde parou
+Open earlier chats	Abrir conversas anteriores
+Search the web, translate...	Buscar na web, traduzir...
+Start fresh	Começar do zero
+Replies on the phone, offline	Respostas no celular, offline
+Can we reach the server?	Conseguimos alcançar o servidor?
+Text size, look, sound, language	Tamanho do texto, aparência, som, idioma
+What is AIKON?	O que é o AIKON?
+See you soon	Até logo
+Balance, add a code, buy	Saldo, adicionar código, comprar
+Select	Selecionar
+The server has no model choice (needs server 0.7.0).	O servidor não tem escolha de modelo (precisa do servidor 0.7.0).
+The server listed no models.	O servidor não listou modelos.
+Choose	Escolher
+Refresh the list	Atualizar a lista
+now	agora
+last used	último usado
+default	padrão
+In test mode the list cannot come from the server.	No modo teste a lista não pode vir do servidor.
+No list yet. Choose 'Refresh the list'.	Sem lista ainda. Escolha 'Atualizar a lista'.
+Other	Outro
+1 model	1 modelo
+Test mode uses no network.	O modo teste não usa rede.
+{0} models	{0} modelos
+~{0} credits a message	~{0} créditos por mensagem
+UTF-8 not supported	UTF-8 não suportado
+The address must start with https://	O endereço deve começar com https://
+Java network access denied	Acesso à rede Java negado
+Connection type not supported: 	Tipo de conexão não suportado: 
+Certificate: 	Certificado: 
+\nCipher: 	\nCifra: 
+\nCertificate: 	\nCertificado: 
+\nIssuer: 	\nEmissor: 
+\nSignature: 	\nAssinatura: 
+\nValid until: 	\nVálido até: 
+\nSubject: 	\nTitular: 
+unknown certificate authority (root not on the phone)	autoridade certificadora desconhecida (raiz não está no celular)
+expired or not yet valid (phone date / time zone?)	expirado ou ainda não válido (data / fuso do celular?)
+not yet valid (phone clock?)	ainda não válido (relógio do celular?)
+host name mismatch	nome do host não confere
+broken certificate chain	cadeia de certificados quebrada
+root certificate expired	certificado raiz expirado
+signature not verified (root missing or algorithm unsupported)	assinatura não verificada (raiz ausente ou algoritmo não suportado)
+missing signature	assinatura ausente
+unsupported extension	extensão não suportada
+inappropriate key usage	uso de chave inadequado
+code 	código 
+The server address must start with https://.	O endereço do servidor deve começar com https://.
+Java network access was denied. Allow it in the application settings.	O acesso à rede Java foi negado. Permita nas configurações do aplicativo.
+Could not open HTTPS. Check the Java access point (mobile data / WLAN).	Não foi possível abrir HTTPS. Verifique o ponto de acesso Java (dados móveis / WLAN).
+Secure connection failed (certificate/TLS). 	Falha na conexão segura (certificado/TLS). 
+Character encoding error: 	Erro de codificação de caracteres: 
+Could not connect or no reply (access point, DNS, network or TLS). 	Não foi possível conectar ou sem resposta (ponto de acesso, DNS, rede ou TLS). 
+Could not read the reply (HTTP 	Não foi possível ler a resposta (HTTP 
+(maybe DNS) 	(talvez DNS) 
+(timeout) 	(tempo esgotado) 
+(maybe TLS) 	(talvez TLS) 
+Pairing code	Código de pareamento
+Status	Status
+Give this code to the server's owner.	Dê este código ao dono do servidor.
+Requesting a code...	Solicitando um código...
+Pairing	Pareamento
+The server's owner approves the code on the server:\nadmin.sh SERVER pair <code>\n\nAfter approval the phone fetches its access code by itself; keep this screen open. The code is valid for 10 minutes.	O dono do servidor aprova o código no servidor:\nadmin.sh SERVER pair <code>\n\nApós a aprovação o celular busca seu código de acesso sozinho; mantenha esta tela aberta. O código vale por 10 minutos.
+Could not start. 	Não foi possível iniciar. 
+Too many pending pairings; try again in a few minutes.	Pareamentos pendentes demais; tente de novo em alguns minutos.
+Could not start (	Não foi possível iniciar (
+Waiting for approval...	Aguardando aprovação...
+Connection problem, pairing stopped. 	Problema de conexão, pareamento interrompido. 
+Connection problem, trying again (	Problema de conexão, tentando de novo (
+Paired (	Pareado (
+). Access code saved; chat is ready.	). Código de acesso salvo; o chat está pronto.
+Pairing expired. Start again.	Pareamento expirado. Comece de novo.
+Another photo	Outra foto
+Take a photo	Tirar uma foto
+Choose from the phone	Escolher no celular
+The server could not read this photo (it must be JPEG or PNG).	O servidor não conseguiu ler esta foto (deve ser JPEG ou PNG).
+The photo is too large.	A foto é grande demais.
+No photos left today. More tomorrow (UTC).	Sem fotos hoje. Mais amanhã (UTC).
+The server does not take photos (older version).	O servidor não aceita fotos (versão antiga).
+The server is preparing the photo...	O servidor está preparando a foto...
+Photo	Foto
+The photo goes to the server and is shown to this chat's model, also with later messages.\n\nIt stays on the server with the chat (30 days, or until you delete the chat). An unused photo is deleted after a day.\n\nThe photo is never sent by itself: it goes with your message when you press Send.	A foto vai ao servidor e é mostrada ao modelo desta conversa, também nas mensagens seguintes.\n\nEla fica no servidor com a conversa (30 dias, ou até você excluir a conversa). Uma foto não usada é apagada após um dia.\n\nA foto nunca é enviada sozinha: vai com sua mensagem quando você aperta Enviar.
+Choose a photo	Escolher uma foto
+File access was denied. Answer 'Yes' when the phone asks.	O acesso a arquivos foi negado. Responda 'Sim' quando o celular perguntar.
+Could not read the folder: 	Não foi possível ler a pasta: 
+.. (up)	.. (acima)
+Drives	Unidades
+Could not read the file: 	Não foi possível ler o arquivo: 
+File access was denied.	O acesso a arquivos foi negado.
+The photo does not fit in the phone's memory. Take it with the app's camera.	A foto não cabe na memória do celular. Tire-a com a câmera do app.
+Reading...	Lendo...
+The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.	A foto é grande demais ({0} KB). No máximo {1} KB; tire-a com a câmera do app.
+The phone did not accept it: 	O celular não aceitou: 
+Permission denied. Answer 'Yes' when the phone asks, to add it.	Permissão negada. Responda 'Sim' quando o celular perguntar, para adicionar.
+Could not add it: 	Não foi possível adicionar: 
+Microphone access was denied. Answer 'Yes' when the phone asks.	O acesso ao microfone foi negado. Responda 'Sim' quando o celular perguntar.
+Could not start recording. 	Não foi possível iniciar a gravação. 
+Still busy with the previous file.	Ainda ocupado com o arquivo anterior.
+File error: 	Erro de arquivo: 
+Permission denied. Answer 'Yes' when the phone asks about file access.	Permissão negada. Responda 'Sim' quando o celular perguntar sobre o acesso a arquivos.
+Saved on the phone:\n	Salvo no celular:\n
+\n\nRead it offline: main menu > Saved.	\n\nLeia offline: menu principal > Salvos.
+Nothing saved yet. In the chat select a reply (1/3), centre key > Save to phone.	Nada salvo ainda. Na conversa, selecione uma resposta (1/3), tecla central > Salvar no celular.
+Delete this file from the phone?\n	Excluir este arquivo do celular?\n
+Could not save settings: 	Não foi possível salvar os ajustes: 
+Setup	Configuração
+Setup 	Configuração 
+Skip setup	Pular configuração
+Pair again	Parear de novo
+This phone is already paired. Setup is complete.	Este celular já está pareado. Configuração concluída.
+Last step: press Start and type your credit code.	Último passo: aperte Iniciar e digite seu código de crédito.
+Last step: press Start; the server's owner approves the code shown.	Último passo: aperte Iniciar; o dono do servidor aprova o código mostrado.
+Welcome! Three steps: server address, connection test, pairing. Every step can be left with 'Skip setup'; come back later from Settings > Options > Setup wizard. The language follows the phone; change it in Settings.\n\nJust trying it out? Skip setup, then Settings > Test mode (fake replies, no network).\n\nThe server's owner gives you its address.\n\nIt must start with https://; unencrypted connections are never used. The next step tests the secure connection.	Bem-vindo! Três passos: endereço do servidor, teste de conexão, pareamento. Cada passo pode ser deixado com 'Pular configuração'; volte depois em Ajustes > Opções > Assistente. O idioma segue o celular; mude-o em Ajustes.\n\nSó quer experimentar? Pule a configuração e depois Ajustes > Modo teste (respostas falsas, sem rede).\n\nO dono do servidor lhe dá o endereço.\n\nEle deve começar com https://; conexões sem criptografia nunca são usadas. O próximo passo testa a conexão segura.
+This server works with credit codes: press Start and type the 16-digit code you bought. The phone is paired with the code; no approval by the server's owner.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Este servidor funciona com códigos de crédito: aperte Iniciar e digite o código de 16 dígitos que você comprou. O celular é pareado com o código; sem aprovação do dono do servidor.\n\nO código de acesso fica guardado neste celular e no backup da configuração no cartão de memória, e é enviado só ao endereço https://.
+Press Start and a 6-digit code appears. Once the server's owner approves it, the phone fetches its access code by itself; nothing long to type.\n\nThe access code is kept on this phone and in the setup backup on the memory card, and sent only to the https:// address.	Aperte Iniciar e um código de 6 dígitos aparece. Quando o dono do servidor o aprovar, o celular busca seu código de acesso sozinho; nada longo para digitar.\n\nO código de acesso fica guardado neste celular e no backup da configuração no cartão de memória, e é enviado só ao endereço https://.
+The address must start with https://, for example https://your-server. HTTP is not supported.	O endereço deve começar com https://, por exemplo https://seu-servidor. HTTP não é suportado.
+All set!	Tudo pronto!
+Setup saved. Finish the missing steps from Settings.	Configuração salva. Conclua os passos que faltam em Ajustes.
+Setup skipped. Settings > Options > Setup wizard.	Configuração pulada. Ajustes > Opções > Assistente.
+Yesterday	Ontem
+.	.

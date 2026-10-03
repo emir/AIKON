@@ -132,8 +132,8 @@ final class ChatList implements CommandListener, Runnable {
             if (!r.ok()) {
                 actionError = Net.explain(r);
             } else if ("pin_limit".equals(st)) {
-                actionError = L.s("En fazla " + r.msg.field("max") + " sohbet sabitlenebilir. Önce birini kaldırın.",
-                        "At most " + r.msg.field("max") + " chats can be pinned. Unpin one first.");
+                actionError = L.f("En fazla {0} sohbet sabitlenebilir. Önce birini kaldırın.",
+                        "At most {0} chats can be pinned. Unpin one first.", r.msg.field("max"));
             } else if (j == JOB_DELETE && ("deleted".equals(st) || "conversation_not_found".equals(st))) {
                 midlet.chatDeleted(id);
             } else if (!"ok".equals(st)) {

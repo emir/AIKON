@@ -196,11 +196,11 @@ final class Credits implements CommandListener, Runnable {
                     + "and requests with an unknown result cost nothing.\n\nAdd a new code with 'Add credits'.");
         }
         return L.s("Kodu, kredi satan sunucunun sitesinden alırsın. 16 rakamdır; son rakam bir kontrol rakamı "
-                + "olduğu için yanlış yazılan kod gönderilmeden fark edilir.\n\nKod bir kez kullanılır."
-                + (mode == PAIR ? " Bu telefon kodla eşleşir; sunucu sahibinin onayı gerekmez." : ""),
+                + "olduğu için yanlış yazılan kod gönderilmeden fark edilir.\n\nKod bir kez kullanılır.",
                 "You get the code from the shop of the server that sells credits. It has 16 digits; the last one "
-                + "is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once."
-                + (mode == PAIR ? " This phone is paired with the code; no approval by the server's owner." : ""));
+                + "is a check digit, so a mistyped code is caught before it is sent.\n\nA code works once.")
+                + (mode == PAIR ? L.s(" Bu telefon kodla eşleşir; sunucu sahibinin onayı gerekmez.",
+                        " This phone is paired with the code; no approval by the server's owner.") : "");
     }
 
     /** 16 digits with a valid check digit (Luhn). */
@@ -274,8 +274,7 @@ final class Credits implements CommandListener, Runnable {
             if (mode == TRIAL && model.length() > 0) {
                 Models.setLast(model); // new chats start with the trial's model
             }
-            status(mode == TRIAL ? L.s("Deneme başladı: " + bal + " kredi. Kod yükleyince tüm modeller açılır.",
-                    "Trial started: " + bal + " credits. A credit code opens every model.")
+            status(mode == TRIAL ? L.f("Deneme başladı: {0} kredi. Kod yükleyince tüm modeller açılır.", "Trial started: {0} credits. A credit code opens every model.", bal)
                     : (mode == PAIR ? L.s("Eşleştirildi. ", "Paired. ") : L.s("Yüklendi. ", "Added. "))
                     + L.s("Bakiye: ", "Balance: ") + bal + L.s(" kredi", " credits"));
             form.removeCommand(enterCmd);

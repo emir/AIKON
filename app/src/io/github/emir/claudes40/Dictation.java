@@ -197,7 +197,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                     + a.length + L.s(" bayt.", " bytes."));
             return;
         }
-        String url = s.url + "/v1/transcribe?request=" + id + "&lang=" + (L.turkish() ? "tr" : "en");
+        String url = s.url + "/v1/transcribe?request=" + id + (L.code().equals("tr") || L.code().equals("en") ? "&lang=" + L.code() : "");
         Net.Result r = Net.upload(url, s.token, a, contentType(a), midlet.userAgent(), this);
         synchronized (this) {
             if (closed || gen != generation) {
@@ -209,8 +209,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                 return;
             }
             if (r.msg == null) {
-                fail(L.s("Sunucu yanıtı tanınmadı (HTTP " + r.httpCode + ").",
-                        "Unrecognised server reply (HTTP " + r.httpCode + ")."), true, false);
+                fail(L.f("Sunucu yanıtı tanınmadı (HTTP {0}).", "Unrecognised server reply (HTTP {0}).", String.valueOf(r.httpCode)), true, false);
                 return;
             }
         }
@@ -243,8 +242,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                 fail(L.s("Sunucuda sesle yazma açık değil.", "Voice messages are not turned on on the server."),
                         false, false);
             } else if ("too_long".equals(st)) {
-                fail(L.s("Kayıt çok uzun. En fazla " + MAX_SECONDS + " saniye.",
-                        "The recording is too long. At most " + MAX_SECONDS + " seconds."), false, false);
+                fail(L.f("Kayıt çok uzun. En fazla {0} saniye.", "The recording is too long. At most {0} seconds.", String.valueOf(MAX_SECONDS)), false, false);
             } else if ("too_short".equals(st)) {
                 fail(L.s("Kayıt çok kısa.", "The recording is too short."), false, false);
             } else if ("bad_audio".equals(st) || "too_large".equals(st)) {
@@ -256,12 +254,10 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
                         "Unknown result: the speech service did not answer in time. 'Send again' is a new "
                                 + "(paid) request."), false, true);
             } else if ("rate_limited".equals(st) || "overloaded".equals(st) || "upstream_error".equals(st)) {
-                fail(L.s("Yazıya dökme servisi şu an yanıt vermiyor (" + st + "). Biraz sonra 'Yeniden gönder'.",
-                        "The speech service is not answering right now (" + st + "). 'Send again' later."), false,
+                fail(L.f("Yazıya dökme servisi şu an yanıt vermiyor ({0}). Biraz sonra 'Yeniden gönder'.", "The speech service is not answering right now ({0}). 'Send again' later.", st), false,
                         true);
             } else if ("billing".equals(st) || "config_error".equals(st)) {
-                fail(L.s("Sunucudaki yazıya dökme ayarında sorun var (" + st + ").",
-                        "The server's speech-to-text setup has a problem (" + st + ")."), false, false);
+                fail(L.f("Sunucudaki yazıya dökme ayarında sorun var ({0}).", "The server's speech-to-text setup has a problem ({0}).", st), false, false);
             } else if ("credit".equals(st)) {
                 fail(L.s("Kredi yetersiz. Ayarlar > Seçenekler > 'Kredi' ile yeni kod gir.",
                         "Not enough credits. Add a code in Settings > Options > 'Credits'."), false, false);

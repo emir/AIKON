@@ -136,10 +136,7 @@ final class PhotoPicker implements CommandListener, Runnable {
             b = Files.readBytes(url, Photo.MAX_BYTES);
             if (b == null) {
                 long size = Files.size(url);
-                err = L.s("Fotoğraf çok büyük (" + size / 1024 + " KB). En fazla " + Photo.MAX_BYTES / 1024
-                        + " KB; uygulamadaki kamerayla çekin.",
-                        "The photo is too large (" + size / 1024 + " KB). At most " + Photo.MAX_BYTES / 1024
-                        + " KB; take it with the app's camera instead.");
+                err = L.f("Fotoğraf çok büyük ({0} KB). En fazla {1} KB; uygulamadaki kamerayla çekin.", "The photo is too large ({0} KB). At most {1} KB; take it with the app's camera instead.", String.valueOf(size / 1024), String.valueOf(Photo.MAX_BYTES / 1024));
             }
         } catch (IOException e) {
             err = L.s("Dosya okunamadı: ", "Could not read the file: ") + e.getMessage();

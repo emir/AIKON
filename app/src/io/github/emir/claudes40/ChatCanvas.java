@@ -1293,7 +1293,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private String typingLabel() {
         int sec = session.elapsed();
         String label = session.state() == ChatSession.STATE_SENDING ? L.s("Gönderiliyor", "Sending")
-                : L.s(session.ai() + " yazıyor", session.ai() + " is typing");
+                : L.f("{0} yazıyor", "{0} is typing", session.ai());
         return sec > 0 ? label + " · " + sec + L.s(" sn", " s") : label + "...";
     }
 

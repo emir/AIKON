@@ -14,7 +14,8 @@ Nokia Series 40 and Symbian S60 phones (Java ME, CLDC 1.1 / MIDP 2.0), plus
 the small Go server it talks to. Pick a model per chat (Claude, OpenAI, Gemini or Grok),
 type on the keypad, get the answer on a 240x320 screen: with today's news,
 weather and exchange rates from web search, long answers you can page
-through, and a UI in Turkish or English. Tested on the Nokia 6300 (S40) and
+through, and a UI in Turkish, English, Spanish, Portuguese, French, German, Russian or
+Indonesian. Tested on the Nokia 6300 (S40) and
 the Nokia E63 (S60 QWERTY).
 
 **Video** (still as Claude S40): [on a Nokia 6300, on X](https://x.com/EmirKarsiyakali/status/2104183718483018026)
