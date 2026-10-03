@@ -27,8 +27,9 @@ import javax.microedition.lcdui.TextField;
  * the server's site) still on that address asks for nothing but the pairing
  * (the credit code form on a server that sells credits): the language
  * follows the phone (it stays "Same as phone"), the address is in the build
- * and the connection test runs by itself first; only a failed test stays on
- * screen. Back there leaves the setup like "Skip setup".
+ * and the connection test runs by itself first, shown only as "Connecting..."
+ * (ConnTest.runAuto); only a failed test stays on screen. Back there leaves
+ * the setup like "Skip setup".
  */
 final class Setup implements CommandListener {
 

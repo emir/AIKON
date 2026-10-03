@@ -4,6 +4,8 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
+import java.util.Timer;
+import java.util.TimerTask;
 
 /**
  * Connection test: GET /health, then POST /echo with a fixed Turkish probe.
@@ -18,6 +20,11 @@ import javax.microedition.lcdui.Displayable;
  * The screen shows only a short checklist and the result; the technical
  * details (server version, TLS of both ends, bytes) are behind "Ayrıntılar".
  * The centre key starts the test, and in the wizard goes on once it passed.
+ *
+ * Started by the wizard of a build that names its server (runAuto), it is
+ * quiet: only a moving "Connecting..." while /health is checked (the build
+ * names a known server, so the UTF-8 round trip is left to this screen in
+ * Settings); the checklist appears only if the server cannot be reached.
  */
 final class ConnTest implements CommandListener, Runnable {
 
@@ -38,6 +45,8 @@ final class ConnTest implements CommandListener, Runnable {
     private boolean auto;
     /** Commands shown now (they change with the state). */
     private Command[] shown = new Command[0];
+    /** The moving dots of the quiet run (null otherwise). */
+    private Timer dots;
     /** Technical details of the last run, for "Ayrıntılar". */
     private final StringBuffer details = new StringBuffer();
 
@@ -131,14 +140,38 @@ final class ConnTest implements CommandListener, Runnable {
     /** Tests at once; on success the wizard goes on (Setup.connected), on failure the checklist stays. */
     void runAuto(Display d) {
         auto = true;
+        synchronized (this) {
+            running = true;
+            details.setLength(0);
+        }
+        form.deleteAll();
+        final String text = L.t("Connecting");
+        final int big = form.append(null, text + "...");
+        form.setBig(big);
+        form.append(null, L.t("AIKON is connecting to its server; this takes a few seconds. If the phone asks about "
+                + "network access, allow it."));
+        commands();
+        dots = new Timer();
+        dots.schedule(new TimerTask() {
+            private int n;
+
+            public void run() {
+                n = (n + 1) % 4;
+                form.setText(big, text + "...".substring(0, n));
+            }
+        }, 500, 500);
         d.setCurrent(form);
-        commandAction(startCmd, form);
+        new Thread(this).start();
     }
 
     public void run() {
         try {
             test();
         } finally {
+            if (dots != null) {
+                dots.cancel();
+                dots = null;
+            }
             synchronized (this) {
                 running = false;
             }
@@ -146,7 +179,8 @@ final class ConnTest implements CommandListener, Runnable {
         }
         if (auto) {
             auto = false;
-            if (setup != null && midlet.settings.connectionVerified()) {
+            // not when the setup was left (Back) while connecting
+            if (setup != null && midlet.settings.connectionVerified() && midlet.display().getCurrent() == form) {
                 setup.connected();
             }
         }
@@ -155,7 +189,7 @@ final class ConnTest implements CommandListener, Runnable {
     private void test() {
         Settings s = midlet.settings;
         String base = s.url;
-        if (form.size() > 1) {
+        if (!auto && form.size() > 1) {
             form.delete(form.size() - 1); // "Testing..."
         }
         if (!Net.isHttps(base)) {
@@ -166,7 +200,18 @@ final class ConnTest implements CommandListener, Runnable {
         // 1. health
         Net.Result h = Net.request(base + "/health", "GET", null, null, midlet.userAgent(), null);
         String why = problem("/health", h);
-        check(L.t("Reaching the server"), why == null);
+        if (auto) {
+            if (why != null) {
+                // the quiet run failed: the plain checklist after all
+                form.deleteAll();
+                form.append(L.t("Server"), base);
+                check(L.t("Reaching the server"), false);
+                fail(why);
+                return;
+            }
+        } else {
+            check(L.t("Reaching the server"), why == null);
+        }
         if (why != null) {
             fail(why);
             return;
@@ -179,6 +224,10 @@ final class ConnTest implements CommandListener, Runnable {
         detail(L.t("TLS seen by the server"), hm.field("tls-version") + ", " + hm.field("tls-cipher"));
         if (hm.flag("credits")) {
             detail(L.t("Credits"), L.t("this server works with credit codes"));
+        }
+        if (auto) {
+            verified(base, hm);
+            return;
         }
 
         // 2. echo
@@ -202,12 +251,18 @@ final class ConnTest implements CommandListener, Runnable {
             return;
         }
 
-        s.verifiedUrl = base;
-        s.credits = hm.flag("credits");
-        String err = s.save();
+        String err = verified(base, hm);
         detail(L.t("Note"), L.t("A working connection alone does not prove a current security level; check the TLS version and "
                 + "cipher above."));
         result(true, L.t("Ready, chat can be used.") + (err != null ? " (" + err + ")" : ""));
+    }
+
+    /** Marks the address as verified; the save error or null. */
+    private String verified(String base, S40Message hm) {
+        Settings s = midlet.settings;
+        s.verifiedUrl = base;
+        s.credits = hm.flag("credits");
+        return s.save();
     }
 
     /** Why a step failed (also kept in the details), or null if it passed. */

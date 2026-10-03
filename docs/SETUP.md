@@ -158,7 +158,8 @@ Settings → Options → Setup wizard.
 A build made with `GATEWAY_URL` (as offered on your download page) asks only
 for the pairing (the credit code form on a server that sells credits): the
 address is in the build and the connection test runs by itself first,
-staying on screen only if it fails.
+shown only as "Connecting..." (just `/health`; the `/echo` round trip stays
+in Settings → Connection test), with its checklist only if it fails.
 
 1. **Connection test → Start**: it checks `/health` and a UTF-8 round trip
    (`/echo`) and shows the TLS version, cipher and certificate. Chat stays

@@ -553,3 +553,5 @@ Setup skipped. Settings > Options > Setup wizard.	Config ignorée. Réglages > O
 Yesterday	Hier
 .	.
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	L'essai gratuit ne fonctionne qu'avec {0}, cette discussion l'utilise donc maintenant. Ton message est gardé en brouillon : renvoie-le. Un code de crédits ouvre tous les modèles (menu principal > Crédits).
+Connecting	Connexion
+AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	AIKON se connecte à son serveur ; cela prend quelques secondes. Si le téléphone demande l'accès au réseau, autorise-le.
