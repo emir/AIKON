@@ -249,14 +249,82 @@ func (w *webSide) appVersion() string {
 
 var versionRE = regexp.MustCompile(`^[0-9]{1,3}(\.[0-9]{1,3}){1,2}$`)
 
-// phoneLang: Turkish when the phone's browser asks for it first, else English.
+// phoneLangs: the languages of the app (and of these pages), in their own
+// words; the first is the default.
+var phoneLangs = []struct{ code, name string }{
+	{"en", "English"}, {"tr", "Türkçe"}, {"es", "Español"}, {"pt", "Português"}, {"fr", "Français"},
+	{"de", "Deutsch"}, {"ru", "Русский"}, {"id", "Bahasa Indonesia"},
+}
+
+// phoneLang: the first language the phone's browser asks for that we
+// have, else English.
 func phoneLang(r *http.Request) string {
-	first, _, _ := strings.Cut(r.Header.Get("Accept-Language"), ",")
-	first, _, _ = strings.Cut(strings.TrimSpace(first), ";")
-	if strings.HasPrefix(strings.ToLower(first), "tr") {
-		return "tr"
+	for _, part := range strings.Split(r.Header.Get("Accept-Language"), ",") {
+		tag, _, _ := strings.Cut(strings.TrimSpace(part), ";")
+		code := strings.ToLower(tag)
+		if len(code) > 2 {
+			code = code[:2]
+		}
+		for _, l := range phoneLangs {
+			if l.code == code {
+				return code
+			}
+		}
 	}
 	return "en"
+}
+
+// phoneTexts: the few texts of the phone pages, per language (keys in English).
+var phoneTexts = map[string]map[string]string{
+	"Download AIKON": {"tr": "AIKON'u indirin", "es": "Descargar AIKON", "pt": "Baixar o AIKON", "fr": "Télécharger AIKON",
+		"de": "AIKON herunterladen", "ru": "Скачать AIKON", "id": "Unduh AIKON"},
+	"Answer Yes when the phone asks to install it.": {"tr": "Telefon kurmak isteyip istemediğinizi sorunca Evet deyin.",
+		"es": "Responde Sí cuando el teléfono pregunte si quieres instalarlo.",
+		"pt": "Responda Sim quando o celular perguntar se deseja instalar.",
+		"fr": "Réponds Oui quand le téléphone demande s'il faut l'installer.",
+		"de": "Antworte mit Ja, wenn das Handy fragt, ob es installieren soll.",
+		"ru": "Ответь «Да», когда телефон спросит об установке.",
+		"id": "Jawab Ya saat ponsel bertanya apakah akan memasangnya."},
+	"Save the certificate": {"tr": "Sertifikayı kaydedin", "es": "Guardar el certificado", "pt": "Salvar o certificado",
+		"fr": "Enregistrer le certificat", "de": "Zertifikat speichern", "ru": "Сохранить сертификат",
+		"id": "Simpan sertifikat"},
+	"Save it as an authority certificate. Its fingerprint must match the one on {0}:": {
+		"tr": "\"Yetkili\" sertifikası olarak kaydedin. Parmak izi {0}'dakiyle aynı olmalı:",
+		"es": "Guárdalo como certificado de autoridad. Su huella debe coincidir con la de {0}:",
+		"pt": "Salve como certificado de autoridade. A impressão digital deve ser igual à de {0}:",
+		"fr": "Enregistre-le comme certificat d'autorité. Son empreinte doit être celle de {0} :",
+		"de": "Als Zertifizierungsstelle speichern. Der Fingerabdruck muss dem auf {0} entsprechen:",
+		"ru": "Сохрани его как сертификат центра. Отпечаток должен совпадать с указанным на {0}:",
+		"id": "Simpan sebagai sertifikat otoritas. Sidik jarinya harus sama dengan yang ada di {0}:"},
+	"Save it as an authority certificate. Its fingerprint must match the one the server's owner publishes:": {
+		"tr": "\"Yetkili\" sertifikası olarak kaydedin. Parmak izi sunucunun sahibinin yayınladığıyla aynı olmalı:",
+		"es": "Guárdalo como certificado de autoridad. Su huella debe coincidir con la que publica el dueño del servidor:",
+		"pt": "Salve como certificado de autoridade. A impressão digital deve ser igual à publicada pelo dono do servidor:",
+		"fr": "Enregistre-le comme certificat d'autorité. Son empreinte doit être celle publiée par le propriétaire du serveur :",
+		"de": "Als Zertifizierungsstelle speichern. Der Fingerabdruck muss dem vom Serverbetreiber veröffentlichten entsprechen:",
+		"ru": "Сохрани его как сертификат центра. Отпечаток должен совпадать с опубликованным владельцем сервера:",
+		"id": "Simpan sebagai sertifikat otoritas. Sidik jarinya harus sama dengan yang diterbitkan pemilik server:"},
+}
+
+// phoneT: an English text of the phone pages in lang ({0} replaced by arg).
+func phoneT(lang, en string, arg ...string) string {
+	t := en
+	if v, ok := phoneTexts[en][lang]; ok {
+		t = v
+	}
+	if len(arg) > 0 {
+		t = strings.ReplaceAll(t, "{0}", arg[0])
+	}
+	return t
+}
+
+// phoneLangLine: the app's languages in their own words, for the pages.
+func phoneLangLine() string {
+	names := make([]string, len(phoneLangs))
+	for i, l := range phoneLangs {
+		names[i] = l.name
+	}
+	return "<p>" + html.EscapeString(strings.Join(names, " · ")) + "</p>"
 }
 
 // site: the first public host (where the fingerprint is published), or "".
@@ -270,13 +338,6 @@ func (w *webSide) site() string {
 	return best
 }
 
-func phoneT(lang, tr, en string) string {
-	if lang == "tr" {
-		return tr
-	}
-	return en
-}
-
 // phonePage: https://PHONE_HOST/ in the phone's browser (the root is saved).
 func (s *server) phonePage(w http.ResponseWriter, r *http.Request) {
 	if s.web == nil || s.web.download == "" {
@@ -287,9 +348,8 @@ func (s *server) phonePage(w http.ResponseWriter, r *http.Request) {
 	host := html.EscapeString(s.web.phoneHostFor(r))
 	w.Header().Set("Vary", "Accept-Language")
 	writeHTML(w, 200, "AIKON", "<h1>AIKON</h1>"+
-		"<p><a href=\"https://"+host+"/app/AIKON.jad\">"+phoneT(lang, "AIKON'u indir", "Download AIKON")+"</a></p>"+
-		"<p>"+phoneT(lang, "Telefon kurmak isteyip istemediğinizi sorunca Evet deyin.",
-		"Answer Yes when the phone asks to install it.")+"</p>")
+		"<p><a href=\"https://"+host+"/app/AIKON.jad\">"+phoneT(lang, "Download AIKON")+"</a></p>"+
+		"<p>"+phoneT(lang, "Answer Yes when the phone asks to install it.")+"</p>"+phoneLangLine())
 }
 
 // httpHandler: the plain-HTTP listener (landing page and ca.cer only).
@@ -298,12 +358,10 @@ func (s *server) httpHandler() http.Handler {
 	mux.HandleFunc("GET /{$}", func(w http.ResponseWriter, r *http.Request) {
 		lang := phoneLang(r)
 		host := html.EscapeString(s.web.phoneHostFor(r))
-		where := phoneT(lang, "sunucunun sahibinin yayınladığıyla", "the one the server's owner publishes")
+		save := phoneT(lang, "Save it as an authority certificate. Its fingerprint must match the one the server's owner publishes:")
 		if site := s.web.site(); site != "" {
-			where = html.EscapeString(site) + phoneT(lang, "'dakiyle", "")
-			if lang == "en" {
-				where = "the one on " + where
-			}
+			save = phoneT(lang, "Save it as an authority certificate. Its fingerprint must match the one on {0}:",
+				html.EscapeString(site))
 		}
 		fp := ""
 		if s.web.caSHA1 != "" {
@@ -311,10 +369,9 @@ func (s *server) httpHandler() http.Handler {
 		}
 		w.Header().Set("Vary", "Accept-Language")
 		writeHTML(w, 200, "AIKON", "<h1>AIKON</h1>"+
-			"<p>1. <a href=\"http://"+host+"/ca.cer\">"+phoneT(lang, "Sertifikayı kaydedin", "Save the certificate")+"</a></p>"+
-			"<p>"+phoneT(lang, "\"Yetkili\" sertifikası olarak kaydedin. Parmak izi "+where+" aynı olmalı:",
-			"Save it as an authority certificate. Its fingerprint must match "+where+":")+"</p>"+fp+
-			"<p>2. <a href=\"https://"+host+"/app/AIKON.jad\">"+phoneT(lang, "AIKON'u indirin", "Download AIKON")+"</a></p>")
+			"<p>1. <a href=\"http://"+host+"/ca.cer\">"+phoneT(lang, "Save the certificate")+"</a></p>"+
+			"<p>"+save+"</p>"+fp+
+			"<p>2. <a href=\"https://"+host+"/app/AIKON.jad\">"+phoneT(lang, "Download AIKON")+"</a></p>"+phoneLangLine())
 	})
 	mux.HandleFunc("GET /ca.cer", func(w http.ResponseWriter, r *http.Request) {
 		b, err := os.ReadFile(filepath.Join(s.web.download, "ca.cer"))

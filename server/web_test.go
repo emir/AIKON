@@ -187,6 +187,20 @@ func TestPlainHTTPLanding(t *testing.T) {
 		!strings.Contains(b, "AIKON'u indirin") || strings.Contains(b, "Save the") || tw.Header().Get("Vary") != "Accept-Language" {
 		t.Fatalf("turkish landing: %q", b)
 	}
+	// any language of the app, the first the browser asks for that we have; the list of languages on every page
+	r = httptest.NewRequest("GET", "http://m.example.test/", nil)
+	r.Header.Set("Accept-Language", "ja;q=1, es-MX;q=0.8, en;q=0.5")
+	ew := httptest.NewRecorder()
+	h.ServeHTTP(ew, r)
+	if b := ew.Body.String(); !strings.Contains(b, "Guardar el certificado") || !strings.Contains(b, "Descargar AIKON") ||
+		!strings.Contains(b, "English · Türkçe · Español") || !strings.Contains(b, "Русский") {
+		t.Fatalf("spanish landing: %q", b)
+	}
+	for en, tr := range phoneTexts {
+		if len(tr) != len(phoneLangs)-1 {
+			t.Fatalf("phone text %q: %d languages", en, len(tr))
+		}
+	}
 	if w := do("m.example.test", "/ca.cer"); w.Code != 200 || w.Header().Get("Content-Type") != "application/x-x509-ca-cert" {
 		t.Fatalf("ca: %d", w.Code)
 	}
