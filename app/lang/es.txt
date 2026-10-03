@@ -552,3 +552,4 @@ Setup saved. Finish the missing steps from Settings.	Configuración guardada. Te
 Setup skipped. Settings > Options > Setup wizard.	Configuración omitida. Ajustes > Opciones > Asistente de configuración.
 Yesterday	Ayer
 .	.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	La prueba gratuita solo funciona con {0}, así que este chat ya lo usa. Tu mensaje se guarda como borrador: envíalo de nuevo. Un código de créditos abre todos los modelos (menú principal > Créditos).

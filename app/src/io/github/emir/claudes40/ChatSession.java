@@ -800,8 +800,18 @@ final class ChatSession implements Runnable, Net.Listener {
                     + (shop.length() > 0 ? "\n\n" + shop : "");
         } else if ("trial_model".equals(st)) {
             status = L.t("Trial: one model");
-            msg = L.t("The free trial works with one model only. Pick it in the Model menu; a credit code opens every "
-                    + "model (main menu > Credits). Your message is kept as a draft.");
+            String trial = Models.trial();
+            if (trial.length() > 0 && !trial.equals(model)) {
+                // switch this chat to the trial's model; the draft waits to be sent again
+                model = trial;
+                modelName = Models.name(trial);
+                msg = L.f("The free trial works with {0} only, so this chat now uses it. Your message is kept as a "
+                        + "draft: send it again. A credit code opens every model (main menu > Credits).",
+                        modelName.length() > 0 ? modelName : trial);
+            } else {
+                msg = L.t("The free trial works with one model only. Pick it in the Model menu; a credit code opens every "
+                        + "model (main menu > Credits). Your message is kept as a draft.");
+            }
         } else if ("account_disabled".equals(st)) {
             status = L.t("Account closed");
             msg = L.t("This account is closed. Write to the server's support address.");

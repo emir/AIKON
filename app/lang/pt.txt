@@ -552,3 +552,4 @@ Setup saved. Finish the missing steps from Settings.	Configuração salva. Concl
 Setup skipped. Settings > Options > Setup wizard.	Configuração pulada. Ajustes > Opções > Assistente.
 Yesterday	Ontem
 .	.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	O teste grátis só funciona com {0}, então esta conversa agora usa ele. Sua mensagem fica como rascunho: envie de novo. Um código de créditos libera todos os modelos (menu principal > Créditos).

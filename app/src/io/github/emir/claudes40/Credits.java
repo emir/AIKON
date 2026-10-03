@@ -266,7 +266,12 @@ final class Credits implements CommandListener, Runnable {
             }
             String model = r.msg.field("model");
             if (mode == TRIAL && model.length() > 0) {
-                Models.setLast(model); // new chats start with the trial's model
+                // the trial works with one model: new chats and the chat now open start with it
+                Models.setTrial(model);
+                Models.setLast(model);
+                midlet.session().newChat(model);
+            } else {
+                Models.setTrial(""); // a code opens every model
             }
             status(mode == TRIAL ? L.f("Trial started: {0} credits. A credit code opens every model.", bal)
                     : (mode == PAIR ? L.t("Paired. ") : L.t("Added. "))

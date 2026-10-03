@@ -552,3 +552,4 @@ Setup saved. Finish the missing steps from Settings.	Setelan tersimpan. Selesaik
 Setup skipped. Settings > Options > Setup wizard.	Setelan dilewati. Pengaturan > Pilihan > Panduan setelan.
 Yesterday	Kemarin
 .	.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Uji coba gratis hanya bisa dengan {0}, jadi obrolan ini sekarang memakainya. Pesanmu disimpan sebagai draf: kirim lagi. Kode kredit membuka semua model (menu utama > Kredit).

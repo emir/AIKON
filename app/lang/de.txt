@@ -552,3 +552,4 @@ Setup saved. Finish the missing steps from Settings.	Einrichtung gespeichert. Sc
 Setup skipped. Settings > Options > Setup wizard.	Einrichtung übersprungen. Einstellungen > Optionen > Einrichtung.
 Yesterday	Gestern
 .	.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Die Gratis-Testversion funktioniert nur mit {0}, daher nutzt dieser Chat es jetzt. Deine Nachricht bleibt als Entwurf erhalten: sende sie erneut. Ein Guthabencode schaltet alle Modelle frei (Hauptmenü > Guthaben).

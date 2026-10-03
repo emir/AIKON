@@ -552,3 +552,4 @@ What can I cook with: 	Elimde şunlar var, ne pişirebilirim:
 Help me decide, short pros and cons: 	Karar vermeme yardım et, kısa artı ve eksiler: 
 Step by step, at most 5 steps: how do I 	En fazla 5 adımda anlat, nasıl yapılır: 
 Roast this phone. It's an old Nokia and it's talking to you.	Bu telefonu roastla. Eski bir Nokia ve şu an seninle konuşuyor.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Ücretsiz deneme yalnızca {0} ile çalışır; bu sohbet artık onu kullanıyor. Mesajın taslakta duruyor, yeniden gönder. Kredi kodu yükleyince tüm modeller açılır (Ana menü > Kredi).

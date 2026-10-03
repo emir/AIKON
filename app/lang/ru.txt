@@ -552,3 +552,4 @@ Setup saved. Finish the missing steps from Settings.	Настройка сохр
 Setup skipped. Settings > Options > Setup wizard.	Настройка пропущена. Настройки > Функции > Мастер настройки.
 Yesterday	Вчера
 .	.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Бесплатная пробная версия работает только с {0}, поэтому этот чат теперь использует её. Сообщение сохранено как черновик: отправь его снова. Код кредитов открывает все модели (главное меню > Кредиты).

@@ -80,6 +80,20 @@ final class Models implements CommandListener, Runnable {
         return name(last).length() > 0 ? last : defaultId;
     }
 
+    /** The free trial's only model ("" = not a trial account): set on a trial pairing, cleared by a code. */
+    private static String trial = "";
+
+    static synchronized String trial() {
+        load();
+        return trial;
+    }
+
+    static synchronized void setTrial(String id) {
+        load();
+        trial = id == null ? "" : id;
+        save();
+    }
+
     /** The model new chats start with (also set by a free trial: its model). */
     static synchronized void setLast(String id) {
         last = id;
@@ -117,6 +131,7 @@ final class Models implements CommandListener, Runnable {
             costs = c2;
             defaultId = def;
             last = l;
+            trial = in.readUTF(); // 0.16.3; older records end before it
         } catch (RecordStoreException e) {
             // nothing kept yet
         } catch (IOException e) {
@@ -141,6 +156,7 @@ final class Models implements CommandListener, Runnable {
                 out.writeUTF(providers[i]);
                 out.writeUTF(i < costs.length ? costs[i] : "");
             }
+            out.writeUTF(trial);
             out.close();
             byte[] b = bo.toByteArray();
             rs = RecordStore.openRecordStore(STORE, true);
@@ -166,6 +182,7 @@ final class Models implements CommandListener, Runnable {
         costs = new String[0];
         defaultId = "";
         last = "";
+        trial = "";
         loaded = true;
         try {
             RecordStore.deleteRecordStore(STORE);

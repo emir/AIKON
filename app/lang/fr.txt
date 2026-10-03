@@ -552,3 +552,4 @@ Setup saved. Finish the missing steps from Settings.	Config enregistrée. Termin
 Setup skipped. Settings > Options > Setup wizard.	Config ignorée. Réglages > Options > Assistant de config.
 Yesterday	Hier
 .	.
+The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	L'essai gratuit ne fonctionne qu'avec {0}, cette discussion l'utilise donc maintenant. Ton message est gardé en brouillon : renvoie-le. Un code de crédits ouvre tous les modèles (menu principal > Crédits).
