@@ -130,6 +130,8 @@ final class ChatSession implements Runnable, Net.Listener {
     private int state = STATE_IDLE;
     private String status = "";
     private String conversation = "";
+    /** The note of the last model switch, replaced by the next one if nothing came between. */
+    private Entry modelNote;
     private String draft = "";
     private int version;
     private String remaining = "";
@@ -322,9 +324,24 @@ final class ChatSession implements Runnable, Net.Listener {
             }
             model = id;
             modelName = Models.name(id);
-            note(KIND_INFO, L.s("Sonraki yanıtlar: " + ai(), "Next replies: " + ai()),
-                    L.s(ai() + " bir sonraki mesajından itibaren yanıtlar ve bu sohbetin geçmişini de görür.",
-                            ai() + " answers from your next message on and sees this chat's history too."));
+            boolean written = conversation.length() > 0;
+            for (int i = 0; i < entries.size() && !written; i++) {
+                written = ((Entry) entries.elementAt(i)).kind != KIND_INFO;
+            }
+            if (!written) {
+                // nothing written yet: the one "New chat" note names the new model
+                entries.removeAllElements();
+                newChatNote();
+            } else {
+                // switching again replaces the last switch's note
+                if (modelNote != null && entries.size() > 0 && entries.lastElement() == modelNote) {
+                    entries.removeElementAt(entries.size() - 1);
+                }
+                modelNote = new Entry(KIND_INFO, L.s("Sonraki yanıtlar: " + ai(), "Next replies: " + ai()),
+                        L.s(ai() + " bir sonraki mesajından itibaren yanıtlar ve bu sohbetin geçmişini de görür.",
+                                ai() + " answers from your next message on and sees this chat's history too."));
+                add(modelNote);
+            }
         }
         changed(false);
         return null;
@@ -466,13 +483,18 @@ final class ChatSession implements Runnable, Net.Listener {
             resetLocal();
             model = modelId == null ? "" : modelId;
             modelName = Models.name(model);
-            String with = modelName.length() > 0 ? " · " + modelName : "";
-            note(KIND_INFO, L.s("Yeni sohbet", "New chat") + with,
-                    L.s("Önceki sohbet sunucuda 30 gün kalır; Sohbetler'den yeniden açılabilir.",
-                            "The previous chat stays on the server for 30 days; open it again from Chats."));
+            newChatNote();
         }
         changed(false);
         return null;
+    }
+
+    /** "New chat · <model>". Called with the lock held. */
+    private void newChatNote() {
+        String with = modelName.length() > 0 ? " · " + modelName : "";
+        note(KIND_INFO, L.s("Yeni sohbet", "New chat") + with,
+                L.s("Önceki sohbet sunucuda 30 gün kalır; Sohbetler'den yeniden açılabilir.",
+                        "The previous chat stays on the server for 30 days; open it again from Chats."));
     }
 
     /** Deletes the current conversation on the server, then starts a new one. */

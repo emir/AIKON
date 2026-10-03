@@ -225,6 +225,14 @@ public class EmuShot {
         select(3);                            // Grok
         select(0);                            // its only model
         save("chat_new_grok");
+        // switching the model twice before writing keeps one "New chat" note (Grok, then Gemini, then Grok)
+        command(t("Model", "Model"));
+        select(2);                            // Gemini
+        select(0);
+        command(t("Model", "Model"));
+        select(3);                            // Grok again
+        select(0);
+        save("chat_new_switched");
         command(t("Write", "Yaz"));
         type(t("Which phone is this?", "Bu hangi telefon?"));
         command(t("Send", "Gönder"));
