@@ -82,7 +82,7 @@ deploy/admin.sh $SERVER devices          # then: deploy/admin.sh $SERVER revoke 
 
 ```
 echo "GATEWAY_URL=https://$IP" > app/app.local.properties
-make -C app            # build + 48 checks + reproducible rebuild
+make -C app            # build + package checks + reproducible rebuild
 ls app/dist            # AIKON.jad, AIKON.jar, SHA256SUMS
 ```
 
