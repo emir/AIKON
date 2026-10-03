@@ -27,6 +27,9 @@ MIDP  := $(DEPS)/midpapi20-2.0.4.jar
 # stubs (stubs/jsr135), used only by Rec and Cam.
 JSR75 := $(DEPS)/microemu-jsr-75-2.0.4.jar
 PROGUARD := $(DEPS)/proguard-7.9.1/lib/proguard.jar
+# Zopfli sources (CafeUndZopfli, Apache-2.0) for tools/ZopfliDir.java: the JAR
+# entries packed ~5% tighter than zlib -9; runs on the build host only
+ZOPFLI := $(DEPS)/cafeundzopfli-5cdf283
 
 # class version 46.0 (as the MIDlets shipped on Series 40 3rd Edition phones)
 SOURCE_LEVEL := 1.3
@@ -50,8 +53,8 @@ deps:
 	@tools/fetch_deps.sh $(DEPS)
 
 build: deps
-	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(BUILD)/mapping.txt $(STUBS) $(DIST)
-	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(STUBS)
+	rm -rf $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(BUILD)/mapping.txt $(BUILD)/zopfli $(BUILD)/deflated $(STUBS) $(DIST)
+	mkdir -p $(BUILD)/classes $(BUILD)/preverified $(BUILD)/res $(BUILD)/zopfli $(BUILD)/deflated $(STUBS)
 	$(PYTHON) tools/make_art.py icon $(BUILD)/res/icon.png
 	$(PYTHON) tools/strings.py check src lang
 	$(PYTHON) tools/strings.py pack src lang $(BUILD)/res/lang
@@ -65,7 +68,9 @@ build: deps
 		-injars $(BUILD)/classes -outjars $(BUILD)/preverified \
 		-libraryjars $(CLDC) -libraryjars $(MIDP) -libraryjars $(JSR75) -libraryjars $(STUBS) \
 		-printmapping $(BUILD)/mapping.txt
-	$(PYTHON) tools/package.py app.properties $(BUILD)/preverified $(DIST) $(LOCAL) $(BUILD)/res
+	$(JAVA) -jar $(ECJ) -8 -nowarn -encoding UTF-8 -d $(BUILD)/zopfli $(ZOPFLI)/*.java tools/ZopfliDir.java
+	$(JAVA) -cp $(BUILD)/zopfli ZopfliDir $(BUILD)/deflated $(BUILD)/preverified $(BUILD)/res
+	$(PYTHON) tools/package.py app.properties $(BUILD)/preverified $(DIST) $(LOCAL) $(BUILD)/res $(BUILD)/deflated
 
 check:
 	@test -f $(DIST)/SHA256SUMS || { echo "run 'make build' first" >&2; exit 1; }

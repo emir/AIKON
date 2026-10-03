@@ -224,7 +224,7 @@ hardware.
 ## License
 
 MIT, see [LICENSE](LICENSE). Copyright (c) 2026 Emir Karşıyakalı. Build-time tools are downloaded, not bundled
-(ECJ: EPL-2.0, ProGuard: GPL-2.0, MicroEmulator API stubs: LGPL); none of
+(ECJ: EPL-2.0, ProGuard: GPL-2.0, MicroEmulator API stubs: LGPL, CafeUndZopfli: Apache-2.0); none of
 them end up in the phone app. The optional emulator harness
 `app/emu/EmuShot.java` links against FreeJ2ME (GPL-3.0), which is not
 included.

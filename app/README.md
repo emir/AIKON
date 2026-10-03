@@ -37,7 +37,7 @@ cp app.local.properties.example app.local.properties   # set GATEWAY_URL=https:/
 make            # downloads pinned tools to .deps/j2me (SHA-256 checked), builds, runs the package checks twice
 ```
 
-Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~210 KB with the languages), `dist/SHA256SUMS`.
+Output: `dist/AIKON.jad`, `dist/AIKON.jar` (~200 KB with the languages), `dist/SHA256SUMS`.
 Version and build number live only in `app.properties`.
 
 Pipeline: ECJ compiles against the CLDC 1.1 + MIDP 2.0 API stubs, plus the
@@ -45,9 +45,12 @@ optional JSR 75 FileConnection API (MicroEmulator jar) and PIM API
 (compile-only stubs in `stubs/jsr75-pim`, used only by `Files` and `Pim`),
 ProGuard `-microedition` preverifies, drops unused code and gives every class
 but the MIDlet a short name (no bytecode optimization; the real names are in
-`build/mapping.txt`, which `tools/check.py` and the emulator harness read), `tools/package.py`
-writes a deterministic JAR and the JAD (with the language files packed by
-`tools/strings.py`), `tools/check.py` verifies it.
+`build/mapping.txt`, which `tools/check.py` and the emulator harness read),
+`tools/ZopfliDir.java` deflates every entry with Zopfli (CafeUndZopfli
+sources pinned in `deps.lock`; each entry is inflated back and compared),
+`tools/package.py` writes a deterministic JAR from that data and the JAD
+(with the language files packed by `tools/strings.py`), `tools/check.py`
+verifies it.
 
 ## Install
 

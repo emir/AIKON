@@ -21,6 +21,7 @@ grep -v '^#' "$HERE/deps.lock" | while IFS='	' read -r name want license url; do
 		case "$url" in
 		http*)
 			echo "fetch $name"
+			mkdir -p "$(dirname "$f")"
 			curl -fsSL -m 600 "$url" -o "$f.part"
 			mv "$f.part" "$f"
 			;;

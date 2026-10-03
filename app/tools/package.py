@@ -2,22 +2,26 @@
 """
 Deterministic MIDlet packaging: JAR first, then JAD from the final JAR.
 
-  package.py app.properties CLASSES_DIR DIST_DIR [LOCAL_PROPERTIES]
+  package.py app.properties CLASSES_DIR DIST_DIR [LOCAL_PROPERTIES [RES_DIR [DEFLATED_DIR]]]
 
 AIKON differences: MIDlet-Description, one optional permission
 (MIDlet-Permissions-Opt: https), and an optional ClaudeS40-Gateway URL taken
 from an untracked app.local.properties. Secrets are never packaged.
 
 - Manifest is the first entry; entries sorted; fixed timestamps; fixed
-  permissions; deflate level 9 -> same inputs give the same bytes.
+  permissions -> same inputs give the same bytes.
+- Entry data: from DEFLATED_DIR (raw deflate per file, made by
+  tools/ZopfliDir.java; about 5% smaller), else zlib level 9 (the manifest
+  always). The ZIP is written here, since zipfile cannot take ready data.
 - JAD is written after the JAR is closed; MIDlet-Jar-Size is the real size.
 - Only MIDlet-Permissions-Opt (HTTPS); no install/delete notify URLs, no push.
 """
 
 import hashlib
 import os
+import struct
 import sys
-import zipfile
+import zlib
 
 FIXED_TIME = (2000, 1, 1, 0, 0, 0)
 
@@ -76,18 +80,43 @@ def gammu_stalls(n):
     return (last + FRAME_OVERHEAD) % USB_PACKET == 0
 
 
-def zinfo(name):
-    zi = zipfile.ZipInfo(name, date_time=FIXED_TIME)
-    zi.compress_type = zipfile.ZIP_DEFLATED
-    zi.create_system = 0
-    zi.external_attr = 0
-    return zi
+def dos_time(t):
+    y, mo, d, h, mi, sec = t
+    return (h << 11 | mi << 5 | sec // 2), ((y - 1980) << 9 | mo << 5 | d)
+
+
+def write_zip(path, entries, comment):
+    """entries: (name, data, deflated data); stored as deflate, DOS time FIXED_TIME,
+    made by MS-DOS, external attributes 0600 << 16, no extra fields (as zipfile
+    wrote them before)."""
+    tm, dt = dos_time(FIXED_TIME)
+    central = []
+    with open(path, "wb") as f:
+        for name, data, packed in entries:
+            n = name.encode("ascii")
+            crc = zlib.crc32(data) & 0xFFFFFFFF
+            central.append(struct.pack("<4s6H3L5H2L", b"PK\x01\x02", 20, 20, 0, 8, tm, dt, crc,
+                                       len(packed), len(data), len(n), 0, 0, 0, 0, 0o600 << 16, f.tell()) + n)
+            f.write(struct.pack("<4s5H3L2H", b"PK\x03\x04", 20, 0, 8, tm, dt, crc,
+                                len(packed), len(data), len(n), 0) + n)
+            f.write(packed)
+        start = f.tell()
+        cd = b"".join(central)
+        f.write(cd)
+        f.write(struct.pack("<4s4H2LH", b"PK\x05\x06", 0, 0, len(entries), len(entries),
+                            len(cd), start, len(comment)) + comment)
+
+
+def zlib_deflate(data):
+    c = zlib.compressobj(9, zlib.DEFLATED, -15)
+    return c.compress(data) + c.flush()
 
 
 def main():
     props_path, classes, dist = sys.argv[1:4]
     local_path = sys.argv[4] if len(sys.argv) > 4 else ""
     res_dir = sys.argv[5] if len(sys.argv) > 5 else ""
+    deflated = sys.argv[6] if len(sys.argv) > 6 else ""
     p = read_props(props_path)
     local = read_props(local_path) if local_path and os.path.exists(local_path) else {}
     attrs = attributes(p, local)
@@ -115,18 +144,22 @@ def main():
                 resources.append(os.path.relpath(os.path.join(dp, f), res_dir).replace(os.sep, "/"))
         resources.sort()
 
+    def entry(base, rel):
+        data = open(os.path.join(base, rel), "rb").read()
+        if not deflated:
+            return rel, data, zlib_deflate(data)
+        packed = open(os.path.join(deflated, rel), "rb").read()
+        if zlib.decompress(packed, -15) != data:
+            sys.exit(f"{rel}: deflated data does not match the file")
+        return rel, data, packed
+
+    m = manifest.encode("utf-8")
+    entries = [("META-INF/MANIFEST.MF", m, zlib_deflate(m))]
+    entries += [entry(classes, rel) for rel in files]
+    entries += [entry(res_dir, rel) for rel in resources]
     # a ZIP comment of a few spaces moves the size off a stalling length
     for pad in range(3):
-        with zipfile.ZipFile(jar_path, "w") as z:
-            z.writestr(zinfo("META-INF/MANIFEST.MF"), manifest.encode("utf-8"),
-                       compresslevel=9)
-            for rel in files:
-                with open(os.path.join(classes, rel), "rb") as f:
-                    z.writestr(zinfo(rel), f.read(), compresslevel=9)
-            for rel in resources:
-                with open(os.path.join(res_dir, rel), "rb") as f:
-                    z.writestr(zinfo(rel), f.read(), compresslevel=9)
-            z.comment = b" " * pad
+        write_zip(jar_path, entries, b" " * pad)
         size = os.path.getsize(jar_path)
         if not gammu_stalls(size):
             break
