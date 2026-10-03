@@ -9,6 +9,7 @@ import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.DateField;
 import javax.microedition.lcdui.Displayable;
 import javax.microedition.lcdui.Form;
+import javax.microedition.lcdui.Gauge;
 import javax.microedition.lcdui.TextField;
 
 /**
@@ -101,8 +102,14 @@ final class CalendarForm implements CommandListener, Runnable {
             int a = alarm.getSelectedIndex();
             alarmMinutes = a >= 0 && a < ALARMS.length ? ALARMS[a] : -1;
         }
+        // the phone's own running bar while the entry is written (it may ask for permission first)
+        savingBar = new Gauge(L.t("Saving..."), false, Gauge.INDEFINITE, Gauge.CONTINUOUS_RUNNING);
+        form.append(savingBar);
         new Thread(this).start();
     }
+
+    /** The running bar while saving, or null. */
+    private Gauge savingBar;
 
     public void run() {
         boolean t;
@@ -118,6 +125,12 @@ final class CalendarForm implements CommandListener, Runnable {
         String err = Pim.add(t, w, a, m);
         synchronized (this) {
             saving = false;
+            for (int i = form.size() - 1; i >= 0; i--) {
+                if (form.get(i) == savingBar) {
+                    form.delete(i);
+                }
+            }
+            savingBar = null;
         }
         if (err != null) {
             midlet.info(err, form);

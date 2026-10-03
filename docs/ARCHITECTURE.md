@@ -73,7 +73,9 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   server address, access code, setup address, calendar entry; the credit code
   is typed on its page, with the number box as a fallback);
   custom `Canvas` screens elsewhere (splash, home, chat, settings and every
-  list through `RowList`, every text page and message through `TextPage`),
+  list through `RowList`, every text page and message through `TextPage`;
+  anything waited for shows `Busy`: a spinner beside the status, pulsing
+  placeholder rows, the typing dots in the chat),
   with
   line icons and the wordmark drawn by the app (`Icons`, `Wordmark`), sized
   from `getWidth()/getHeight()`,

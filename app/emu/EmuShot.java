@@ -287,6 +287,14 @@ public class EmuShot {
         key(Mobile.KEY_NUM9);
         key(Mobile.KEY_NUM1);
         save("credit_code_typing");           // "4539 1___ ...", Delete on the right softkey
+        Method wt = cr.getDeclaredMethod("waiting", String.class);
+        wt.setAccessible(true);
+        wt.invoke(credits, t("Sending...", "Gönderiliyor..."));
+        Thread.sleep(300);
+        save("credit_sending");               // the status with the spinner (harness only: nothing is sent)
+        Method stt = cr.getDeclaredMethod("status", String.class);
+        stt.setAccessible(true);
+        stt.invoke(credits, "");
         command(t("Buy a code", "Kod satın al"));
         save("credit_buy_qr");
         command(t("Back", "Geri"));

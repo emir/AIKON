@@ -558,3 +558,4 @@ Type the 16-digit credit code with the number keys.	Escribe el código de crédi
 Type the new credit code with the number keys.	Escribe el nuevo código de crédito con las teclas numéricas.
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	¿Aún sin código? Opciones > Comprar un código: un código QR para escanear con un smartphone.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Escanéalo con la cámara de un smartphone, compra allí un código y luego escríbelo aquí.
+Saving...	Guardando...

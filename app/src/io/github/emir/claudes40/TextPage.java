@@ -13,7 +13,8 @@ import javax.microedition.lcdui.Graphics;
 /**
  * A page of text drawn like the lists, in place of a Form that only shows
  * text: the title bar of RowList, then items of a small muted label and
- * wrapped text (or a large value, or a progress bar). UP/DOWN scroll.
+ * wrapped text (or a large value, or a progress bar). An item that waits
+ * for something (setBusy) has a moving spinner before its text. UP/DOWN scroll.
  * Items can change from worker threads; every method is synchronized.
  * Follows Settings > Screen > Full screen like RowList.
  */
@@ -40,6 +41,7 @@ final class TextPage extends Canvas {
         String label;
         String text;
         boolean big;
+        boolean busy;
         int value = -1; // a progress bar when >= 0
         int max;
     }
@@ -101,6 +103,26 @@ final class TextPage extends Canvas {
     synchronized void setBig(int i) {
         ((Item) items.elementAt(i)).big = true;
         repaint();
+    }
+
+    /** A spinner before the item's text while on (a request under way). */
+    synchronized void setBusy(int i, boolean on) {
+        if (i >= 0 && i < items.size()) {
+            ((Item) items.elementAt(i)).busy = on;
+            repaint();
+        }
+    }
+
+    /** The item's text with the spinner on: what is being waited for. */
+    synchronized void waiting(int i, String text) {
+        setText(i, text);
+        setBusy(i, true);
+    }
+
+    /** The item's text with the spinner off: the outcome. */
+    synchronized void done(int i, String text) {
+        setText(i, text);
+        setBusy(i, false);
     }
 
     synchronized void setText(int i, String text) {
@@ -197,6 +219,7 @@ final class TextPage extends Canvas {
         scroll = Math.max(0, Math.min(scroll, maxScroll));
 
         int y = top + 8 - scroll;
+        boolean anyBusy = false;
         for (int i = 0; i < items.size(); i++) {
             Item it = (Item) items.elementAt(i);
             if (it.label != null && it.label.length() > 0) {
@@ -223,16 +246,23 @@ final class TextPage extends Canvas {
             }
             if (it.text.length() > 0) {
                 Font tf = it.big ? bigFont() : f;
+                int indent = 0;
+                if (it.busy) {
+                    anyBusy = true;
+                    int sz = Math.max(16, Math.min(tf.getHeight() + 4, 24));
+                    Busy.spinner(g, MARGIN, y + (tf.getHeight() - sz) / 2, sz);
+                    indent = sz + 8;
+                }
                 g.setFont(tf);
                 g.setColor(Theme.ink);
                 Vector lines = new Vector();
-                Text.wrap(it.text, tf, tw, lines);
+                Text.wrap(it.text, tf, tw - indent, lines);
                 while (lines.size() > 0 && ((String) lines.lastElement()).length() == 0) {
                     lines.removeElementAt(lines.size() - 1); // Form texts ended with "\n"
                 }
                 for (int k = 0; k < lines.size(); k++) {
                     if (y + tf.getHeight() > top && y < h) {
-                        g.drawString((String) lines.elementAt(k), MARGIN, y, Graphics.TOP | Graphics.LEFT);
+                        g.drawString((String) lines.elementAt(k), MARGIN + indent, y, Graphics.TOP | Graphics.LEFT);
                     }
                     y += tf.getHeight();
                 }
@@ -248,5 +278,10 @@ final class TextPage extends Canvas {
             g.fillRoundRect(w - 3, by, 2, bh, 2, 2);
         }
         RowList.paintBar(g, w, title);
+        if (anyBusy) {
+            Busy.on(this);
+        } else {
+            Busy.off(this);
+        }
     }
 }

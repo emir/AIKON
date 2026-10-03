@@ -55,6 +55,8 @@ final class RowList extends Canvas {
     static boolean fullScreen = true;
 
     private boolean full;
+    /** A spinner at the right of the title bar (a file being read, a change being sent). */
+    private boolean busy;
 
     RowList(String title) {
         this.title = title;
@@ -125,7 +127,12 @@ final class RowList extends Canvas {
         repaint();
     }
 
-    /** Grey placeholder rows while the real ones load (not selectable). */
+    synchronized void setBusy(boolean on) {
+        busy = on;
+        repaint();
+    }
+
+    /** Grey placeholder rows while the real ones load (not selectable); they pulse slowly. */
     synchronized void skeleton(int n) {
         for (int i = 0; i < n; i++) {
             Row r = new Row();
@@ -316,6 +323,7 @@ final class RowList extends Canvas {
         scroll = Math.max(0, Math.min(scroll, Math.max(0, ys[n] - area)));
 
         g.setClip(0, top, w, area + 4);
+        boolean pulsing = false;
         int ic = Math.max(14, Math.min(22, f.getHeight() + 2));
         for (int i = 0; i < n; i++) {
             int y = top + ys[i] - scroll;
@@ -327,7 +335,8 @@ final class RowList extends Canvas {
             if (r.skeleton) {
                 // bars where a title and its second line will be, shorter each row
                 int bw = (w - 2 * MARGIN - 12) * (70 - (i % 3) * 12) / 100;
-                g.setColor(Theme.mix(Theme.bg, Theme.border, 200));
+                pulsing = true;
+                g.setColor(Theme.mix(Theme.bg, Theme.border, 120 + Busy.pulse() * 135 / 255));
                 g.fillRoundRect(MARGIN + 6, y + 6, bw, f.getHeight() - 6, 6, 6);
                 g.fillRoundRect(MARGIN + 6, y + 6 + f.getHeight(), bw * 3 / 5, sm.getHeight() - 6, 6, 6);
                 continue;
@@ -411,5 +420,14 @@ final class RowList extends Canvas {
         }
 
         paintBar(g, w, title);
+        if (busy) {
+            int sz = Math.min(barH() - 16, 18);
+            Busy.spinner(g, w - MARGIN - 4 - sz, (barH() - sz) / 2, sz);
+        }
+        if (pulsing || busy) {
+            Busy.on(this);
+        } else {
+            Busy.off(this);
+        }
     }
 }

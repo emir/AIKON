@@ -230,6 +230,11 @@ public class ClaudeS40MIDlet extends MIDlet implements CommandListener {
     private boolean splashDone;
     private boolean restored;
 
+    /** True while the setup backup is still being read at start-up (Splash shows a spinner). */
+    synchronized boolean restoringSetup() {
+        return restoring;
+    }
+
     /** Worker thread at start-up: the setup kept outside the app (Backup), if any. */
     private void restoreSetup() {
         boolean ok = Backup.restore(settings);

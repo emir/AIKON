@@ -79,7 +79,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         seconds = 0;
         form.setProgress(gauge, 0, MAX_SECONDS);
         form.setLabel(gauge, "0 / " + MAX_SECONDS + L.t(" s"));
-        show(L.t("Opening the microphone..."), new Command[] { cancelCmd });
+        show(L.t("Opening the microphone..."), new Command[] { cancelCmd }, true);
         job = JOB_START;
         new Thread(this).start();
     }
@@ -118,7 +118,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         }
         timer.cancel();
         timer = null;
-        show(L.t("Finishing the recording..."), new Command[] { cancelCmd });
+        show(L.t("Finishing the recording..."), new Command[] { cancelCmd }, true);
         job = JOB_STOP;
         new Thread(this).start();
     }
@@ -129,7 +129,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         if (!sameRequest || requestId == null) {
             requestId = Text.requestId();
         }
-        show(L.t("Sending (") + (audio.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd });
+        show(L.t("Sending (") + (audio.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd }, true);
         job = JOB_SEND;
         new Thread(this).start();
     }
@@ -318,7 +318,13 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
     private Command[] shownCmds = new Command[0];
 
     private void show(String text, Command[] cmds) {
+        show(text, cmds, false);
+    }
+
+    /** The status (with the spinner while busy, something under way) and the commands for it. */
+    private void show(String text, Command[] cmds, boolean busy) {
         form.setText(status, text);
+        form.setBusy(status, busy);
         for (int i = 0; i < shownCmds.length; i++) {
             form.removeCommand(shownCmds[i]);
         }
@@ -332,7 +338,7 @@ final class Dictation implements CommandListener, Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 if (!closed && job == JOB_SEND) {
-                    form.setText(status, L.t("Turning speech into text..."));
+                    form.waiting(status, L.t("Turning speech into text..."));
                 }
             }
         }

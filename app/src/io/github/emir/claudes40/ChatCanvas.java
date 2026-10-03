@@ -1424,8 +1424,18 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         }
         String t = st.length() > 0 ? st : draft.length() > 0 ? L.t("Draft: ") + draft
                 : ready ? L.t("Write a message") : hint;
-        g.drawString(Text.fit(t, Theme.small, w - 4 * PAD), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
+        boolean busy = session.busy();
+        int dotsW = busy ? 30 : 0; // the typing bubble's three dots, small, at the pill's right end
+        g.drawString(Text.fit(t, Theme.small, w - 4 * PAD - dotsW), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
                 Graphics.TOP | Graphics.LEFT);
+        if (busy) {
+            for (int i = 0; i < 3; i++) {
+                boolean up = animFrame % 3 == i;
+                g.setColor(up ? Theme.accent : Theme.border);
+                int d = up ? 6 : 4;
+                g.fillArc(w - 2 * PAD - dotsW + 6 + i * 9 - d / 2, py + ph / 2 - d / 2, d, d, 0, 360);
+            }
+        }
     }
 
     /** The idle hint (a marker: the pill then shows its placeholder). */

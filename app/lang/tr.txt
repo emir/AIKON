@@ -558,3 +558,4 @@ Type the 16-digit credit code with the number keys.	16 haneli kredi kodunu tuşl
 Type the new credit code with the number keys.	Yeni kredi kodunu tuşlarla yaz.
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Henüz kodun yok mu? Seçenekler > Kod satın al: akıllı telefonla taranacak bir QR kod.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Akıllı telefonun kamerasıyla tara, kodu orada satın al, sonra buraya yaz.
+Saving...	Kaydediliyor...

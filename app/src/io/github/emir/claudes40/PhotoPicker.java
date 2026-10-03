@@ -153,12 +153,17 @@ final class PhotoPicker implements CommandListener, Runnable {
                 closed = true;
             }
         }
+        list.setBusy(false);
         if (b != null) {
             photo.chosen(b);
         } else {
+            list.title(readTitle); // not "Reading..." any more
             midlet.info(err, list);
         }
     }
+
+    /** The list's title before "Reading...". */
+    private String readTitle = "";
 
     private synchronized void done() {
         busy = false;
@@ -200,7 +205,9 @@ final class PhotoPicker implements CommandListener, Runnable {
                     job = JOB_READ;
                     jobUrl = t;
                 }
+                readTitle = list.getTitle();
                 list.title(L.t("Reading..."));
+                list.setBusy(true);
                 new Thread(this).start();
             }
         } else if (c == backCmd && dir != null) {

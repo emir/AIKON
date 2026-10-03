@@ -105,6 +105,8 @@ final class ChatList implements CommandListener, Runnable {
         if (j == JOB_LIST || j == JOB_SEARCH) {
             list.deleteAll();
             list.skeleton(5);
+        } else {
+            list.setBusy(true); // pinning or deleting: the rows stay until the list comes again
         }
         new Thread(this).start();
     }
@@ -139,6 +141,7 @@ final class ChatList implements CommandListener, Runnable {
                 actionError = (j == JOB_PIN ? L.t("Could not pin (") : L.t("Could not delete ("))
                         + (st.length() > 0 ? st : "?") + ").";
             }
+            list.setBusy(false);
             list.deleteAll();
             list.skeleton(5);
         }

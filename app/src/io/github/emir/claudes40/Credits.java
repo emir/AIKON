@@ -1,8 +1,5 @@
 package io.github.emir.claudes40;
 
-import java.util.Timer;
-import java.util.TimerTask;
-
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -102,8 +99,9 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         mode = BALANCE;
         page = new TextPage(L.t("Credits"));
         form = page;
-        statusItem = page.append(L.t("Balance"), L.t("Loading..."));
+        statusItem = page.append(L.t("Balance"), "");
         page.setBig(statusItem);
+        waiting(L.t("Loading..."));
         String shop = midlet.shopLine();
         page.append(null, (shop.length() > 0 ? shop + "\n" : "")
                 + L.t("Enter the code with Options > 'Add credits'."));
@@ -229,7 +227,13 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
             typed(true);
             return;
         }
-        if (c == helpCmd) {
+        if (c == okCmd) {
+            if (mode == TOPUP) {
+                new Credits(midlet, null, back).showBalance();
+            } else {
+                midlet.display().setCurrent(back);
+            }
+        } else if (c == helpCmd) {
             Help.show(midlet.display(), form.getTitle(), helpText(), form);
         } else if (c == deleteCmd) {
             clear();
@@ -246,6 +250,7 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         } else if (c == topupCmd) {
             new Credits(midlet, null, back).showTopup();
         } else if (c == refreshCmd) {
+            waiting(L.t("Loading..."));
             start();
         } else if (c == enterCmd) {
             typeCode();
@@ -296,40 +301,13 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         return sum % 10 == 0;
     }
 
-    /** The moving dots of a request under way (null otherwise). */
-    private Timer dots;
-
-    /** A status that moves ("Sending", "Sending.", ...) until the next status(). */
+    /** A status with the spinner: a request under way, until the next status(). */
     private void waiting(String text) {
-        final String base = text.endsWith("...") ? text.substring(0, text.length() - 3) : text;
-        status(text);
-        final Timer t = new Timer();
-        synchronized (this) {
-            dots = t;
-        }
-        t.schedule(new TimerTask() {
-            private int n = 3;
-
-            public void run() {
-                synchronized (Credits.this) {
-                    if (dots != t) {
-                        return; // a result came in meanwhile
-                    }
-                    n = (n + 1) % 4;
-                    page.setText(statusItem, base + "...".substring(0, n));
-                }
-            }
-        }, 400, 400);
+        page.waiting(statusItem, text);
     }
 
     private void status(String s) {
-        synchronized (this) {
-            if (dots != null) {
-                dots.cancel();
-                dots = null;
-            }
-        }
-        page.setText(statusItem, s);
+        page.done(statusItem, s);
     }
 
     public void run() {
@@ -396,6 +374,8 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
             if ((mode == PAIR || mode == TRIAL) && setup != null) {
                 // straight on to the chat, with the balance in its short note
                 setup.finish(bal.length() > 0 ? L.f("Ready · {0} credits", bal) : null);
+            } else {
+                form.addCommand(okCmd); // the centre key goes on: the balance after a top-up, else back
             }
         } else if ("trial_closed".equals(st)) {
             status(L.t("Today's free trials are used up. Try again tomorrow, or get a credit code."));

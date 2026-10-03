@@ -4,8 +4,6 @@ import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
 import javax.microedition.lcdui.Displayable;
-import java.util.Timer;
-import java.util.TimerTask;
 
 /**
  * Connection test: GET /health, then POST /echo with a fixed Turkish probe.
@@ -22,7 +20,7 @@ import java.util.TimerTask;
  * The centre key starts the test, and in the wizard goes on once it passed.
  *
  * Started by the wizard of a build that names its server (runAuto), it is
- * quiet: only a moving "Connecting..." while /health is checked (the build
+ * quiet: only "Connecting..." with the spinner while /health is checked (the build
  * names a known server, so the UTF-8 round trip is left to this screen in
  * Settings); the checklist appears only if the server cannot be reached.
  */
@@ -45,8 +43,8 @@ final class ConnTest implements CommandListener, Runnable {
     private boolean auto;
     /** Commands shown now (they change with the state). */
     private Command[] shown = new Command[0];
-    /** The moving dots of the quiet run (null otherwise). */
-    private Timer dots;
+    /** The "Testing..." line with the spinner, kept last while the test runs (-1: none). */
+    private int busyLine = -1;
     /** Technical details of the last run, for "Ayrıntılar". */
     private final StringBuffer details = new StringBuffer();
 
@@ -118,7 +116,8 @@ final class ConnTest implements CommandListener, Runnable {
             form.deleteAll();
             String url = midlet.settings.url.length() > 0 ? midlet.settings.url : L.t("(not set)");
             form.append(L.t("Server"), url);
-            line(L.t("Testing..."));
+            busyLine = form.append(null, L.t("Testing..."));
+            form.setBusy(busyLine, true);
             commands();
             new Thread(this).start();
         }
@@ -128,9 +127,23 @@ final class ConnTest implements CommandListener, Runnable {
         form.append(null, text);
     }
 
-    /** One checklist row: what was checked and whether it worked. */
+    /** One checklist row: what was checked and whether it worked; "Testing..." stays below it. */
     private void check(String what, boolean ok) {
+        boolean going = busyLine >= 0;
+        stopBusy();
         form.append(what, (ok ? L.t("OK") : L.t("failed")));
+        if (going) {
+            busyLine = form.append(null, L.t("Testing..."));
+            form.setBusy(busyLine, true);
+        }
+    }
+
+    /** Removes the "Testing..." line, if any. */
+    private void stopBusy() {
+        if (busyLine >= 0) {
+            form.delete(busyLine);
+            busyLine = -1;
+        }
     }
 
     private void detail(String label, String text) {
@@ -145,21 +158,12 @@ final class ConnTest implements CommandListener, Runnable {
             details.setLength(0);
         }
         form.deleteAll();
-        final String text = L.t("Connecting");
-        final int big = form.append(null, text + "...");
+        int big = form.append(null, L.t("Connecting") + "...");
         form.setBig(big);
+        form.setBusy(big, true);
         form.append(null, L.t("AIKON is connecting to its server; this takes a few seconds. If the phone asks about "
                 + "network access, allow it."));
         commands();
-        dots = new Timer();
-        dots.schedule(new TimerTask() {
-            private int n;
-
-            public void run() {
-                n = (n + 1) % 4;
-                form.setText(big, text + "...".substring(0, n));
-            }
-        }, 500, 500);
         d.setCurrent(form);
         new Thread(this).start();
     }
@@ -168,10 +172,7 @@ final class ConnTest implements CommandListener, Runnable {
         try {
             test();
         } finally {
-            if (dots != null) {
-                dots.cancel();
-                dots = null;
-            }
+            stopBusy();
             synchronized (this) {
                 running = false;
             }
@@ -189,9 +190,6 @@ final class ConnTest implements CommandListener, Runnable {
     private void test() {
         Settings s = midlet.settings;
         String base = s.url;
-        if (!auto && form.size() > 1) {
-            form.delete(form.size() - 1); // "Testing..."
-        }
         if (!Net.isHttps(base)) {
             result(false, L.t("The address must start with https://. Set it in Settings."));
             return;
@@ -283,6 +281,7 @@ final class ConnTest implements CommandListener, Runnable {
     }
 
     private void result(boolean ok, String text) {
+        stopBusy();
         form.append(ok ? L.t("Result") : L.t("Failed"), text);
     }
 

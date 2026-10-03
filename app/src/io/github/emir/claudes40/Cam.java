@@ -260,10 +260,19 @@ final class Cam extends Canvas implements CommandListener, Runnable {
         g.setFont(f);
         g.setColor(0xFFFFFF);
         String s;
+        boolean busy;
         synchronized (this) {
             s = status;
+            busy = !ready && !closed; // opening the camera or taking the photo
         }
         g.drawString(Text.fit(s, f, w - 4), w / 2, h - 2, Graphics.BOTTOM | Graphics.HCENTER);
+        if (busy) {
+            int sz = Math.max(16, w / 8);
+            Busy.spinner(g, (w - sz) / 2, (h - sz) / 2, sz);
+            Busy.on(this);
+        } else {
+            Busy.off(this);
+        }
     }
 
     protected void keyPressed(int keyCode) {

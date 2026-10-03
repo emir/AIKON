@@ -558,3 +558,4 @@ Type the 16-digit credit code with the number keys.	Ketik kode kredit 16 digit d
 Type the new credit code with the number keys.	Ketik kode kredit baru dengan tombol angka.
 No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Belum punya kode? Pilihan > Beli kode: kode QR untuk dipindai dengan smartphone.
 Scan it with a smartphone camera, buy a code there, then type the code here.	Pindai dengan kamera smartphone, beli kode di sana, lalu ketik kodenya di sini.
+Saving...	Menyimpan...

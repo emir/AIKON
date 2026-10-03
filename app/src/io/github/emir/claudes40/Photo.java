@@ -97,7 +97,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
 
     private synchronized void upload() {
         generation++;
-        show(L.t("Sending (") + (data.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd });
+        show(L.t("Sending (") + (data.length + 1023) / 1024 + " KB)...", new Command[] { cancelCmd }, true);
         midlet.display().setCurrent(form);
         new Thread(this).start();
     }
@@ -162,7 +162,7 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
         if (phase >= Net.PHASE_RESPONSE) {
             synchronized (this) {
                 if (!closed) {
-                    form.setText(status, L.t("The server is preparing the photo..."));
+                    form.waiting(status, L.t("The server is preparing the photo..."));
                 }
             }
         }
@@ -193,7 +193,13 @@ final class Photo implements CommandListener, Runnable, Net.Listener {
 
     /** Called with the lock held. */
     private void show(String text, Command[] cmds) {
+        show(text, cmds, false);
+    }
+
+    /** The status (with the spinner while busy, something under way) and the commands for it. */
+    private void show(String text, Command[] cmds, boolean busy) {
         form.setText(status, text);
+        form.setBusy(status, busy);
         for (int i = 0; i < shownCmds.length; i++) {
             form.removeCommand(shownCmds[i]);
         }

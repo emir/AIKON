@@ -66,6 +66,7 @@ final class Splash extends Canvas {
         done = true;
         stop();
         midlet.afterSplash();
+        repaint(); // the spinner, while the backup is still being read
     }
 
     protected void keyPressed(int keyCode) {
@@ -103,5 +104,13 @@ final class Splash extends Canvas {
         g.fillRect(lx, ly, lw, 2);
         g.setColor(Theme.accent);
         g.fillRect(lx, ly, lw * Math.min(frame, FRAMES) / FRAMES, 2);
+        if (done && midlet.restoringSetup()) {
+            // the intro is over but the setup backup is still being read (a permission prompt, a slow card)
+            int sz = Math.max(16, w / 12);
+            Busy.spinner(g, (w - sz) / 2, ly + 14, sz);
+            Busy.on(this);
+        } else {
+            Busy.off(this);
+        }
     }
 }

@@ -33,7 +33,7 @@ final class Pairing implements CommandListener, Runnable {
     private final int statusItem;
     private final Command cancelCmd = new Command(L.t("Cancel"), Command.BACK, 1);
     private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
-    private final Command finishCmd = new Command(L.t("Finish"), Command.OK, 1);
+    private final Command okCmd = new Command(L.t("OK"), Command.OK, 1);
     private final Command helpCmd = Help.command();
     private volatile boolean cancelled;
 
@@ -68,25 +68,31 @@ final class Pairing implements CommandListener, Runnable {
             } else {
                 midlet.showMenu();
             }
-        } else if (c == finishCmd) {
-            setup.finish(null);
+        } else if (c == okCmd) {
+            midlet.showMenu();
         }
     }
 
+    /** Something under way: the status with the spinner. */
     private void status(String s) {
-        form.setText(statusItem, s);
+        form.waiting(statusItem, s);
     }
 
     private void finish(String s) {
         finish(s, false);
     }
 
+    /** The outcome: no spinner; paired in the setup goes straight on to the chat. */
     private void finish(String s, boolean paired) {
-        status(s);
+        form.done(statusItem, s);
         form.removeCommand(cancelCmd);
-        form.addCommand(backCmd);
         if (paired && setup != null) {
-            form.addCommand(finishCmd);
+            setup.finish(null);
+            return;
+        }
+        form.addCommand(backCmd);
+        if (paired) {
+            form.addCommand(okCmd);
         }
     }
 
