@@ -316,6 +316,7 @@ final class Credits implements CommandListener, Runnable {
             return;
         }
         String bal = r.msg.field("balance");
+        Models.setTrial(r.msg.field("trial-model"));
         midlet.session().setBalance(bal);
         status(bal + L.t(" credits"));
         // keep the balance item, list the newest charges below it
@@ -409,6 +410,7 @@ final class Credits implements CommandListener, Runnable {
                     Net.Result r = Net.request(s.url + "/v1/balance", "POST", s.token,
                             S40Message.format(new String[0], new String[0], ""), midlet.userAgent(), null);
                     if (r.ok() && r.msg != null && "ok".equals(r.msg.field("status")) && r.msg.flag("credits")) {
+                        Models.setTrial(r.msg.field("trial-model")); // "" once a code was redeemed
                         midlet.session().setBalance(r.msg.field("balance"));
                         midlet.balanceChanged();
                     }

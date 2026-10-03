@@ -723,6 +723,9 @@ final class ChatSession implements Runnable, Net.Listener {
             remaining = m.field("remaining");
             remainingAt = System.currentTimeMillis();
         }
+        if (m.field("trial-model").length() > 0 && !m.field("trial-model").equals(Models.trial())) {
+            Models.setTrial(m.field("trial-model")); // a trial account (server 0.9.6+): its only model
+        }
         if (m.field("balance").length() > 0) {
             balance = m.field("balance");
             if (!midlet.settings.credits) {

@@ -243,7 +243,7 @@ open-source server has no such extension; it only offers the hooks
 | Route | Auth | Purpose |
 |---|---|---|
 | `POST /v1/pair/voucher` | – | `voucher: <16 digits>` → `ok` + `device`, `token`, `balance` (a new account, no owner approval) |
-| `POST /v1/pair/trial` | – | → `ok` + `device`, `token`, `model`, `balance`: a free trial (only when `/health` says `trial: 1`); the account works with that one model until a code is redeemed on it, other models answer `trial_model` (403). `trial_closed` (409): today's trials are used up; `slow_down`: too many from one address |
+| `POST /v1/pair/trial` | – | → `ok` + `device`, `token`, `model`, `balance`: a free trial (only when `/health` says `trial: 1`); the account works with that one model until a code is redeemed on it, other models answer `trial_model` (403); chat and balance answers of a trial account carry `trial-model` (the phone moves the chat to it). `trial_closed` (409): today's trials are used up; `slow_down`: too many from one address |
 | `POST /v1/redeem` | Bearer token | `voucher: <16 digits>` → `ok` + `balance` |
 | `POST /v1/balance` | Bearer token | → `ok` + `credits` (0/1), `balance`; text: newest charges, one per line `ts-ms TAB kind TAB credits TAB model` (kinds `chat`, `transcribe`, `voucher`, `adjust`) |
 
