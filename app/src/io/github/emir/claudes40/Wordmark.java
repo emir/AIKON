@@ -27,6 +27,12 @@ final class Wordmark {
         { 826, 5, 884, 5, 987, 142, 987, 5, 1051, 5, 1051, 246, 985, 246, 887, 113, 887, 246, 826, 246 }, // N
     };
 
+    /** The letter of each polygon: 0 A, 1 I, 2 K, 3 O (the ellipses), 4 N. */
+    private static final int[] LETTER = { 0, 0, 1, 2, 2, 4 };
+    /** Each letter's left and right edge in the artwork (A I K O N). */
+    private static final int[] LEFT = { 1, 288, 361, 558, 826 };
+    private static final int[] RIGHT = { 292, 350, 589, 817, 1051 };
+
     // O: outer and inner ellipse (centre x, centre y, rx, ry), in tenths of a pixel
     private static final int[] O_OUTER = { 6875, 1250, 1290, 1220 };
     private static final int[] O_INNER = { 6875, 1265, 655, 645 };
@@ -51,21 +57,55 @@ final class Wordmark {
             if (cache.size() >= 4) {
                 cache.clear(); // a theme or text size change leaves old ones behind
             }
-            img = render(width, color);
+            img = render(width, color, -1);
             cache.put(key, img);
         }
         return img;
     }
 
+    /**
+     * Letter i (0 A, 1 I, 2 K, 3 O, 4 N) alone, as drawn in the wordmark of
+     * that width: drawn at letterX(i, width) over get(width, ...) it covers
+     * the same pixels. Not cached (the splash keeps its own).
+     */
+    static Image letter(int i, int width, int color) {
+        return render(Math.max(8, width), color, i);
+    }
+
+    /** Where letter i starts in the wordmark of that width, in whole pixels. */
+    static int letterX(int i, int width) {
+        return (int) ((LEFT[i] - X0) * (Math.max(8, width) / (float) W));
+    }
+
+    /** Letter i's width in the artwork's pixels (scale with width / artWidth()). */
+    static int letterArtWidth(int i) {
+        return RIGHT[i] - LEFT[i];
+    }
+
+    /** The artwork's width (the whole wordmark). */
+    static int artWidth() {
+        return W;
+    }
+
     private static final int SUB = 4; // sample rows per pixel row
 
-    private static Image render(int w, int color) {
-        int h = height(w);
-        float k = w / (float) W;
+    /** The wordmark w pixels wide, or with letter >= 0 only that letter (cropped, from letterX). */
+    private static Image render(int ww, int color, int letter) {
+        int h = height(ww);
+        float k = ww / (float) W;
+        int ox = 0;
+        int w = ww;
+        if (letter >= 0) {
+            ox = letterX(letter, ww);
+            w = (int) ((RIGHT[letter] - X0) * k) + 2 - ox;
+        }
         // edges: x0, y0, x1, y1, winding (+1/-1), in pixels
         float[] e = new float[5 * 200];
         int n = 0;
         for (int p = 0; p < POLYS.length; p++) {
+            if (letter >= 0 && LETTER[p] != letter) {
+                continue;
+            }
             int[] poly = POLYS[p];
             boolean hole = poly[0] == -1;
             int off = hole ? 1 : 0;
@@ -73,13 +113,15 @@ final class Wordmark {
             float[] xs = new float[pts];
             float[] ys = new float[pts];
             for (int i = 0; i < pts; i++) {
-                xs[i] = (poly[off + 2 * i] - X0) * k;
+                xs[i] = (poly[off + 2 * i] - X0) * k - ox;
                 ys[i] = (poly[off + 2 * i + 1] - Y0) * k;
             }
             n = addPoly(e, n, xs, ys, hole);
         }
-        n = addEllipse(e, n, O_OUTER, k, false);
-        n = addEllipse(e, n, O_INNER, k, true);
+        if (letter < 0 || letter == 3) {
+            n = addEllipse(e, n, O_OUTER, k, ox, false);
+            n = addEllipse(e, n, O_INNER, k, ox, true);
+        }
 
         float[] cov = new float[w * h];
         float[] cx = new float[64];
@@ -170,13 +212,13 @@ final class Wordmark {
         return n;
     }
 
-    private static int addEllipse(float[] e, int n, int[] el, float k, boolean hole) {
+    private static int addEllipse(float[] e, int n, int[] el, float k, int ox, boolean hole) {
         int pts = 40;
         float[] xs = new float[pts];
         float[] ys = new float[pts];
         for (int i = 0; i < pts; i++) {
             double a = Math.PI * 2 * i / pts;
-            xs[i] = (float) ((el[0] / 10.0 - X0 + el[2] / 10.0 * Math.cos(a)) * k);
+            xs[i] = (float) ((el[0] / 10.0 - X0 + el[2] / 10.0 * Math.cos(a)) * k) - ox;
             ys[i] = (float) ((el[1] / 10.0 - Y0 + el[3] / 10.0 * Math.sin(a)) * k);
         }
         return addPoly(e, n, xs, ys, hole);

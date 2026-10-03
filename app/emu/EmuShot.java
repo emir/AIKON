@@ -128,8 +128,8 @@ public class EmuShot {
             call("rebuildUi");
         }
 
-        // splash animation frames (runs ~2.4 s by itself), then the setup wizard (fresh install)
-        for (int i = 0; i < 16; i++) {
+        // splash animation frames (runs ~3 s by itself), then the setup wizard (fresh install)
+        for (int i = 0; i < 22; i++) {
             Thread.sleep(150);
             ImageIO.write(Mobile.getPlatform().getLCD(), "png", new File(out, String.format("splash/f%02d.png", i)));
         }
