@@ -1,5 +1,8 @@
 package io.github.emir.claudes40;
 
+import java.util.Timer;
+import java.util.TimerTask;
+
 import javax.microedition.lcdui.Command;
 import javax.microedition.lcdui.CommandListener;
 import javax.microedition.lcdui.Display;
@@ -126,8 +129,9 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         form = page;
         int c = page.append(L.t("Credit code"), grouped(""));
         page.setBig(c);
+        // right under the code, where it is seen: sending, the result, a mistyped digit
+        statusItem = page.append(null, "");
         page.append(null, line + buyLine());
-        statusItem = page.append(null, ""); // sending, the result, a mistyped digit
         if (trial) {
             trialCmd = new Command(L.t("Try for free"), Command.OK, 1);
             form.addCommand(trialCmd);
@@ -190,7 +194,7 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         if (mode == TRIAL) {
             mode = PAIR; // a code typed after a trial that did not start
         }
-        status(L.t("Sending..."));
+        waiting(L.t("Sending..."));
         start();
     }
 
@@ -247,7 +251,7 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
             typeCode();
         } else if (c == trialCmd) {
             mode = TRIAL;
-            status(L.t("Starting the trial..."));
+            waiting(L.t("Starting the trial..."));
             start();
         }
     }
@@ -292,7 +296,39 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         return sum % 10 == 0;
     }
 
+    /** The moving dots of a request under way (null otherwise). */
+    private Timer dots;
+
+    /** A status that moves ("Sending", "Sending.", ...) until the next status(). */
+    private void waiting(String text) {
+        final String base = text.endsWith("...") ? text.substring(0, text.length() - 3) : text;
+        status(text);
+        final Timer t = new Timer();
+        synchronized (this) {
+            dots = t;
+        }
+        t.schedule(new TimerTask() {
+            private int n = 3;
+
+            public void run() {
+                synchronized (Credits.this) {
+                    if (dots != t) {
+                        return; // a result came in meanwhile
+                    }
+                    n = (n + 1) % 4;
+                    page.setText(statusItem, base + "...".substring(0, n));
+                }
+            }
+        }, 400, 400);
+    }
+
     private void status(String s) {
+        synchronized (this) {
+            if (dots != null) {
+                dots.cancel();
+                dots = null;
+            }
+        }
         page.setText(statusItem, s);
     }
 
