@@ -24,6 +24,7 @@ final class QrPage extends Canvas implements CommandListener {
     private final String url;
     private final boolean[][] qr;
     private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
+    private final KeyBar keys = new KeyBar();
 
     private QrPage(Display display, Displayable back, String title, String url, boolean[][] qr) {
         this.display = display;
@@ -46,13 +47,27 @@ final class QrPage extends Canvas implements CommandListener {
         return true;
     }
 
+    /** The commands are also drawn in the key bar (KeyBar). */
+    public void addCommand(Command c) {
+        super.addCommand(c);
+        keys.add(c);
+        repaint();
+    }
+
+    public void removeCommand(Command c) {
+        super.removeCommand(c);
+        keys.remove(c);
+        repaint();
+    }
+
     public void commandAction(Command c, Displayable d) {
         display.setCurrent(back);
     }
 
     protected void paint(Graphics g) {
         int w = getWidth();
-        int h = getHeight();
+        int full = getHeight();
+        int h = full - KeyBar.height();
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
         int top = RowList.barH();
@@ -90,5 +105,6 @@ final class QrPage extends Canvas implements CommandListener {
             ty += f.getHeight();
         }
         RowList.paintBar(g, w, title);
+        keys.paint(g, w, full);
     }
 }

@@ -131,6 +131,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     private int sel;
 
     private Timer anim;
+    /** What the keys under the screen do. */
+    private final KeyBar keys = new KeyBar();
     private int animFrame;
     private String toast;
     private long toastUntil;
@@ -143,7 +145,23 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         updateCommands();
     }
 
+    /** The commands are also drawn in the key bar (KeyBar). */
+    public void addCommand(Command c) {
+        super.addCommand(c);
+        keys.add(c);
+        repaint();
+    }
+
+    public void removeCommand(Command c) {
+        super.removeCommand(c);
+        keys.remove(c);
+        repaint();
+    }
+
     public void commandAction(Command c, Displayable d) {
+        synchronized (this) {
+            card = false; // a softkey closes the key card too
+        }
         midlet.userActive();
         String err = null;
         if (c == writeCmd) {
@@ -327,12 +345,22 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     protected void showNotify() {
+        synchronized (this) {
+            if (!Resume.tipsSeen && !reading) {
+                card = true; // the first time the chat is shown: its keys, once
+                Resume.tipsShown();
+            }
+        }
         updateCommands();
         updateAnimation();
     }
 
+    /** The one-time key card is over the chat; any key closes it. */
+    private boolean card;
+
     protected void hideNotify() {
         synchronized (this) {
+            card = false;
             if (anim != null) {
                 anim.cancel();
                 anim = null;
@@ -373,6 +401,13 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     private void key(int keyCode, boolean repeat) {
+        synchronized (this) {
+            if (card) {
+                card = false; // the key only closes the card
+                repaint();
+                return;
+            }
+        }
         keyCode = Keys.map(keyCode);
         midlet.userActive();
         String err = null;
@@ -661,7 +696,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     private int viewH() {
-        return getHeight() - barH() - statusH();
+        return getHeight() - KeyBar.height() - barH() - statusH();
     }
 
     private static int style() {
@@ -927,7 +962,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     }
 
     private int readAreaH() {
-        return getHeight() - readHeadH() - 2 * 4;
+        return getHeight() - KeyBar.height() - readHeadH() - 2 * 4;
     }
 
     /** Called with the lock held; leaves reading mode if the reply is gone. */
@@ -1090,8 +1125,70 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
     // ------------------------------------------------------------ paint
 
     protected synchronized void paint(Graphics g) {
+        paintScreen(g);
+        keys.centre(card ? L.t("Close") : centreLabel());
+        keys.paint(g, getWidth(), getHeight());
+        if (card) {
+            paintCard(g, getWidth(), getHeight() - KeyBar.height());
+        }
+    }
+
+    /** The keys of the chat on a card in the middle of the screen (first time only). */
+    private void paintCard(Graphics g, int w, int h) {
+        Font b = Theme.bold;
+        Font sm = Theme.small;
+        int cw = w - 16;
+        Vector lines = new Vector();
+        Text.wrap(L.t("[•] write, or the actions of a selected message\n[1] [3] select the previous / next message\n"
+                + "[2] [8] page up / down · [*] [#] top / end\n[7] reading mode · [0] the rest of a reply\n[9] text size"),
+                sm, cw - 16, lines);
+        int lh = sm.getHeight() + 3;
+        Vector foot = new Vector();
+        Text.wrap(L.t("Any key closes this. All keys: Options > Shortcuts."), sm, cw - 16, foot);
+        int ch = 10 + b.getHeight() + 6 + lines.size() * lh + 6 + foot.size() * sm.getHeight() + 10;
+        int x = 8;
+        int y = Math.max(4, (h - ch) / 2);
+        g.setColor(Theme.surface);
+        g.fillRoundRect(x, y, cw, ch, 12, 12);
+        g.setColor(Theme.accent);
+        g.drawRoundRect(x, y, cw - 1, ch - 1, 12, 12);
+        int ty = y + 10;
+        g.setFont(b);
+        g.setColor(Theme.ink);
+        g.drawString(Text.fit(L.t("Keys in the chat"), b, cw - 16), x + 8, ty, Graphics.TOP | Graphics.LEFT);
+        ty += b.getHeight() + 6;
+        g.setFont(sm);
+        for (int i = 0; i < lines.size(); i++) {
+            g.setColor(Theme.ink);
+            KeyBar.text(g, (String) lines.elementAt(i), x + 8, ty);
+            ty += lh;
+        }
+        ty += 6;
+        g.setColor(Theme.muted);
+        for (int i = 0; i < foot.size(); i++) {
+            g.drawString((String) foot.elementAt(i), x + 8, ty, Graphics.TOP | Graphics.LEFT);
+            ty += sm.getHeight();
+        }
+    }
+
+    /** What the centre key does now (it is this canvas's own key, not a command); "" for nothing. */
+    private String centreLabel() {
+        if (reading) {
+            return visibleEnd(rTop) >= rLines.size()
+                    ? (session.canMore(readUid) ? L.t("Show the rest") : "") : L.t("Next page");
+        }
+        if (sel != 0) {
+            return L.t("Actions");
+        }
+        if (session.canRetry()) {
+            return L.t("Retry");
+        }
+        return session.busy() ? "" : L.t("Write");
+    }
+
+    private void paintScreen(Graphics g) {
         int w = getWidth();
-        int h = getHeight();
+        int h = getHeight() - KeyBar.height();
         if (reading) {
             readLayout(w);
         }
@@ -1338,7 +1435,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         Vector title = new Vector();
         Text.wrap(session.ai(), Theme.bold, w - 4 * PAD, title);
         Vector tips = new Vector();
-        Text.wrap(L.t("Centre key to write"), Theme.small, w - 4 * PAD, tips);
+        Text.wrap(L.t("[•] write"), Theme.small, w - 4 * PAD, tips);
         int textH = title.size() * Theme.bold.getHeight() + 4 + tips.size() * Theme.small.getHeight();
         int ww = Math.min(w * 55 / 100, (vh - used - textH - 2 * PAD) * 3);
         int wh = ww >= 24 ? Wordmark.height(ww) : 0;
@@ -1360,7 +1457,8 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         g.setFont(Theme.small);
         g.setColor(Theme.muted);
         for (int i = 0; i < tips.size() && y + Theme.small.getHeight() <= bottom; i++) {
-            g.drawString((String) tips.elementAt(i), cx, y, Graphics.TOP | Graphics.HCENTER);
+            String tip = (String) tips.elementAt(i);
+            KeyBar.text(g, tip, cx - Theme.small.stringWidth(tip) / 2, y);
             y += Theme.small.getHeight();
         }
     }
@@ -1426,8 +1524,7 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
                 : ready ? L.t("Write a message") : hint;
         boolean busy = session.busy();
         int dotsW = busy ? 30 : 0; // the typing bubble's three dots, small, at the pill's right end
-        g.drawString(Text.fit(t, Theme.small, w - 4 * PAD - dotsW), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2,
-                Graphics.TOP | Graphics.LEFT);
+        KeyBar.text(g, Text.fit(t, Theme.small, w - 4 * PAD - dotsW), 2 * PAD, py + (ph - Theme.small.getHeight()) / 2);
         if (busy) {
             for (int i = 0; i < 3; i++) {
                 boolean up = animFrame % 3 == i;
@@ -1446,20 +1543,20 @@ final class ChatCanvas extends Canvas implements CommandListener, ChatSession.Vi
         if (sel != 0) {
             ChatSession.Entry e = session.entry(sel);
             if (e != null && !isBubble(e.kind)) {
-                return L.t("Centre key: details · 1/3: select");
+                return L.t("[•] details · [1] [3] select");
             }
-            return L.t("Centre key: actions · 1/3: select");
+            return L.t("[•] actions · [1] [3] select");
         }
         if (session.canRetry()) {
-            return L.t("Centre key: retry · 5: write");
+            return L.t("[•] retry · [5] write");
         }
         if (session.canMore()) {
-            return L.t("0: the rest · 7: reading mode");
+            return L.t("[0] the rest · [7] reading mode");
         }
         for (int i = 0; i < blocks.size(); i++) {
             Block b = (Block) blocks.elementAt(i);
             if (isReply(b.kind) && b.h > vh * 3 / 4) {
-                return L.t("7: reading mode · 5: write");
+                return L.t("[7] reading mode · [5] write");
             }
         }
         return READY;

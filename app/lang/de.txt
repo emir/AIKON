@@ -56,15 +56,15 @@ Loading the rest...	Rest wird geladen...
 Web searches can take a while	Websuchen können dauern
 Sending	Senden
  s	 s
-Centre key to write	Mitteltaste zum Schreiben
+[•] write	[•] schreiben
  left	 übrig
 Draft: 	Entwurf: 
 Write a message	Nachricht schreiben
-Centre key: details · 1/3: select	Mitteltaste: Details · 1/3: wählen
-Centre key: actions · 1/3: select	Mitteltaste: Aktionen · 1/3: wählen
-Centre key: retry · 5: write	Mitteltaste: wiederholen · 5: schreiben
-0: the rest · 7: reading mode	0: Rest · 7: Lesemodus
-7: reading mode · 5: write	7: Lesemodus · 5: schreiben
+[•] details · [1] [3] select	[•] Details · [1] [3] wählen
+[•] actions · [1] [3] select	[•] Aktionen · [1] [3] wählen
+[•] retry · [5] write	[•] wiederholen · [5] schreiben
+[0] the rest · [7] reading mode	[0] Rest · [7] Lesemodus
+[7] reading mode · [5] write	[7] Lesemodus · [5] schreiben
 New reply · press 3	Neue Antwort · 3 drücken
 0 or centre key: the rest	0 oder Mitteltaste: Rest
 0: the rest	0: Rest
@@ -563,3 +563,9 @@ Try again	Erneut versuchen
 Search again	Neu suchen
 Start a new chat	Neuen Chat beginnen
 Go to the chat	Zum Chat
+Options	Optionen
+Actions	Aktionen
+Next page	Nächste Seite
+[•] write, or the actions of a selected message\n[1] [3] select the previous / next message\n[2] [8] page up / down · [*] [#] top / end\n[7] reading mode · [0] the rest of a reply\n[9] text size	[•] schreiben oder Aktionen der gewählten Nachricht\n[1] [3] vorige / nächste Nachricht wählen\n[2] [8] Seite hoch / runter · [*] [#] Anfang / Ende\n[7] Lesemodus · [0] Rest einer Antwort\n[9] Textgröße
+Keys in the chat	Tasten im Chat
+Any key closes this. All keys: Options > Shortcuts.	Jede Taste schließt das. Alle Tasten: Optionen > Kürzel.

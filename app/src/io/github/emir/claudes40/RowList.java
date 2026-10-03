@@ -57,6 +57,21 @@ final class RowList extends Canvas {
     private boolean full;
     /** A spinner at the right of the title bar (a file being read, a change being sent). */
     private boolean busy;
+    /** What the keys under the screen do. */
+    private final KeyBar keys = new KeyBar();
+
+    /** The commands are also drawn in the key bar (KeyBar). */
+    public void addCommand(Command c) {
+        super.addCommand(c);
+        keys.add(c);
+        repaint();
+    }
+
+    public void removeCommand(Command c) {
+        super.removeCommand(c);
+        keys.remove(c);
+        repaint();
+    }
 
     RowList(String title) {
         this.title = title;
@@ -287,7 +302,7 @@ final class RowList extends Canvas {
 
     protected synchronized void paint(Graphics g) {
         int w = getWidth();
-        int h = getHeight();
+        int h = getHeight() - KeyBar.height();
         Font f = Theme.font;
         Font sm = Theme.small;
         g.setColor(Theme.bg);
@@ -420,6 +435,7 @@ final class RowList extends Canvas {
         }
 
         paintBar(g, w, title);
+        keys.paint(g, w, getHeight());
         if (busy) {
             int sz = Math.min(barH() - 16, 18);
             Busy.spinner(g, w - MARGIN - 4 - sz, (barH() - sz) / 2, sz);

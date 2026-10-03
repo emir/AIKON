@@ -56,15 +56,15 @@ Loading the rest...	Загружаю остальное...
 Web searches can take a while	Веб-поиск может занять время
 Sending	Отправка
  s	 с
-Centre key to write	Центр. клавиша: писать
+[•] write	[•] писать
  left	 осталось
 Draft: 	Черновик: 
 Write a message	Напиши сообщение
-Centre key: details · 1/3: select	Центр. клавиша: детали · 1/3: выбор
-Centre key: actions · 1/3: select	Центр. клавиша: действия · 1/3: выбор
-Centre key: retry · 5: write	Центр. клавиша: повтор · 5: писать
-0: the rest · 7: reading mode	0: остальное · 7: режим чтения
-7: reading mode · 5: write	7: режим чтения · 5: писать
+[•] details · [1] [3] select	[•] детали · [1] [3] выбор
+[•] actions · [1] [3] select	[•] действия · [1] [3] выбор
+[•] retry · [5] write	[•] повтор · [5] писать
+[0] the rest · [7] reading mode	[0] остальное · [7] режим чтения
+[7] reading mode · [5] write	[7] режим чтения · [5] писать
 New reply · press 3	Новый ответ · нажми 3
 0 or centre key: the rest	0 или центр. клавиша: остальное
 0: the rest	0: остальное
@@ -563,3 +563,9 @@ Try again	Повторить
 Search again	Искать снова
 Start a new chat	Начать новый чат
 Go to the chat	Перейти в чат
+Options	Функции
+Actions	Действия
+Next page	Дальше
+[•] write, or the actions of a selected message\n[1] [3] select the previous / next message\n[2] [8] page up / down · [*] [#] top / end\n[7] reading mode · [0] the rest of a reply\n[9] text size	[•] писать или действия с выбранным сообщением\n[1] [3] выбрать предыдущее / следующее\n[2] [8] страница вверх / вниз · [*] [#] начало / конец\n[7] режим чтения · [0] остаток ответа\n[9] размер текста
+Keys in the chat	Клавиши в чате
+Any key closes this. All keys: Options > Shortcuts.	Любая клавиша закрывает. Все клавиши: Функции > Клавиши.

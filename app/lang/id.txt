@@ -56,15 +56,15 @@ Loading the rest...	Memuat sisanya...
 Web searches can take a while	Pencarian web bisa agak lama
 Sending	Mengirim
  s	 dtk
-Centre key to write	Tombol tengah untuk menulis
+[•] write	[•] tulis
  left	 lagi
 Draft: 	Draf: 
 Write a message	Tulis pesan
-Centre key: details · 1/3: select	Tombol tengah: detail · 1/3: pilih
-Centre key: actions · 1/3: select	Tombol tengah: aksi · 1/3: pilih
-Centre key: retry · 5: write	Tombol tengah: coba lagi · 5: tulis
-0: the rest · 7: reading mode	0: sisanya · 7: mode baca
-7: reading mode · 5: write	7: mode baca · 5: tulis
+[•] details · [1] [3] select	[•] detail · [1] [3] pilih
+[•] actions · [1] [3] select	[•] aksi · [1] [3] pilih
+[•] retry · [5] write	[•] coba lagi · [5] tulis
+[0] the rest · [7] reading mode	[0] sisanya · [7] mode baca
+[7] reading mode · [5] write	[7] mode baca · [5] tulis
 New reply · press 3	Balasan baru · tekan 3
 0 or centre key: the rest	0 atau tombol tengah: sisanya
 0: the rest	0: sisanya
@@ -563,3 +563,9 @@ Try again	Coba lagi
 Search again	Cari lagi
 Start a new chat	Mulai chat baru
 Go to the chat	Buka chat
+Options	Pilihan
+Actions	Tindakan
+Next page	Halaman berikut
+[•] write, or the actions of a selected message\n[1] [3] select the previous / next message\n[2] [8] page up / down · [*] [#] top / end\n[7] reading mode · [0] the rest of a reply\n[9] text size	[•] tulis, atau aksi pesan yang dipilih\n[1] [3] pilih pesan sebelum / sesudah\n[2] [8] halaman atas / bawah · [*] [#] awal / akhir\n[7] mode baca · [0] sisa jawaban\n[9] ukuran teks
+Keys in the chat	Tombol di chat
+Any key closes this. All keys: Options > Shortcuts.	Tombol apa saja menutup ini. Semua tombol: Pilihan > Pintasan.

@@ -27,6 +27,8 @@ final class TextPage extends Canvas {
     private int scroll;
     private int contentH;
     private boolean full;
+    /** What the keys under the screen do. */
+    private final KeyBar keys = new KeyBar();
     /** Gets the digit keys and Clear (a credit code typed on the page), or null. */
     private Digits digits;
 
@@ -77,6 +79,19 @@ final class TextPage extends Canvas {
             full = RowList.fullScreen;
             setFullScreenMode(full);
         }
+    }
+
+    /** The commands are also drawn in the key bar (KeyBar). */
+    public void addCommand(Command c) {
+        super.addCommand(c);
+        keys.add(c);
+        repaint();
+    }
+
+    public void removeCommand(Command c) {
+        super.removeCommand(c);
+        keys.remove(c);
+        repaint();
     }
 
     /** The page's own title bar (no native title over it). */
@@ -213,7 +228,8 @@ final class TextPage extends Canvas {
         g.setColor(Theme.bg);
         g.fillRect(0, 0, w, h);
         int top = RowList.barH();
-        int area = h - top;
+        int kb = KeyBar.height();
+        int area = h - top - kb;
         int tw = w - 2 * MARGIN - 4;
         int maxScroll = Math.max(0, contentH - area);
         scroll = Math.max(0, Math.min(scroll, maxScroll));
@@ -278,6 +294,7 @@ final class TextPage extends Canvas {
             g.fillRoundRect(w - 3, by, 2, bh, 2, 2);
         }
         RowList.paintBar(g, w, title);
+        keys.paint(g, w, h);
         if (anyBusy) {
             Busy.on(this);
         } else {

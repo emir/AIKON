@@ -56,15 +56,15 @@ Loading the rest...	Cargando el resto...
 Web searches can take a while	Las búsquedas web pueden tardar
 Sending	Enviando
  s	 s
-Centre key to write	Tecla central para escribir
+[•] write	[•] escribir
  left	 restantes
 Draft: 	Borrador: 
 Write a message	Escribe un mensaje
-Centre key: details · 1/3: select	Tecla central: detalles · 1/3: elegir
-Centre key: actions · 1/3: select	Tecla central: acciones · 1/3: elegir
-Centre key: retry · 5: write	Tecla central: reintentar · 5: escribir
-0: the rest · 7: reading mode	0: el resto · 7: modo lectura
-7: reading mode · 5: write	7: modo lectura · 5: escribir
+[•] details · [1] [3] select	[•] detalles · [1] [3] elegir
+[•] actions · [1] [3] select	[•] acciones · [1] [3] elegir
+[•] retry · [5] write	[•] reintentar · [5] escribir
+[0] the rest · [7] reading mode	[0] el resto · [7] modo lectura
+[7] reading mode · [5] write	[7] modo lectura · [5] escribir
 New reply · press 3	Respuesta nueva · pulsa 3
 0 or centre key: the rest	0 o tecla central: el resto
 0: the rest	0: el resto
@@ -563,3 +563,9 @@ Try again	Reintentar
 Search again	Buscar de nuevo
 Start a new chat	Empezar un chat nuevo
 Go to the chat	Ir al chat
+Options	Opciones
+Actions	Acciones
+Next page	Página siguiente
+[•] write, or the actions of a selected message\n[1] [3] select the previous / next message\n[2] [8] page up / down · [*] [#] top / end\n[7] reading mode · [0] the rest of a reply\n[9] text size	[•] escribir o acciones del mensaje elegido\n[1] [3] elegir mensaje anterior / siguiente\n[2] [8] página arriba / abajo · [*] [#] inicio / final\n[7] modo lectura · [0] el resto de una respuesta\n[9] tamaño de texto
+Keys in the chat	Teclas del chat
+Any key closes this. All keys: Options > Shortcuts.	Cualquier tecla lo cierra. Todas las teclas: Opciones > Atajos.

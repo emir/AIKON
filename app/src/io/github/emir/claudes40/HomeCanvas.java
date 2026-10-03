@@ -64,6 +64,8 @@ final class HomeCanvas extends Canvas implements CommandListener {
     private final Command exitCmd = new Command(L.t("Exit"), Command.EXIT, 2);
     private final Command updateCmd = new Command(L.t("Update"), Command.SCREEN, 3);
     private boolean updateShown;
+    /** What the keys under the screen do. */
+    private final KeyBar keys = new KeyBar();
     private int selected;
     private int top;
 
@@ -72,6 +74,19 @@ final class HomeCanvas extends Canvas implements CommandListener {
         addCommand(selectCmd);
         addCommand(exitCmd);
         setCommandListener(this);
+    }
+
+    /** The commands are also drawn in the key bar (KeyBar). */
+    public void addCommand(Command c) {
+        super.addCommand(c);
+        keys.add(c);
+        repaint();
+    }
+
+    public void removeCommand(Command c) {
+        super.removeCommand(c);
+        keys.remove(c);
+        repaint();
     }
 
     public void commandAction(Command c, Displayable d) {
@@ -131,7 +146,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
 
     protected void paint(Graphics g) {
         int w = getWidth();
-        int h = getHeight();
+        int h = getHeight() - KeyBar.height();
         Font f = Theme.bold;
         Font sm = Theme.small;
 
@@ -206,6 +221,7 @@ final class HomeCanvas extends Canvas implements CommandListener {
             g.setColor(Theme.mix(Theme.chrome, Theme.muted, 170));
             g.drawString(ver, w - MARGIN - 2, fy, Graphics.TOP | Graphics.RIGHT);
         }
+        keys.paint(g, w, getHeight());
     }
 
     /** Item ids are Icons ids (CHAT .. EXIT). */

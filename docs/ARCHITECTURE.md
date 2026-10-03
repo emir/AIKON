@@ -75,7 +75,11 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   custom `Canvas` screens elsewhere (splash, home, chat, settings and every
   list through `RowList`, every text page and message through `TextPage`;
   anything waited for shows `Busy`: a spinner beside the status, pulsing
-  placeholder rows, the typing dots in the chat),
+  placeholder rows, the typing dots in the chat; in full screen every
+  canvas draws `KeyBar`, what the left softkey, the centre key and the right
+  softkey do (Series 40 split: BACK/EXIT/CANCEL/STOP right, the first OK/ITEM
+  command centre, the rest left), and key tokens in texts (`[5]`, `[•]`) are
+  drawn as key caps; the chat shows its keys once on a card),
   with
   line icons and the wordmark drawn by the app (`Icons`, `Wordmark`), sized
   from `getWidth()/getHeight()`,
@@ -138,8 +142,9 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
 - Where the app was left (RMS `cs40resume`, `Resume`): whether the chat was
   open and its conversation id, so the next start goes back there (the chat
   is fetched again unless it is the one kept on the phone); the unsent draft
-  only while "keep last chat" is on. Written on entering/leaving the chat
-  and at exit, only when it changed.
+  only while "keep last chat" is on; whether the chat's key card was seen
+  (format 2). Written on entering/leaving the chat and at exit, only when
+  it changed.
 - Stored on the phone (RMS `cs40cfg`): server URL, access token, verified
   URL, test mode, theme, text size, sound, vibration, language, web search
   on/off, "keep last chat", setup wizard done, the backlight option (light up for a reply; the old reading-mode one is kept unused),
