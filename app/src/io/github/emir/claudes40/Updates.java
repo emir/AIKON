@@ -119,6 +119,12 @@ final class Updates implements Runnable {
         return shop.startsWith("https://") ? shop.substring(8) : shop;
     }
 
+    /** The shop's full https:// address (for the QR code), or "" if this server names none. */
+    static synchronized String shopUrl(String serverUrl) {
+        load();
+        return serverUrl.equals(server) && Net.isHttps(shop) ? shop : "";
+    }
+
     /** True if this server offers a free trial. */
     static synchronized boolean trial(String serverUrl) {
         load();

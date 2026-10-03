@@ -362,9 +362,6 @@ Try for free	Testar grátis
 Finish	Concluir
 Add credits	Adicionar créditos
 Credit code	Código de crédito
-Centre key: type the 16-digit credit code.	Tecla central: digite o código de crédito de 16 dígitos.
-\n\nNo code? Options > Try for free: a few messages with one model.	\n\nSem código? Opções > Testar grátis: algumas mensagens com um modelo.
-Centre key: type the new credit code.	Tecla central: digite o novo código de crédito.
 Balance	Saldo
 Loading...	Carregando...
 Enter the code with Options > 'Add credits'.	Digite o código em Opções > 'Adicionar créditos'.
@@ -555,3 +552,9 @@ Yesterday	Ontem
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	O teste grátis só funciona com {0}, então esta conversa agora usa ele. Sua mensagem fica como rascunho: envie de novo. Um código de créditos libera todos os modelos (menu principal > Créditos).
 Connecting	Conectando
 AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	O AIKON está se conectando ao servidor; leva alguns segundos. Se o telefone pedir acesso à rede, permita.
+Buy a code	Comprar um código
+No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 digits with the number keys.	Sem código? Tecla central: teste grátis, algumas mensagens com um modelo.\n\nTem um código? Digite os 16 dígitos com as teclas numéricas.
+Type the 16-digit credit code with the number keys.	Digite o código de crédito de 16 dígitos com as teclas numéricas.
+Type the new credit code with the number keys.	Digite o novo código de crédito com as teclas numéricas.
+No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Ainda sem código? Opções > Comprar um código: um QR code para escanear com um smartphone.
+Scan it with a smartphone camera, buy a code there, then type the code here.	Escaneie com a câmera de um smartphone, compre um código lá e depois digite-o aqui.

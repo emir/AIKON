@@ -362,9 +362,6 @@ Try for free	Gratis testen
 Finish	Fertig
 Add credits	Guthaben laden
 Credit code	Guthabencode
-Centre key: type the 16-digit credit code.	Mitteltaste: 16-stelligen Guthabencode eingeben.
-\n\nNo code? Options > Try for free: a few messages with one model.	\n\nKein Code? Optionen > Gratis testen: ein paar Nachrichten mit einem Modell.
-Centre key: type the new credit code.	Mitteltaste: neuen Guthabencode eingeben.
 Balance	Stand
 Loading...	Lädt...
 Enter the code with Options > 'Add credits'.	Gib den Code über Optionen > 'Guthaben laden' ein.
@@ -555,3 +552,9 @@ Yesterday	Gestern
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Die Gratis-Testversion funktioniert nur mit {0}, daher nutzt dieser Chat es jetzt. Deine Nachricht bleibt als Entwurf erhalten: sende sie erneut. Ein Guthabencode schaltet alle Modelle frei (Hauptmenü > Guthaben).
 Connecting	Verbinde
 AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	AIKON verbindet sich mit seinem Server; das dauert ein paar Sekunden. Fragt das Telefon nach Netzzugriff, erlaube ihn.
+Buy a code	Code kaufen
+No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 digits with the number keys.	Kein Code? Mitteltaste: kostenlos testen, ein paar Nachrichten mit einem Modell.\n\nCode vorhanden? Tippe die 16 Ziffern mit den Zifferntasten.
+Type the 16-digit credit code with the number keys.	Tippe den 16-stelligen Guthabencode mit den Zifferntasten.
+Type the new credit code with the number keys.	Tippe den neuen Guthabencode mit den Zifferntasten.
+No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Noch kein Code? Optionen > Code kaufen: ein QR-Code zum Scannen mit dem Smartphone.
+Scan it with a smartphone camera, buy a code there, then type the code here.	Scanne ihn mit der Smartphone-Kamera, kaufe dort einen Code und tippe ihn dann hier ein.

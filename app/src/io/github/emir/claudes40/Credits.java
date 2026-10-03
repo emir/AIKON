@@ -17,10 +17,14 @@ import javax.microedition.lcdui.TextField;
  *   BALANCE  the balance and the newest charges (POST /v1/balance)
  *
  * The last digit of a code is a check digit (Luhn), so a mistyped code is
- * caught before anything is sent. Networking on a worker thread, one
- * request at a time; nothing is repeated by itself.
+ * caught before anything is sent. The code is typed straight on the page
+ * with the number keys (the right softkey deletes while there are digits;
+ * the phone's number box stays in Options) and sent once all 16 are there.
+ * The free trial, where the server has one, is on the centre key; the shop
+ * opens as a QR code for a smartphone (QrPage). Networking on a worker
+ * thread, one request at a time; nothing is repeated by itself.
  */
-final class Credits implements CommandListener, Runnable {
+final class Credits implements CommandListener, Runnable, TextPage.Digits {
 
     static final int PAIR = 0;
     static final int TOPUP = 1;
@@ -42,11 +46,15 @@ final class Credits implements CommandListener, Runnable {
     private TextBox codeBox;
     private String code = "";
     private boolean busy;
-    private final Command enterCmd = new Command(L.t("Type the code"), Command.OK, 1);
+    /** The centre key with no trial, else in Options. */
+    private Command enterCmd;
     private final Command okCmd = new Command(L.t("OK"), Command.OK, 1);
-    private final Command trialCmd = new Command(L.t("Try for free"), Command.SCREEN, 2);
+    /** The centre key where the server has a free trial, else null. */
+    private Command trialCmd;
     private final Command backCmd = new Command(L.t("Back"), Command.BACK, 1);
-    private final Command finishCmd = new Command(L.t("Finish"), Command.OK, 1);
+    /** In place of Back while digits are typed: deletes the last one. */
+    private final Command deleteCmd = new Command(L.t("Delete"), Command.BACK, 1);
+    private final Command buyCmd = new Command(L.t("Buy a code"), Command.SCREEN, 3);
     private final Command topupCmd = new Command(L.t("Add credits"), Command.SCREEN, 2);
     private final Command refreshCmd = new Command(L.t("Refresh"), Command.SCREEN, 3);
     private final Command helpCmd = Help.command();
@@ -60,20 +68,31 @@ final class Credits implements CommandListener, Runnable {
     /** Pairing with a code (setup step or Settings > Pair this phone). */
     void showPair() {
         mode = PAIR;
-        String shop = midlet.shopLine();
         boolean trial = Updates.trial(midlet.settings.url);
-        codeForm(setup != null ? Setup.title(Setup.STEPS) : L.t("Credit code"),
-                L.t("Centre key: type the 16-digit credit code.")
-                + (trial ? L.t("\n\nNo code? Options > Try for free: a few messages with one model.") : "")
-                + (shop.length() > 0 ? "\n\n" + shop : ""));
-        if (trial) {
-            form.addCommand(trialCmd);
-        }
+        codeForm(setup != null ? Setup.title(Setup.STEPS) : L.t("Credit code"), trial
+                ? L.t("No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 "
+                        + "digits with the number keys.")
+                : L.t("Type the 16-digit credit code with the number keys."), trial);
     }
 
     void showTopup() {
         mode = TOPUP;
-        codeForm(L.t("Add credits"), L.t("Centre key: type the new credit code."));
+        codeForm(L.t("Add credits"), L.t("Type the new credit code with the number keys."), false);
+    }
+
+    /** The shop as a QR code can be shown (the server names a shop whose address fits one). */
+    private boolean canBuy() {
+        String url = Updates.shopUrl(midlet.settings.url);
+        return url.length() > 0 && Qr.encode(url) != null;
+    }
+
+    /** How to get a code, under the code page's text. */
+    private String buyLine() {
+        if (canBuy()) {
+            return "\n\n" + L.t("No code yet? Options > Buy a code: a QR code to scan with a smartphone.");
+        }
+        String shop = midlet.shopLine();
+        return shop.length() > 0 ? "\n\n" + shop : "";
     }
 
     void showBalance() {
@@ -87,6 +106,9 @@ final class Credits implements CommandListener, Runnable {
                 + L.t("Enter the code with Options > 'Add credits'."));
         form.addCommand(backCmd);
         form.addCommand(topupCmd);
+        if (canBuy()) {
+            form.addCommand(buyCmd);
+        }
         form.addCommand(refreshCmd);
         form.addCommand(helpCmd);
         form.setCommandListener(this);
@@ -96,21 +118,80 @@ final class Credits implements CommandListener, Runnable {
 
     /**
      * The code page: the code large in four groups (blanks until typed), a
-     * status line, how to get a code. The centre key opens the phone's number
-     * box; OK there checks the check digit and sends at once.
+     * status line, how to get a code. Digits are typed on the page; the
+     * phone's number box (Type the code) does the same.
      */
-    private void codeForm(String title, String line) {
+    private void codeForm(String title, String line, boolean trial) {
         page = new TextPage(title);
         form = page;
         int c = page.append(L.t("Credit code"), grouped(""));
         page.setBig(c);
-        page.append(null, line);
+        page.append(null, line + buyLine());
         statusItem = page.append(null, ""); // sending, the result, a mistyped digit
+        if (trial) {
+            trialCmd = new Command(L.t("Try for free"), Command.OK, 1);
+            form.addCommand(trialCmd);
+        }
+        enterCmd = new Command(L.t("Type the code"), trial ? Command.SCREEN : Command.OK, trial ? 2 : 1);
         form.addCommand(enterCmd);
+        if (canBuy()) {
+            form.addCommand(buyCmd);
+        }
         form.addCommand(backCmd);
         form.addCommand(helpCmd);
         form.setCommandListener(this);
+        page.setDigits(this);
         midlet.display().setCurrent(form);
+    }
+
+    /** A number key on the code page. */
+    public void digit(char ch) {
+        synchronized (this) {
+            if (busy) {
+                return;
+            }
+        }
+        if (code.length() >= 16) {
+            code = ""; // a full code that did not work: typing starts a new one
+        }
+        code += ch;
+        typed(false);
+    }
+
+    /** Clear / Backspace, and the Delete softkey: the last digit. */
+    public void clear() {
+        synchronized (this) {
+            if (busy || code.length() == 0) {
+                return;
+            }
+        }
+        code = code.substring(0, code.length() - 1);
+        typed(false);
+    }
+
+    /** The code changed: shown, Delete or Back on the right softkey, sent once complete. */
+    private void typed(boolean fromBox) {
+        page.setText(0, grouped(code));
+        if (code.length() > 0) {
+            form.removeCommand(backCmd);
+            form.addCommand(deleteCmd);
+        } else {
+            form.removeCommand(deleteCmd);
+            form.addCommand(backCmd);
+        }
+        if (code.length() < 16) {
+            status(fromBox && code.length() > 0 ? L.t("The code has 16 digits. Centre key to finish it.") : "");
+            return;
+        }
+        if (!valid(code)) {
+            status(L.t("A digit may be mistyped; check the code."));
+            return;
+        }
+        if (mode == TRIAL) {
+            mode = PAIR; // a code typed after a trial that did not start
+        }
+        status(L.t("Sending..."));
+        start();
     }
 
     /** "1234 5678 9012 3456", with "_" for digits not typed yet. */
@@ -141,21 +222,15 @@ final class Credits implements CommandListener, Runnable {
                 return;
             }
             code = v;
-            page.setText(0, grouped(v));
-            if (!valid(v)) {
-                status(v.length() < 16 ? L.t("The code has 16 digits. Centre key to finish it.")
-                        : L.t("A digit may be mistyped; check the code."));
-                return;
-            }
-            if (mode == TRIAL) {
-                mode = PAIR; // a code typed after a trial that did not start
-            }
-            status(L.t("Sending..."));
-            start();
+            typed(true);
             return;
         }
         if (c == helpCmd) {
             Help.show(midlet.display(), form.getTitle(), helpText(), form);
+        } else if (c == deleteCmd) {
+            clear();
+        } else if (c == buyCmd) {
+            QrPage.show(midlet.display(), form, L.t("Buy a code"), Updates.shopUrl(midlet.settings.url));
         } else if (c == backCmd) {
             if (setup != null) {
                 setup.pairingBack();
@@ -164,8 +239,6 @@ final class Credits implements CommandListener, Runnable {
             } else {
                 midlet.display().setCurrent(back);
             }
-        } else if (c == finishCmd) {
-            setup.finish();
         } else if (c == topupCmd) {
             new Credits(midlet, null, back).showTopup();
         } else if (c == refreshCmd) {
@@ -276,10 +349,17 @@ final class Credits implements CommandListener, Runnable {
             status(mode == TRIAL ? L.f("Trial started: {0} credits. A credit code opens every model.", bal)
                     : (mode == PAIR ? L.t("Paired. ") : L.t("Added. "))
                     + L.t("Balance: ") + bal + L.t(" credits"));
+            page.setDigits(null);
             form.removeCommand(enterCmd);
-            form.removeCommand(trialCmd);
+            if (trialCmd != null) {
+                form.removeCommand(trialCmd);
+            }
+            form.removeCommand(buyCmd);
+            form.removeCommand(deleteCmd);
+            form.addCommand(backCmd);
             if ((mode == PAIR || mode == TRIAL) && setup != null) {
-                form.addCommand(finishCmd);
+                // straight on to the chat, with the balance in its short note
+                setup.finish(bal.length() > 0 ? L.f("Ready · {0} credits", bal) : null);
             }
         } else if ("trial_closed".equals(st)) {
             status(L.t("Today's free trials are used up. Try again tomorrow, or get a credit code."));

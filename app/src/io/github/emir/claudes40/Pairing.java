@@ -69,7 +69,7 @@ final class Pairing implements CommandListener, Runnable {
                 midlet.showMenu();
             }
         } else if (c == finishCmd) {
-            setup.finish();
+            setup.finish(null);
         }
     }
 

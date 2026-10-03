@@ -26,6 +26,15 @@ final class TextPage extends Canvas {
     private int scroll;
     private int contentH;
     private boolean full;
+    /** Gets the digit keys and Clear (a credit code typed on the page), or null. */
+    private Digits digits;
+
+    /** The keys of a page that is typed on: 0..9, and Clear / Backspace. */
+    interface Digits {
+        void digit(char c);
+
+        void clear();
+    }
 
     private static final class Item {
         String label;
@@ -131,14 +140,37 @@ final class TextPage extends Canvas {
         repaint();
     }
 
+    synchronized void setDigits(Digits d) {
+        digits = d;
+    }
+
     protected void keyPressed(int keyCode) {
-        int action = Keys.action(this, Keys.map(keyCode));
+        int k = Keys.map(keyCode);
+        Digits d;
+        synchronized (this) {
+            d = digits;
+        }
+        if (d != null) {
+            if (k >= KEY_NUM0 && k <= KEY_NUM9) {
+                d.digit((char) ('0' + k - KEY_NUM0));
+                return;
+            }
+            if (k == -8 || k == 8) { // Nokia's Clear key, Backspace on QWERTY
+                d.clear();
+                return;
+            }
+        }
+        int action = Keys.action(this, k);
         if (action == UP || action == DOWN) {
             scrollBy(action == UP ? -1 : 1);
         }
     }
 
     protected void keyRepeated(int keyCode) {
+        int k = Keys.map(keyCode);
+        if (k >= KEY_NUM0 && k <= KEY_NUM9 && digits != null) {
+            return; // a held digit is typed once
+        }
         keyPressed(keyCode);
     }
 

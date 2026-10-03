@@ -362,9 +362,6 @@ Try for free	Probar gratis
 Finish	Terminar
 Add credits	Añadir créditos
 Credit code	Código de crédito
-Centre key: type the 16-digit credit code.	Tecla central: escribe el código de crédito de 16 dígitos.
-\n\nNo code? Options > Try for free: a few messages with one model.	\n\n¿Sin código? Opciones > Probar gratis: unos pocos mensajes con un modelo.
-Centre key: type the new credit code.	Tecla central: escribe el nuevo código de crédito.
 Balance	Saldo
 Loading...	Cargando...
 Enter the code with Options > 'Add credits'.	Escribe el código con Opciones > 'Añadir créditos'.
@@ -555,3 +552,9 @@ Yesterday	Ayer
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	La prueba gratuita solo funciona con {0}, así que este chat ya lo usa. Tu mensaje se guarda como borrador: envíalo de nuevo. Un código de créditos abre todos los modelos (menú principal > Créditos).
 Connecting	Conectando
 AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	AIKON se conecta a su servidor; tarda unos segundos. Si el teléfono pregunta por el acceso a la red, permítelo.
+Buy a code	Comprar un código
+No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 digits with the number keys.	¿Sin código? Tecla central: prueba gratis, unos mensajes con un modelo.\n\n¿Tienes un código? Escribe sus 16 dígitos con las teclas numéricas.
+Type the 16-digit credit code with the number keys.	Escribe el código de crédito de 16 dígitos con las teclas numéricas.
+Type the new credit code with the number keys.	Escribe el nuevo código de crédito con las teclas numéricas.
+No code yet? Options > Buy a code: a QR code to scan with a smartphone.	¿Aún sin código? Opciones > Comprar un código: un código QR para escanear con un smartphone.
+Scan it with a smartphone camera, buy a code there, then type the code here.	Escanéalo con la cámara de un smartphone, compra allí un código y luego escríbelo aquí.

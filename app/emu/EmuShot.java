@@ -266,7 +266,13 @@ public class EmuShot {
         save("settings_down");
         command(t("Back", "Geri"));
 
-        // the credit code page (nothing is sent before a code is typed)
+        // the credit code page (nothing is sent before a code is typed), on a server with a free
+        // trial and a shop (example address, put into Updates by the harness; nothing is fetched)
+        Class up = Class.forName("io.github.emir.claudes40.Updates", true, midlet.getClass().getClassLoader());
+        staticField(up, "loaded", Boolean.TRUE);
+        staticField(up, "server", field(field(midlet, "settings"), "url"));
+        staticField(up, "shop", "https://example.com/buy");
+        staticField(up, "trial", Boolean.TRUE);
         Class cr = Class.forName("io.github.emir.claudes40.Credits", true, midlet.getClass().getClassLoader());
         Constructor cc = cr.getDeclaredConstructors()[0];
         cc.setAccessible(true);
@@ -275,7 +281,21 @@ public class EmuShot {
         sp.setAccessible(true);
         sp.invoke(credits);
         save("credit_code");
+        key(Mobile.KEY_NUM4);
+        key(Mobile.KEY_NUM5);
+        key(Mobile.KEY_NUM3);
+        key(Mobile.KEY_NUM9);
+        key(Mobile.KEY_NUM1);
+        save("credit_code_typing");           // "4539 1___ ...", Delete on the right softkey
+        command(t("Buy a code", "Kod satın al"));
+        save("credit_buy_qr");
         command(t("Back", "Geri"));
+        for (int i = 0; i < 5; i++) {
+            command(t("Delete", "Sil"));
+        }
+        command(t("Back", "Geri"));
+        staticField(up, "shop", "");
+        staticField(up, "trial", Boolean.FALSE);
 
         call("showDataUsage");                // Settings > Options > Data usage (test mode: no data)
         save("data_usage");
@@ -407,6 +427,12 @@ public class EmuShot {
         Field f = o.getClass().getDeclaredField(name);
         f.setAccessible(true);
         return f.get(o);
+    }
+
+    static void staticField(Class c, String name, Object value) throws Exception {
+        Field f = c.getDeclaredField(name);
+        f.setAccessible(true);
+        f.set(null, value);
     }
 
     static void setting(String name, Object value) throws Exception {

@@ -70,7 +70,8 @@ server/  Go: phone TLS listener, chat service, SQLite store, admin API
   server only for Turkish and English; others are detected there.
 
 - High-level `TextBox`/`Form` only where text is typed (messages, notes,
-  server address, access code, setup address, credit code, calendar entry);
+  server address, access code, setup address, calendar entry; the credit code
+  is typed on its page, with the number box as a fallback);
   custom `Canvas` screens elsewhere (splash, home, chat, settings and every
   list through `RowList`, every text page and message through `TextPage`),
   with
@@ -250,9 +251,13 @@ open-source server has no such extension; it only offers the hooks
 Such a server may also name its shop in /health: `shop-url: https://...`
 (only while it takes real payments). The phone keeps it with the daily update
 check and shows the address, without "https://", on the home screen's
-Credits row, the Credits page and the "not enough credits" note; it never
-opens it (old phone browsers cannot reach a modern shop), the code is bought
-on another device and typed in. The home status says "Credits low" below
+Credits row, the Credits page and the "not enough credits" note, and as a QR
+code (Options > Buy a code on the code and Credits pages, drawn by the phone,
+level M, up to 106 bytes) to scan with a smartphone; it never opens it (old
+phone browsers cannot reach a modern shop), the code is bought on another
+device and typed in. The code page takes the digits straight from the number
+keys and sends once all 16 are there and the check digit fits; where the
+server has a free trial, that is the centre key. The home status says "Credits low" below
 about ten typical messages with the chat's model, "No credits left" at zero.
 
 A voucher is 16 digits, the last a Luhn check digit (the phone refuses a

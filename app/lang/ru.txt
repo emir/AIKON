@@ -362,9 +362,6 @@ Try for free	Попробовать бесплатно
 Finish	Завершить
 Add credits	Добавить кредиты
 Credit code	Код кредитов
-Centre key: type the 16-digit credit code.	Центр. клавиша: введи 16-значный код кредитов.
-\n\nNo code? Options > Try for free: a few messages with one model.	\n\nНет кода? Функции > Попробовать бесплатно: несколько сообщений с одной моделью.
-Centre key: type the new credit code.	Центр. клавиша: введи новый код кредитов.
 Balance	Баланс
 Loading...	Загрузка...
 Enter the code with Options > 'Add credits'.	Введи код через Функции > 'Добавить кредиты'.
@@ -555,3 +552,9 @@ Yesterday	Вчера
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Бесплатная пробная версия работает только с {0}, поэтому этот чат теперь использует её. Сообщение сохранено как черновик: отправь его снова. Код кредитов открывает все модели (главное меню > Кредиты).
 Connecting	Подключение
 AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	AIKON подключается к своему серверу, это займёт несколько секунд. Если телефон спросит о доступе к сети, разреши его.
+Buy a code	Купить код
+No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 digits with the number keys.	Нет кода? Центральная клавиша: попробовать бесплатно, несколько сообщений с одной моделью.\n\nЕсть код? Набери его 16 цифр цифровыми клавишами.
+Type the 16-digit credit code with the number keys.	Набери 16-значный код кредитов цифровыми клавишами.
+Type the new credit code with the number keys.	Набери новый код кредитов цифровыми клавишами.
+No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Ещё нет кода? Функции > Купить код: QR-код для смартфона.
+Scan it with a smartphone camera, buy a code there, then type the code here.	Отсканируй его камерой смартфона, купи там код и набери его здесь.

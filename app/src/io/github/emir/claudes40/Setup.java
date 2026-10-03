@@ -129,7 +129,7 @@ final class Setup implements CommandListener {
         } else if (c == backCmd) {
             back();
         } else if (c == finishCmd) {
-            finish();
+            finish(null);
         } else if (c == startCmd || c == againCmd) {
             Credits.pair(midlet, this, midlet.display(), form);
         } else if (c == nextCmd) {
@@ -217,13 +217,13 @@ final class Setup implements CommandListener {
         }
     }
 
-    /** Pairing done, or already paired. */
-    void finish() {
+    /** Pairing done, or already paired; done is the chat's short note (null: "All set!"). */
+    void finish(String done) {
         Settings s = midlet.settings;
         s.setupDone = true;
         String err = s.save();
         if (err == null && s.ready()) {
-            midlet.setupDone(L.t("All set!"));
+            midlet.setupDone(done != null ? done : L.t("All set!"));
             return;
         }
         midlet.setupFinished(err != null ? err

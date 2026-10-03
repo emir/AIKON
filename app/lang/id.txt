@@ -362,9 +362,6 @@ Try for free	Coba gratis
 Finish	Selesai
 Add credits	Tambah kredit
 Credit code	Kode kredit
-Centre key: type the 16-digit credit code.	Tombol tengah: ketik kode kredit 16 digit.
-\n\nNo code? Options > Try for free: a few messages with one model.	\n\nTak punya kode? Pilihan > Coba gratis: beberapa pesan dengan satu model.
-Centre key: type the new credit code.	Tombol tengah: ketik kode kredit baru.
 Balance	Saldo
 Loading...	Memuat...
 Enter the code with Options > 'Add credits'.	Masukkan kode lewat Pilihan > 'Tambah kredit'.
@@ -555,3 +552,9 @@ Yesterday	Kemarin
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	Uji coba gratis hanya bisa dengan {0}, jadi obrolan ini sekarang memakainya. Pesanmu disimpan sebagai draf: kirim lagi. Kode kredit membuka semua model (menu utama > Kredit).
 Connecting	Menghubungkan
 AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	AIKON sedang terhubung ke servernya; butuh beberapa detik. Jika ponsel meminta akses jaringan, izinkan.
+Buy a code	Beli kode
+No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 digits with the number keys.	Tidak punya kode? Tombol tengah: coba gratis, beberapa pesan dengan satu model.\n\nPunya kode? Ketik 16 digitnya dengan tombol angka.
+Type the 16-digit credit code with the number keys.	Ketik kode kredit 16 digit dengan tombol angka.
+Type the new credit code with the number keys.	Ketik kode kredit baru dengan tombol angka.
+No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Belum punya kode? Pilihan > Beli kode: kode QR untuk dipindai dengan smartphone.
+Scan it with a smartphone camera, buy a code there, then type the code here.	Pindai dengan kamera smartphone, beli kode di sana, lalu ketik kodenya di sini.

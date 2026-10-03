@@ -362,9 +362,6 @@ Try for free	Essai gratuit
 Finish	Terminer
 Add credits	Ajouter des crédits
 Credit code	Code de crédits
-Centre key: type the 16-digit credit code.	Touche centrale: saisis le code de crédits à 16 chiffres.
-\n\nNo code? Options > Try for free: a few messages with one model.	\n\nPas de code ? Options > Essai gratuit: quelques messages avec un modèle.
-Centre key: type the new credit code.	Touche centrale: saisis le nouveau code de crédits.
 Balance	Solde
 Loading...	Chargement...
 Enter the code with Options > 'Add credits'.	Saisis le code avec Options > 'Ajouter des crédits'.
@@ -555,3 +552,9 @@ Yesterday	Hier
 The free trial works with {0} only, so this chat now uses it. Your message is kept as a draft: send it again. A credit code opens every model (main menu > Credits).	L'essai gratuit ne fonctionne qu'avec {0}, cette discussion l'utilise donc maintenant. Ton message est gardé en brouillon : renvoie-le. Un code de crédits ouvre tous les modèles (menu principal > Crédits).
 Connecting	Connexion
 AIKON is connecting to its server; this takes a few seconds. If the phone asks about network access, allow it.	AIKON se connecte à son serveur ; cela prend quelques secondes. Si le téléphone demande l'accès au réseau, autorise-le.
+Buy a code	Acheter un code
+No code? Centre key: try for free, a few messages with one model.\n\nHave a code? Type its 16 digits with the number keys.	Pas de code ? Touche centrale : essai gratuit, quelques messages avec un modèle.\n\nTu as un code ? Tape ses 16 chiffres avec les touches numériques.
+Type the 16-digit credit code with the number keys.	Tape le code de crédit à 16 chiffres avec les touches numériques.
+Type the new credit code with the number keys.	Tape le nouveau code de crédit avec les touches numériques.
+No code yet? Options > Buy a code: a QR code to scan with a smartphone.	Pas encore de code ? Options > Acheter un code : un code QR à scanner avec un smartphone.
+Scan it with a smartphone camera, buy a code there, then type the code here.	Scanne-le avec l'appareil photo d'un smartphone, achète un code là-bas, puis tape-le ici.
