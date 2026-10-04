@@ -268,6 +268,9 @@ func (c *chatService) chat(ctx context.Context, device, requestID, conv, message
 	}
 	opts := o
 	opts.search = o.search && entry.search && c.searchesLeft(ctx, device) > 0
+	if g, ok := c.meter.(searchGate); ok && opts.search && !g.searchAllowed(ctx, device) {
+		opts.search = false
+	}
 	history, err := c.context(ctx, device, conv, o.imageID != "")
 	if err != nil {
 		mu.Unlock()

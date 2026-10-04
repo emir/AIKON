@@ -57,6 +57,12 @@ type meter interface {
 	settle(ctx context.Context, tx *sql.Tx, c meterCall, u meterUse) error
 }
 
+// searchGate: a meter that may turn web search off for a device (a
+// server extension's free trial); without it, search follows the settings.
+type searchGate interface {
+	searchAllowed(ctx context.Context, device string) bool
+}
+
 // meterFactory builds the meter shared by chat and voice messages.
 var meterFactory = func(st *store, c config) meter {
 	return &dailyMeter{st: st, reqLimit: c.reqLimit, tokLimit: c.tokLimit, transcribeLimit: c.transcribeLimit}
