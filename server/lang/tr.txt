@@ -575,3 +575,4 @@ This server has no language files yet.	Bu sunucuda henüz dil dosyası yok.
 The language changed on the server; try again.	Dil sunucuda değişti; yeniden dene.
 The phone's memory is full.	Telefonun belleği dolu.
 Could not get the language ({0}).	Dil alınamadı ({0}).
+This phone's free trial goes on: {0} credits left.	Bu telefonun ücretsiz denemesi sürüyor: {0} kredi kaldı.

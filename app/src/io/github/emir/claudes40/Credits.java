@@ -328,7 +328,19 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
         Settings s = midlet.settings;
         String[] k = { "voucher" };
         String[] v = { code };
-        Net.Result r = mode == TRIAL
+        String kept = mode == TRIAL ? TrialPair.token(s.url) : "";
+        Net.Result r = null;
+        if (kept.length() > 0) {
+            // a trial was started on this phone before (then "Reset setup"): the same account goes on
+            r = Net.request(s.url + "/v1/balance", "POST", kept, S40Message.format(new String[0], new String[0], ""),
+                    midlet.userAgent(), null);
+            if (r.ok() && r.msg != null && "unauthorized".equals(r.msg.field("status"))) {
+                TrialPair.forget(); // revoked on the server
+                kept = "";
+                r = null;
+            }
+        }
+        r = r != null ? r : mode == TRIAL
                 ? Net.request(s.url + "/v1/pair/trial", "POST", null, S40Message.format(new String[0], new String[0], ""),
                         midlet.userAgent(), null)
                 : mode == PAIR
@@ -344,7 +356,7 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
             midlet.doneFeedback();
             midlet.session().setBalance(bal);
             if (mode == PAIR || mode == TRIAL) {
-                s.token = r.msg.field("token");
+                s.token = kept.length() > 0 ? kept : r.msg.field("token");
                 s.credits = true;
                 String err = s.save();
                 if (err != null) {
@@ -352,7 +364,10 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
                     return;
                 }
             }
-            String model = r.msg.field("model");
+            if (mode == TRIAL && kept.length() == 0) {
+                TrialPair.save(s.url, s.token);
+            }
+            String model = r.msg.field(kept.length() > 0 ? "trial-model" : "model");
             if (mode == TRIAL && model.length() > 0) {
                 // the trial works with one model: new chats and the chat now open start with it
                 Models.setTrial(model);
@@ -361,7 +376,8 @@ final class Credits implements CommandListener, Runnable, TextPage.Digits {
             } else {
                 Models.setTrial(""); // a code opens every model
             }
-            status(mode == TRIAL ? L.f("Trial started: {0} credits. A credit code opens every model.", bal)
+            status(kept.length() > 0 ? L.f("This phone's free trial goes on: {0} credits left.", bal)
+                    : mode == TRIAL ? L.f("Trial started: {0} credits. A credit code opens every model.", bal)
                     : (mode == PAIR ? L.t("Paired. ") : L.t("Added. "))
                     + L.t("Balance: ") + bal + L.t(" credits"));
             page.setDigits(null);

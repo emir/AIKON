@@ -575,3 +575,4 @@ This server has no language files yet.	Este servidor ainda não tem arquivos de 
 The language changed on the server; try again.	O idioma mudou no servidor; tente de novo.
 The phone's memory is full.	A memória do telefone está cheia.
 Could not get the language ({0}).	Não foi possível obter o idioma ({0}).
+This phone's free trial goes on: {0} credits left.	O teste grátis deste telefone continua: restam {0} créditos.

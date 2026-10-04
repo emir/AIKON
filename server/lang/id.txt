@@ -575,3 +575,4 @@ This server has no language files yet.	Server ini belum punya file bahasa.
 The language changed on the server; try again.	Bahasa berubah di server; coba lagi.
 The phone's memory is full.	Memori ponsel penuh.
 Could not get the language ({0}).	Tidak bisa mengambil bahasa ({0}).
+This phone's free trial goes on: {0} credits left.	Uji coba gratis ponsel ini berlanjut: sisa {0} kredit.

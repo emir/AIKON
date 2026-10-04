@@ -575,3 +575,4 @@ This server has no language files yet.	На этом сервере пока н�
 The language changed on the server; try again.	Язык на сервере изменился; попробуй ещё раз.
 The phone's memory is full.	Память телефона заполнена.
 Could not get the language ({0}).	Не удалось получить язык ({0}).
+This phone's free trial goes on: {0} credits left.	Проба этого телефона продолжается, осталось кредитов: {0}.
